@@ -1,6 +1,6 @@
 import SmartPiggies from "./contracts/SmartPiggies.json";
-import TableToken from "./contracts/TableToken.json";
-import StableLink from "./contracts/StableLink.json";
+import StableToken from "./contracts/StableToken.json";
+import RopstenLINK from "./contracts/RopstenLINK.json";
 
 const options = {
   web3: {
@@ -10,7 +10,7 @@ const options = {
       url: "ws://127.0.0.1:8545",
     },
   },
-  contracts: [SmartPiggies, TableToken, StableLink],
+  contracts: [SmartPiggies, StableToken, RopstenLINK],
   events: {
   },
   polls: {

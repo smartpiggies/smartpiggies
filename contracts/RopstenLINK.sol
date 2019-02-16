@@ -5,7 +5,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Burnable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Mintable.sol";
 
-contract StableLink is ERC20, ERC20Detailed, ERC20Mintable, ERC20Burnable {
+contract RopstenLINK is ERC20, ERC20Detailed, ERC20Mintable, ERC20Burnable {
     //string public name = "Stable";
     //string public symbol = "STBLE";
     //uint8 public decimals = 18;
@@ -15,7 +15,7 @@ contract StableLink is ERC20, ERC20Detailed, ERC20Mintable, ERC20Burnable {
   constructor()
     ERC20Burnable()
     ERC20Mintable()
-    ERC20Detailed("LinkToken","LINK",18)
+    ERC20Detailed("RopstenLINK","LINK",18)
     ERC20()
     public
   {

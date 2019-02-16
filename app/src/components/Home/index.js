@@ -177,7 +177,6 @@ class Home extends Component {
                   </ListItemText>
                 </ListItem>
 
-                {/*{spArray.map(item => <ListPiggies key={item.label} piggyId={item.value} piggyIndex={item.label} handleChildClick={this.handleChildClick.bind(null, this.state.piggyId)} />)}*/}
                 {piggies}
 
               </List>
@@ -209,8 +208,8 @@ const mapStateToProps = state => {
   return {
     accounts: state.accounts,
     SmartPiggies: state.contracts.SmartPiggies,
-    TableTokens: state.contracts.TableTokens,
-    StableLink: state.contracts.StableLink,
+    StableToken: state.contracts.StableToken,
+    RopstenLINK: state.contracts.RopstenLINK,
     drizzleStatus: state.drizzleStatus,
   };
 };

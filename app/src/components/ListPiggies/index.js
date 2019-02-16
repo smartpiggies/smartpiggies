@@ -18,6 +18,12 @@ class ListPiggies extends Component {
   }
 
   handleButton(event) {
+    // this.setState({
+    //   selectedPiggy: this.props.piggyId,
+    // })
+    // super.setState({
+    //   selectedPiggy: this.props.piggyId,
+    // })
     console.log(this.props.piggyId)
   }
 
@@ -25,7 +31,7 @@ class ListPiggies extends Component {
 
     return (
       <div>
-      <ListItem button key={this.props.key} onClick={this.handleButton}>
+      <ListItem button key={this.props.key} piggyId={this.props.piggyId} onClick={this.handleButton}>
         <ListItemText>
           {this.props.piggyIndex}
         </ListItemText>

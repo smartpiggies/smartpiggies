@@ -14,7 +14,6 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import Divider from '@material-ui/core/Divider';
 
-import ListPiggies from '../ListPiggies'
 /*
 background
 width
@@ -92,20 +91,24 @@ class Home extends Component {
 
     this.handleDrawerOpen = this.handleDrawerOpen.bind(this)
     this.handleDrawerClose = this.handleDrawerClose.bind(this)
+    this.handleSelectPiggy = this.handleSelectPiggy.bind(this)
     this.groomAddress = this.groomAddress.bind(this)
 
     this.state = {
+      spContractAddress: '',
       activeAccount: '',
-      open: true
+      open: true,
+      selectedPiggy: '',
     }
   }
 
   componentDidMount() {
+    console.log("fired")
     this.setState({
+      spContractAddress: this.contracts.SmartPiggies.address,
       activeAccount: this.props.accounts[0]
     })
   }
-
 
   groomAddress(address) {
     let groomed
@@ -124,9 +127,21 @@ class Home extends Component {
     this.setState({ open: false });
   };
 
+  handleSelectPiggy = name => () => {
+    //console.log(name)
+    this.setState({ piggyId: name })
+  }
+
   render() {
     let groomedAddress = this.groomAddress(this.state.activeAccount)
-    //console.log(this.props)
+    //console.log(this.state.piggyId)
+    let piggies = spArray.map(item =>
+        <ListItem button key={item.label} value={item.value} onClick={this.handleSelectPiggy(item.value)}>
+        <ListItemText>
+          {item.label}
+        </ListItemText>
+          {item.value}
+        </ListItem>)
     return (
       <div>
       <AppBar
@@ -138,7 +153,7 @@ class Home extends Component {
           <tr>
             <td>Contract:</td>
             <td></td>
-            <td>{this.props.accounts[0]}</td>
+            <td>{this.state.spContractAddress}</td>
           </tr>
         </tbody>
       </table>
@@ -162,8 +177,8 @@ class Home extends Component {
                   </ListItemText>
                 </ListItem>
 
-                {spArray.map(item => <ListPiggies key={item.label} piggyId={item.value} piggyIndex={item.label} />)}
-
+                {/*{spArray.map(item => <ListPiggies key={item.label} piggyId={item.value} piggyIndex={item.label} handleChildClick={this.handleChildClick.bind(null, this.state.piggyId)} />)}*/}
+                {piggies}
 
               </List>
 
@@ -174,6 +189,7 @@ class Home extends Component {
         <Grid item>
           <Grid container>
               <Paper style={main}>
+              Current Piggy: {this.state.piggyId}
               </Paper>
           </Grid>
         </Grid>

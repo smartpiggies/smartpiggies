@@ -1,9 +1,9 @@
-//const SimpleStorage = artifacts.require("SimpleStorage");
-//const TutorialToken = artifacts.require("TutorialToken");
-//const ComplexStorage = artifacts.require("ComplexStorage");
+const SmartPiggies = artifacts.require("SmartPiggies");
+const TableToken = artifacts.require("TableToken");
+const StableLink = artifacts.require("StableLink");
 
 module.exports = function(deployer) {
-  //deployer.deploy(SimpleStorage);
-  //deployer.deploy(TutorialToken);
-  //deployer.deploy(ComplexStorage);
+  deployer.deploy(SmartPiggies, {gas: 6000000, gasPrice: 1100000000});
+  deployer.deploy(TableToken, {gas: 6000000, gasPrice: 1100000000, overwrite: false});
+  deployer.deploy(StableLINK, {gas: 6000000, gasPrice: 1100000000, overwrite: false});
 };

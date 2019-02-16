@@ -1,6 +1,6 @@
-//import SimpleStorage from "./contracts/SimpleStorage.json";
-//import ComplexStorage from "./contracts/ComplexStorage.json";
-//import TutorialToken from "./contracts/TutorialToken.json";
+import SmartPiggies from "./contracts/SmartPiggies.json";
+import TableToken from "./contracts/TableToken.json";
+import StableLINK from "./contracts/StableLINK.json";
 
 const options = {
   web3: {
@@ -10,7 +10,7 @@ const options = {
       url: "ws://127.0.0.1:8545",
     },
   },
-  contracts: [],
+  contracts: [SmartPiggies, TableToken, StableLINK],
   events: {
   },
   polls: {

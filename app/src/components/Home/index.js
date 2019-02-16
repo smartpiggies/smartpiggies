@@ -14,6 +14,8 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import Divider from '@material-ui/core/Divider';
 
+import ERC20Stats from '../ERC20Stats';  // try to render this at the top of the left sidebar
+
 /*
 background
 width
@@ -33,7 +35,7 @@ const appBar = {
 
 const leftPane = {
   backgroundColor: '#FFCBCB',
-  height: 500,
+  //height: 500,
   width: 250,
   margin: "1em",
   textAlign: 'left',
@@ -44,7 +46,7 @@ const leftPane = {
 
 const main = {
   backgroundColor: '#FFCBCB',
-  height: '60em',
+  height: '60em', // COMMENT THIS OUT LATER WHEN THERE IS CONTENT TO PUT IN
   width: '50em',
   margin: '1em',
   textAlign: 'center',
@@ -163,6 +165,9 @@ class Home extends Component {
         <Grid item>
           <Grid container>
             <Paper style={leftPane}>
+              {/**  ERC-20 information */}
+              <ERC20Stats />
+              {/**  Account + piggy information */}
               <List>
                 <ListItem>
                   <ListItemText>

@@ -2485,8 +2485,8 @@
     "version": "0.5.2+commit.1df8f40c.Emscripten.clang"
   },
   "networks": {},
-  "schemaVersion": "3.0.1",
-  "updatedAt": "2019-02-16T15:11:55.446Z",
+  "schemaVersion": "3.0.2",
+  "updatedAt": "2019-02-16T20:45:33.950Z",
   "devdoc": {
     "methods": {}
   },

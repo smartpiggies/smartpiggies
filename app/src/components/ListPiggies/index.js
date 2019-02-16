@@ -4,7 +4,6 @@ import { drizzleConnect } from "drizzle-react"
 import PropTypes from 'prop-types'
 
 /* import components */
-import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 
@@ -14,18 +13,25 @@ class ListPiggies extends Component {
 
     this.handleButton = this.handleButton.bind(this)
     this.state = {
-
+      piggy: ''
     }
   }
 
-  handleButton() {
-    console.log(this.props.piggyList)
+  handleButton(event) {
+    console.log(this.props.piggyId)
   }
 
   render() {
 
     return (
       <div>
+      <ListItem button key={this.props.key} onClick={this.handleButton}>
+        <ListItemText>
+          {this.props.piggyIndex}
+        </ListItemText>
+          {this.props.piggyId}
+      </ListItem>
+      {/*
       {this.props.piggyList.map(item => (
         <ListItem button key={item.label} value={item.value} onClick={this.handleButton}>
           <ListItemText>
@@ -34,7 +40,7 @@ class ListPiggies extends Component {
             {item.value}
         </ListItem>
       ))}
-
+      */}
         </div>
     )
   }

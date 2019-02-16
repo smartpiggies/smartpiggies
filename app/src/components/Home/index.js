@@ -68,19 +68,19 @@ const grid = {
 const spArray = [
     {
       label: '1',
-      value: '123456'
+      value: '1234'
     },
     {
       label: '2',
-      value: '123456',
+      value: '5678',
     },
     {
       label: '3',
-      value: '123456'
+      value: '9123'
     },
     {
       label: '4',
-      value: '123456'
+      value: '2345'
     }
 ]
 
@@ -162,7 +162,7 @@ class Home extends Component {
                   </ListItemText>
                 </ListItem>
 
-                <ListPiggies piggyList={spArray} />
+                {spArray.map(item => <ListPiggies key={item.label} piggyId={item.value} piggyIndex={item.label} />)}
 
 
               </List>

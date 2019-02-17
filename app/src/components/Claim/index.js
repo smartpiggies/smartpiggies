@@ -8,6 +8,11 @@ import Button from '@material-ui/core/Button'
 import MenuItem from '@material-ui/core/MenuItem'
 import TextField from '@material-ui/core/TextField'
 import Paper from '@material-ui/core/Paper'
+import Typography from '@material-ui/core/Typography'
+import Divider from '@material-ui/core/Divider'
+import List from '@material-ui/core/List'
+import ListItem from '@material-ui/core/ListItem'
+import ListItemText from '@material-ui/core/ListItemText'
 
 //import TokenBalance from '../Displays/TokenBalance'
 //import ERC20Balance from '../ERC20Balance'
@@ -137,106 +142,80 @@ class Claim extends Component {
     //console.log(addresses)
     return (
       <div className="App">
-      <Paper>
-      {/**<TokenBalance owner={this.state.accountAddress} token={this.state.tokenAddress} /> */}
-      {/**<ERC20Balance accounts={this.props.accounts} owner={this.state.accountAddress} token={this.state.tokenAddress} />*/}
-      </Paper>
-
-      <Paper>
-      <div>
-        <h2>Claim a Payout</h2>
-      </div>
-        <table>
-          <tbody>
-            <tr>
-              <td>Account Address:</td>
-              <td>
-                <TextField
-                  id="accountAddress"
-                  select
-                  label="Recipient"
-                  value={this.state.accountAddress}
-                  onChange={this.handleTextMenuChange('accountAddress')}
-                  helperText="select a recipient"
-                  margin="normal"
-                  variant="filled"
-                  >
-                  {this.state.addresses.map(option => (
-                    <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </td>
-            </tr>
-            <tr>
-              <td>token address:</td>
-              <td>
-                <TextField
-                  id="tokenAddress"
-                  select
-                  label="TokenAddress"
-                  value={this.state.tokenAddress}
-                  onChange={this.handleTextMenuChange('tokenAddress')}
-                  helperText="select a token contract"
-                  margin="normal"
-                  variant="filled"
-                  >
-                  {this.state.currencies.map(option => (
-                    <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </td>
-            </tr>
-            <tr>
-            <td></td>
-            <td>
-              <TextField
-                id="denomination"
-                select
-                label="denomination"
-                value={this.state.claimAmount}
-                onChange={this.handleTextMenuChange('claimAmount')}
-                helperText="select a denomination"
-                margin="normal"
-                variant="filled"
-                >
-                {amounts.map(option => (
-                  <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </td>
-            </tr>
-            <tr>
-              <td>withdrawal amount:</td>
-              <td>
-                <TextField
-                  id="claimAmount"
-                  label="Amount"
-                  value={this.state.claimAmount}
-                  onChange={this.handleTextMenuChange('claimAmount')}
-                  margin="normal"
-                  variant="filled"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <table align="center">
-          <tbody>
-            <tr>
-              <td width="20em" ></td>
-              <td>
-                <Button type="Button" variant="contained" onClick={this.handleButton}>Claim</Button>
-              </td>
-            </tr>
-            <tr height="10em"></tr>
-          </tbody>
-        </table>
+        <Paper>
+            <Typography variant="h5" style={{marginBottom: "15px"}}>Claim a Payout</Typography>
+            <Divider />
+            <List>
+                <ListItem>
+                    <ListItemText>Account Address:</ListItemText>
+                    <TextField
+                        id="accountAddress"
+                        select
+                        label="Recipient"
+                        value={this.state.accountAddress}
+                        onChange={this.handleTextMenuChange('accountAddress')}
+                        helperText="select a recipient"
+                        margin="normal"
+                        variant="filled"
+                    >
+                        {this.state.addresses.map(option => (
+                            <MenuItem key={option.value} value={option.value}>
+                                {option.label}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                </ListItem>
+                <ListItem>
+                    <ListItemText>Token Address:</ListItemText>
+                    <TextField
+                        id="tokenAddress"
+                        select
+                        label="TokenAddress"
+                        value={this.state.tokenAddress}
+                        onChange={this.handleTextMenuChange('tokenAddress')}
+                        helperText="select a token contract"
+                        margin="normal"
+                        variant="filled"
+                    >
+                        {this.state.currencies.map(option => (
+                            <MenuItem key={option.value} value={option.value}>
+                                {option.label}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                </ListItem>
+                <ListItem>
+                    <ListItemText>Units Denomination:</ListItemText>
+                    <TextField
+                        id="denomination"
+                        select
+                        label="denomination"
+                        value={this.state.claimAmount}
+                        onChange={this.handleTextMenuChange('claimAmount')}
+                        helperText="select a denomination"
+                        margin="normal"
+                        variant="filled"
+                    >
+                        {amounts.map(option => (
+                            <MenuItem key={option.value} value={option.value}>
+                                {option.label}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                </ListItem>
+                <ListItem>
+                    <ListItemText>Withdrawal Amount:</ListItemText>
+                    <TextField
+                        id="claimAmount"
+                        label="Amount"
+                        value={this.state.claimAmount}
+                        onChange={this.handleTextMenuChange('claimAmount')}
+                        margin="normal"
+                        variant="filled"
+                    />
+                </ListItem>
+            </List>
+            <Button type="Button" variant="contained" color="primary" size="large" onClick={this.handleButton} style={{marginBottom: "15px"}}>Claim Payout</Button>
         </Paper>
       </div>
     )

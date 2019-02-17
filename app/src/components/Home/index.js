@@ -216,6 +216,9 @@ class Home extends Component {
 
                   <div>
                     Load a happy pig picture
+                    <br>
+                    </br>
+
                     also a button inviting the user to create a new piggy
                   </div>
                 }

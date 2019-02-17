@@ -28,6 +28,8 @@ import ERC20Stats from '../ERC20Stats';  // try to render this at the top of the
 //import { Typography } from "@material-ui/core";
 
 import logo from '../../Assets/Logo/logo.png'
+import SatisfyAuction from "../SatisfyAuction";
+import CreatePiggy from '../CreatePiggy';
 
 /*
 background
@@ -376,6 +378,7 @@ class Home extends Component {
                     SEARCH AND BUY FORM GOES HERE
                     <br></br><br></br><br></br><br></br>
                     </Paper>
+                    <SatisfyAuction />
                   </div>
                 }
 
@@ -389,16 +392,10 @@ class Home extends Component {
                 {/** Create Piggy "component" - should show if a "Create Piggy" button has been clicked on in the list above, or default screen*/}
                 {this.state.showCreatePiggy &&
                   <div>
-                    <Paper>
-                    <br></br><br></br><br></br><br></br>
-                    FORM GOES HERE
-                    <br></br><br></br><br></br><br></br>
-                    </Paper>
-                    <br></br>
+                    <CreatePiggy />
                     <Divider />
                     <br></br>
-                    <Button variant="contained" color="secondary" size="large" style={{marginRight: "10px"}}>Cancel</Button>
-                    <Button variant="contained" color="primary" size="large">Create Piggy</Button>
+                    <Button variant="contained" color="secondary" size="large" style={{marginRight: "10px"}} onClick={this.handleHome}>Cancel</Button>
                   </div>
                 }
                 {/** Piggy Details "component" - should show if a piggy has been clicked on in the list above*/}

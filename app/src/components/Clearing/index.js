@@ -8,12 +8,31 @@ import Button from '@material-ui/core/Button'
 import MenuItem from '@material-ui/core/MenuItem'
 import TextField from '@material-ui/core/TextField'
 import Paper from '@material-ui/core/Paper'
+import Typography from '@material-ui/core/Typography'
+import Divider from '@material-ui/core/Divider'
+import List from '@material-ui/core/List'
+import ListItem from '@material-ui/core/ListItem'
+import ListItemText from '@material-ui/core/ListItemText'
 
-//import ClaimPayout from '../../Layout/ClaimPayout'
 
 const BN = web3.utils.BN
 
-class Settlement extends Component {
+const amounts = [
+  {
+    value: '1000000000000000000',
+    label: '1x10^18',
+  },
+  {
+    value: '10000000000000000000',
+    label: '10x10^18',
+  },
+  {
+    value: '100000000000000000000',
+    label: '100x10^18',
+  },
+]
+
+class Clearing extends Component {
   constructor(props, context) {
     super(props)
 
@@ -22,7 +41,6 @@ class Settlement extends Component {
     this.handleInputChange = this.handleInputChange.bind(this)
     this.handleTextMenuChange = this.handleTextMenuChange.bind(this)
     this.handleTextInputChange = this.handleTextInputChange.bind(this)
-    this.handleCheckedInputChange = this.handleCheckedInputChange.bind(this)
     this.handleButton = this.handleButton.bind(this)
     this.handleTokenIdsButton = this.handleTokenIdsButton.bind(this)
 
@@ -31,10 +49,15 @@ class Settlement extends Component {
       tokenIds: [],
       addresses: [],
       accountAddress: '0x0000000000000000000000000000000000000000',
+      oracleFee: ''
     }
   }
 
   componentDidMount() {
+    /*
+    this.contracts.OracleResolver.methods.oralceFeeAddress().call({from: this.props.accounts[0]})
+    .then(result => {console.log(result)})
+    */
     let addressArray = []
     for (var i = 0; i < 4; i++) {
       addressArray.push(
@@ -46,7 +69,8 @@ class Settlement extends Component {
     }
     this.setState({
       accountAddress: this.props.accounts[0],
-      addresses: addressArray
+      addresses: addressArray,
+      tokenId: this.props.tokenId,
     })
   }
 
@@ -56,10 +80,6 @@ class Settlement extends Component {
 
   handleTextMenuChange = name => event => {
     this.setState({ [name]: event.target.value })
-  }
-
-  handleCheckedInputChange = name => event => {
-    this.setState({ [name]: event.target.checked })
   }
 
   handleInputChange(event) {
@@ -91,8 +111,9 @@ class Settlement extends Component {
   }
 
   handleButton() {
-    this.contracts.SmartPiggies.methods.settlePiggy(
-      this.state.tokenId
+    this.contracts.SmartPiggies.methods.requestSettlementPrice(
+      this.state.tokenId,
+      this.state.oracleFee
     ).send({from: this.state.accountAddress, gas: 1000000})
     .then(result => {
       console.log(result)
@@ -118,97 +139,52 @@ class Settlement extends Component {
    }
 
   render() {
-    //console.log(addresses)
+
     return (
       <div className="App">
       <Paper>
-      <div>
-        <h2>Settle a SmartPiggies token</h2>
-      </div>
-      <table>
-        <tbody>
-        <tr>
-          <td>account address:</td>
-          <td>
-            <TextField
-              id="accountAddress"
-              select
-              label="AccountAddress"
-              value={this.state.accountAddress}
-              onChange={this.handleTextMenuChange('accountAddress')}
-              helperText="select an account"
-              margin="normal"
-              variant="filled"
-              >
-              {this.state.addresses.map(option => (
-                <MenuItem key={option.value} value={option.value}>
-                {option.label}
-                </MenuItem>
-              ))}
-            </TextField>
-          </td>
-        </tr>
-        <tr>
-          <td>Owned Tokens:</td>
-          <td>
-            <TextField
-              id="tokenId"
-              select
-              label="Token ID"
-              value={this.state.tokenId}
-              onChange={this.handleTextMenuChange('tokenId')}
-              helperText="select a tokenId"
-              margin="normal"
-              variant="filled"
-              >
-              {this.state.tokenIds.map(option => (
-                <MenuItem key={option.value} value={option.value}>
-                {option.label}
-                </MenuItem>
-              ))}
-            </TextField>
-          </td>
-        </tr>
-          <tr>
-            <td>Token ID:</td>
-            <td>
-              <TextField
-                id="tokenId"
-                label="tokenId"
-                value={this.state.tokenId}
-                onChange={this.handleTextMenuChange('tokenId')}
-                margin="normal"
-                variant="filled"
-              />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <table align="center">
-        <tbody>
-          <tr>
-            <td>
-              <Button type="Button" variant="contained" onClick={this.handleTokenIdsButton}>Get Ids</Button>
-            </td>
-            <td width="20em" ></td>
-            <td>
-              <Button type="Button" variant="contained" onClick={this.handleButton}>Settle</Button>
-            </td>
-            <td width="20em" ></td>
-            <td>
-              {/**<ClaimPayout /> */}
-            </td>
-          </tr>
-          <tr height="10em"></tr>
-        </tbody>
-      </table>
-      </Paper>
+        <Typography variant="h5" style={{marginBottom: "15px"}}>Clear a SmartPiggies Token</Typography>
+        <Divider />
+        <List>
+            <ListItem>
+                <ListItemText>Oracle Fee Units Denomination:</ListItemText>
+                <TextField
+                    id="denomination"
+                    select
+                    label="denomination"
+                    value={this.state.oracleFee}
+                    onChange={this.handleTextMenuChange('oracleFee')}
+                    helperText="select a denomination"
+                    margin="normal"
+                    variant="filled"
+                >
+                    {amounts.map(option => (
+                        <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                        </MenuItem>
+                    ))}
+                </TextField>
+            </ListItem>
+            <ListItem>
+                <ListItemText>Oracle Fee Amount:</ListItemText>
+                <TextField
+                  id="oracleFee"
+                  label="oracleFee"
+                  value={this.state.oracleFee}
+                  onChange={this.handleTextMenuChange('oracleFee')}
+                  margin="normal"
+                  variant="filled"
+                />
+            </ListItem>
+        </List>
+        <Button type="Button" variant="contained" color="primary" style={{marginBottom: "15px"}} onClick={this.handleButton}>Clear</Button>
+        </Paper>
       </div>
     )
   }
 }
 
-Settlement.contextTypes = {
+Clearing.contextTypes = {
   drizzle: PropTypes.object
 }
 
@@ -216,11 +192,11 @@ Settlement.contextTypes = {
 const mapStateToProps = state => {
   return {
     accounts: state.accounts,
-    StableToken: state.contracts.StableToken,
+    TableToken: state.contracts.TableToken,
     drizzleStatus: state.drizzleStatus,
     transactionStack: state.transactionStack,
     transactions: state.transactions
   }
 }
 
-export default drizzleConnect(Settlement, mapStateToProps)
+export default drizzleConnect(Clearing, mapStateToProps)

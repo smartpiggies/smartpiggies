@@ -31,6 +31,8 @@ import logo from '../../Assets/Logo/logo.png'
 import SatisfyAuction from "../SatisfyAuction";
 import CreatePiggy from '../CreatePiggy';
 import StartAuction from '../StartAuction'
+import Clearing from '../Clearing';
+import Settlement from '../Settlement';
 
 /*
 background
@@ -457,37 +459,16 @@ class Home extends Component {
                       <Divider />
                       <ExpansionPanel>
                       <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
-                          <Typography variant="h5">Piggy Settlement Management</Typography>
+                          <Typography variant="h5">Piggy Clearance and Settlement</Typography>
                         </ExpansionPanelSummary>
                         {this.state.piggyHasBeenCleared &&
                           <ExpansionPanelDetails>
-                          <List>
-                            pull in the various auction detail fields here as list items
-                            <ListItem>
-                              On auction: {this.state.piggyOnAuction}
-                            </ListItem>
-                            <ListItem>
-                              Start block: 654321
-                            </ListItem>
-                            <ListItem>
-                              Expiry block: 655000
-                            </ListItem>
-                            <ListItem>
-                              etc.
-                            </ListItem>
-                            <ListItem>
-                              etc.
-                            </ListItem>
-                          </List>
-                        </ExpansionPanelDetails>
+                            <Settlement />
+                          </ExpansionPanelDetails>
                         }
                         {!this.state.piggyHasBeenCleared &&
                           <ExpansionPanelDetails>
-                            <Paper>
-                              <br></br><br></br><br></br>
-                              EXPLANATION + BUTTON TO CLEAR PIGGY GOES HERE
-                              <br></br><br></br><br></br>
-                            </Paper>
+                            <Clearing tokenId={this.state.selectedPiggy} />
                           </ExpansionPanelDetails>
                         }
                       </ExpansionPanel>

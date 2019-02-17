@@ -19,6 +19,7 @@ import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import Typography from '@material-ui/core/Typography';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import PiggyDetail from '../PiggyDetail'
+import Claim from '../Claim';
 import Button from '@material-ui/core/Button';
 import Icon from '@material-ui/core/Icon';
 
@@ -298,6 +299,16 @@ class Home extends Component {
           <Grid item>
             <Grid container>
               <Paper style={main}>
+                {/** Persistent Action Bar "component" - should show UNLESS all "component state management" bools are false */}
+
+                  <div>
+                    <Paper style={{marginBottom: "10px"}}>
+                      <Button variant="contained" onClick={this.handleHome} style={{marginRight: "10px"}}>Home</Button>
+                      <Button variant="contained" onClick={this.handleSearchAndBuy} style={{marginRight: "10px", marginTop: "15px", marginBottom: "15px"}}>Search and Buy Piggies</Button>
+                      <Button variant="contained" onClick={this.handleClaimPayouts}>Claim Payouts</Button>
+                    </Paper>
+                  </div>
+
                 {/** Default Screen "component" - should show if all "component state management" bools are false*/}
 
                 {this.state.showDefaultPage &&
@@ -321,17 +332,6 @@ class Home extends Component {
                   </Button>
                   </div>
                 }
-                
-                {/** Persistent Action Bar "component" - should show UNLESS all "component state management" bools are false */}
-                {!this.state.showDefaultPage &&
-                  <div>
-                    <Paper style={{marginBottom: "10px"}}>
-                      <Button variant="contained" onClick={this.handleHome} style={{marginRight: "10px"}}>Home</Button>
-                      <Button variant="contained" onClick={this.handleSearchAndBuy} style={{marginRight: "10px", marginTop: "15px", marginBottom: "15px"}}>Search and Buy Piggies</Button>
-                      <Button variant="contained" onClick={this.handleClaimPayouts}>Claim Payouts</Button>
-                    </Paper>
-                  </div>
-                }
 
                 {/** Search & Buy "component" - should show if the persistent action bar button has been clicked */}
                 {this.state.showSearchAndBuy &&
@@ -347,11 +347,7 @@ class Home extends Component {
                 {/** Claim Payout "component" - should show if the persistent action bar button has been clicked */}
                 {this.state.showClaimPayout &&
                   <div>
-                    <Paper>
-                    <br></br><br></br><br></br><br></br>
-                    CLAIM PAYOUT FORM GOES HERE
-                    <br></br><br></br><br></br><br></br>
-                    </Paper>
+                    <Claim />
                   </div>
                 }
 

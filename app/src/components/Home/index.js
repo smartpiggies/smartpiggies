@@ -111,6 +111,8 @@ class Home extends Component {
       showDefaultPage: true,  // should be true on initial load, and if we ever get redirected back here after a special action
       showPiggyDetails: false, // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
       showCreatePiggy: false,
+      showSearchAndBuy: false,
+      showClaimPayout: false,
       //showAuctionDetails: false, // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
       //showAdminArea: false,  // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
 
@@ -195,6 +197,7 @@ class Home extends Component {
     this.setState({ open: true });
   };
 
+<<<<<<< HEAD
   handleSelectPiggy = value => () => {
     let auctionArray = []
     let auctionActive = false
@@ -220,9 +223,18 @@ class Home extends Component {
       showPiggyDetails: true,
       showDefaultPage: false,
       piggyOnAuction: auctionActive
+=======
+  handleSelectPiggy = name => () => {
+    this.setState({
+      piggyId: name,
+      showDefaultPage: false,
+      showPiggyDetails: true,
+      showDefaultPage: false,
+      showSearchAndBuy: false,
+      showClaimPayout: false,
+>>>>>>> 3a8c8190aa79f0ae25f9703e9562e15f098ad890
     })
-    //console.log(this.props.SmartPiggies.getDetails[dataKey])
-    //console.log(dataKey)
+    window.scrollTo(0,0);
   }
 
   handleCreatePiggy = () => {
@@ -230,7 +242,32 @@ class Home extends Component {
       showDefaultPage: false,
       showPiggyDetails: false,
       showCreatePiggy: true,
+      showSearchAndBuy: false,
+      showClaimPayout: false,
     })
+    window.scrollTo(0,0);
+  }
+
+  handleSearchAndBuy = () => {
+    this.setState({
+      showDefaultPage: false,
+      showPiggyDetails: false,
+      showCreatePiggy: false,
+      showSearchAndBuy: true,
+      showClaimPayout: false,
+    })
+    window.scrollTo(0,0);
+  }
+
+  handleClaimPayouts = () => {
+    this.setState({
+      showDefaultPage: false,
+      showPiggyDetails: false,
+      showCreatePiggy: false,
+      showSearchAndBuy: false,
+      showClaimPayout: true,
+    })
+    window.scrollTo(0,0);
   }
 
   render() {
@@ -272,14 +309,11 @@ class Home extends Component {
                 <List>
 
                   <ListItem>
-                    <Typography variant="h6">Account:</Typography>
-                    {groomedAddress}
+                    <ListItemText primary="Account:" primaryTypographyProps={{variant: "h6"}} secondary={groomedAddress} />
                   </ListItem>
                   <Divider />
                   <ListItem>
-                    <ListItemText>
-                      <h3>Piggies:</h3>
-                    </ListItemText>
+                    <ListItemText primary="Piggies:" primaryTypographyProps={{variant: "h6"}} />
                   </ListItem>
 
                   {piggies}
@@ -318,6 +352,38 @@ class Home extends Component {
                   </Button>
                   </div>
                 }
+                
+                {/** Persistent Action Bar "component" - should show UNLESS all "component state management" bools are false */}
+                {!this.state.showDefaultPage &&
+                  <div>
+                    <Paper style={{marginBottom: "10px"}}>
+                      <Button variant="contained" onClick={this.handleSearchAndBuy} style={{marginRight: "10px", marginTop: "15px", marginBottom: "15px"}}>Search and Buy Piggies</Button>
+                      <Button variant="contained" onClick={this.handleClaimPayouts}>Claim Payouts</Button>
+                    </Paper>
+                  </div>
+                }
+
+                {/** Search & Buy "component" - should show if the persistent action bar button has been clicked */}
+                {this.state.showSearchAndBuy &&
+                  <div>
+                    <Paper>
+                    <br></br><br></br><br></br><br></br>
+                    SEARCH AND BUY FORM GOES HERE
+                    <br></br><br></br><br></br><br></br>
+                    </Paper>
+                  </div>
+                }
+
+                {/** Claim Payout "component" - should show if the persistent action bar button has been clicked */}
+                {this.state.showClaimPayout &&
+                  <div>
+                    <Paper>
+                    <br></br><br></br><br></br><br></br>
+                    CLAIM PAYOUT FORM GOES HERE
+                    <br></br><br></br><br></br><br></br>
+                    </Paper>
+                  </div>
+                }
 
                 {/** Create Piggy "component" - should show if a "Create Piggy" button has been clicked on in the list above, or default screen*/}
                 {this.state.showCreatePiggy &&
@@ -337,7 +403,6 @@ class Home extends Component {
                 {/** Piggy Details "component" - should show if a piggy has been clicked on in the list above*/}
                 {this.state.showPiggyDetails &&
                   <div>
-                    Current Piggy: {this.state.piggyId}
                     <div>
                       <ExpansionPanel defaultExpanded={true}>
                         <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>

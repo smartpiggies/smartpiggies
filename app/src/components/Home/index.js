@@ -147,6 +147,7 @@ class Home extends Component {
 
   componentDidUpdate(prevProps) {
     if (this.props.SmartPiggies !== prevProps.SmartPiggies) {
+      console.log(this.props.SmartPiggies)
       let piggyIds = []
       let piggyDataKeys = []
       let piggyAuctionDataKeys = []

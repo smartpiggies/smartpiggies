@@ -54,7 +54,7 @@ const appBar = {
 const leftPane = {
   backgroundColor: '#FFCBCB',
   //height: 500,
-  width: 250,
+  width: 300,
   margin: "1em",
   textAlign: 'left',
   display: 'block',
@@ -342,12 +342,15 @@ class Home extends Component {
                     <ListItemText primary="Piggies:" primaryTypographyProps={{variant: "h6"}} />
                     <Button variant="contained" color="primary" onClick={this.handleCreatePiggy}>Create New</Button>
                   </ListItem>
-                  <Divider light />
+                </List>
+                <List style={{maxHeight: 450, overflow: 'auto'}}>
+                  
 
                   {piggies}
 
                 </List>
                 {/**  ERC-20 information */}
+                <br></br>
                 <ERC20Stats />
 
               </Paper>

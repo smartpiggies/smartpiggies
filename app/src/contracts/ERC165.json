@@ -32,9 +32,9 @@
   "sourceMap": "",
   "deployedSourceMap": "",
   "source": "pragma solidity ^0.5.0;\n\nimport \"./IERC165.sol\";\n\n/**\n * @title ERC165\n * @author Matt Condon (@shrugs)\n * @dev Implements ERC165 using a lookup table.\n */\ncontract ERC165 is IERC165 {\n    bytes4 private constant _InterfaceId_ERC165 = 0x01ffc9a7;\n    /**\n     * 0x01ffc9a7 ===\n     *     bytes4(keccak256('supportsInterface(bytes4)'))\n     */\n\n    /**\n     * @dev a mapping of interface id to whether or not it's supported\n     */\n    mapping(bytes4 => bool) private _supportedInterfaces;\n\n    /**\n     * @dev A contract implementing SupportsInterfaceWithLookup\n     * implement ERC165 itself\n     */\n    constructor () internal {\n        _registerInterface(_InterfaceId_ERC165);\n    }\n\n    /**\n     * @dev implement supportsInterface(bytes4) using a lookup table\n     */\n    function supportsInterface(bytes4 interfaceId) external view returns (bool) {\n        return _supportedInterfaces[interfaceId];\n    }\n\n    /**\n     * @dev internal method for registering an interface\n     */\n    function _registerInterface(bytes4 interfaceId) internal {\n        require(interfaceId != 0xffffffff);\n        _supportedInterfaces[interfaceId] = true;\n    }\n}\n",
-  "sourcePath": "/home/cloud/ghver/smartpiggies/contracts/ERC165.sol",
+  "sourcePath": "/home/vagrant/DAPPS/smartpiggiesGithub/smartpiggies/contracts/ERC165.sol",
   "ast": {
-    "absolutePath": "/home/cloud/ghver/smartpiggies/contracts/ERC165.sol",
+    "absolutePath": "/home/vagrant/DAPPS/smartpiggiesGithub/smartpiggies/contracts/ERC165.sol",
     "exportedSymbols": {
       "ERC165": [
         50
@@ -55,7 +55,7 @@
         "src": "0:23:0"
       },
       {
-        "absolutePath": "/home/cloud/ghver/smartpiggies/contracts/IERC165.sol",
+        "absolutePath": "/home/vagrant/DAPPS/smartpiggiesGithub/smartpiggies/contracts/IERC165.sol",
         "file": "./IERC165.sol",
         "id": 2,
         "nodeType": "ImportDirective",
@@ -648,7 +648,7 @@
     "src": "0:1149:0"
   },
   "legacyAST": {
-    "absolutePath": "/home/cloud/ghver/smartpiggies/contracts/ERC165.sol",
+    "absolutePath": "/home/vagrant/DAPPS/smartpiggiesGithub/smartpiggies/contracts/ERC165.sol",
     "exportedSymbols": {
       "ERC165": [
         50
@@ -669,7 +669,7 @@
         "src": "0:23:0"
       },
       {
-        "absolutePath": "/home/cloud/ghver/smartpiggies/contracts/IERC165.sol",
+        "absolutePath": "/home/vagrant/DAPPS/smartpiggiesGithub/smartpiggies/contracts/IERC165.sol",
         "file": "./IERC165.sol",
         "id": 2,
         "nodeType": "ImportDirective",
@@ -1266,8 +1266,8 @@
     "version": "0.5.2+commit.1df8f40c.Emscripten.clang"
   },
   "networks": {},
-  "schemaVersion": "3.0.2",
-  "updatedAt": "2019-02-16T20:45:33.904Z",
+  "schemaVersion": "3.0.1",
+  "updatedAt": "2019-02-17T00:01:47.235Z",
   "devdoc": {
     "author": "Matt Condon (@shrugs)",
     "details": "Implements ERC165 using a lookup table.",

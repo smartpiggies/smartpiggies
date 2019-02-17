@@ -92,7 +92,6 @@ class Home extends Component {
     this.drizzle = context.drizzle
 
     this.handleDrawerOpen = this.handleDrawerOpen.bind(this)
-    this.handleDrawerClose = this.handleDrawerClose.bind(this)
     this.handleSelectPiggy = this.handleSelectPiggy.bind(this)
     this.groomAddress = this.groomAddress.bind(this)
 
@@ -105,7 +104,14 @@ class Home extends Component {
   }
 
   componentDidMount() {
-    console.log("fired")
+    this.contracts.StableToken.methods.balanceOf(
+      this.props.accounts[0]
+    )
+    .call({from: this.props.accounts[0]})
+    .then(result => {
+      console.log(result.toString())
+    })
+
     this.setState({
       spContractAddress: this.contracts.SmartPiggies.address,
       activeAccount: this.props.accounts[0]
@@ -123,10 +129,6 @@ class Home extends Component {
 
   handleDrawerOpen = () => {
     this.setState({ open: true });
-  };
-
-  handleDrawerClose = () => {
-    this.setState({ open: false });
   };
 
   handleSelectPiggy = name => () => {

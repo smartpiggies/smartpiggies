@@ -26,9 +26,9 @@
   "sourceMap": "",
   "deployedSourceMap": "",
   "source": "pragma solidity ^0.5.0;\n\n/**\n * @title IERC165\n * @dev https://github.com/ethereum/EIPs/blob/master/EIPS/eip-165.md\n */\ninterface IERC165 {\n    /**\n     * @notice Query if a contract implements an interface\n     * @param interfaceId The interface identifier, as specified in ERC-165\n     * @dev Interface identification is specified in ERC-165. This function\n     * uses less than 30,000 gas.\n     */\n    function supportsInterface(bytes4 interfaceId) external view returns (bool);\n}\n",
-  "sourcePath": "/home/cloud/ghver/smartpiggies/contracts/IERC165.sol",
+  "sourcePath": "/home/vagrant/DAPPS/smartpiggiesGithub/smartpiggies/contracts/IERC165.sol",
   "ast": {
-    "absolutePath": "/home/cloud/ghver/smartpiggies/contracts/IERC165.sol",
+    "absolutePath": "/home/vagrant/DAPPS/smartpiggiesGithub/smartpiggies/contracts/IERC165.sol",
     "exportedSymbols": {
       "IERC165": [
         60
@@ -150,7 +150,7 @@
     "src": "0:484:1"
   },
   "legacyAST": {
-    "absolutePath": "/home/cloud/ghver/smartpiggies/contracts/IERC165.sol",
+    "absolutePath": "/home/vagrant/DAPPS/smartpiggiesGithub/smartpiggies/contracts/IERC165.sol",
     "exportedSymbols": {
       "IERC165": [
         60
@@ -276,8 +276,8 @@
     "version": "0.5.2+commit.1df8f40c.Emscripten.clang"
   },
   "networks": {},
-  "schemaVersion": "3.0.2",
-  "updatedAt": "2019-02-16T20:45:33.899Z",
+  "schemaVersion": "3.0.1",
+  "updatedAt": "2019-02-17T00:01:47.235Z",
   "devdoc": {
     "details": "https://github.com/ethereum/EIPs/blob/master/EIPS/eip-165.md",
     "methods": {

@@ -82,7 +82,7 @@ class ERC20Stats extends Component {
             dataKeyUB_Link: dataKeyUB_Link,
             dataKeyATSP_Link: dataKeyATSP_Link,
             dataKeyAP_Link: dataKeyAP_Link,
-        }) 
+        })
         // update the object mapping keys to ERC-20 contract values
         let ERC20Mapping = this.state.ERC20s
         ERC20Mapping['STBLE'] = {
@@ -136,7 +136,7 @@ class ERC20Stats extends Component {
         return(
             <div>
                 <Paper>
-                
+
                 <List>
                     <ListItem>
                         <Typography variant="h5" component="h3">
@@ -157,7 +157,7 @@ class ERC20Stats extends Component {
                                     </MenuItem>
 
                                     {this.state.ERC20Keys.map(option => (
-                                        <MenuItem value={option}>
+                                        <MenuItem key={option} value={option}>
                                             {option}
                                         </MenuItem>
                                     ))}
@@ -180,7 +180,7 @@ class ERC20Stats extends Component {
                 </List>
                 </Paper>
             </div>
-        )  
+        )
     }
 }
 
@@ -197,5 +197,5 @@ const mapStateToProps = state => {
         drizzleStatus: state.drizzleStatus,
     }
 }
-  
+
 export default drizzleConnect(ERC20Stats, mapStateToProps)

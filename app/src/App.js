@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import { DrizzleProvider } from "drizzle-react";
-import { LoadingContainer } from "drizzle-react-components";
 
+import LoadingContainer from './components/LoadingContainer'
 import Home from './components/Home'
 
 import "./App.css";

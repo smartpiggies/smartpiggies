@@ -194,15 +194,15 @@ class ERC20Stats extends Component {
                     </ListItem>
                     <Divider light />
                     <ListItem>
-                        <ListItemText primary="Balance:" />{this.state.ERC20s[this.state.currentERC20]['userBalance']}
+                        <ListItemText primary="Balance:" secondary={this.state.ERC20s[this.state.currentERC20]['userBalance']} />
                     </ListItem>
                     <Divider light />
                     <ListItem>
-                        <ListItemText primary="Amount Approved for SmartPiggies Use:" />{this.state.ERC20s[this.state.currentERC20]['approvedToSP']}
+                        <ListItemText primary="Amount Approved for SmartPiggies Use:" secondary={this.state.ERC20s[this.state.currentERC20]['approvedToSP']} />
                     </ListItem>
                     <Divider light />
                     <ListItem>
-                    <ListItemText primary="Amount Available as Payout from SmartPiggies:" />{this.state.ERC20s[this.state.currentERC20]['availablePayout']}
+                    <ListItemText primary="Amount Available as Payout from SmartPiggies:" secondary={this.state.ERC20s[this.state.currentERC20]['availablePayout']} />
                     </ListItem>
                 </List>
                 </Paper>

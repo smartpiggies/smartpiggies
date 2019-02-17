@@ -147,25 +147,6 @@ class Claim extends Component {
             <Divider />
             <List>
                 <ListItem>
-                    <ListItemText>Account Address:</ListItemText>
-                    <TextField
-                        id="accountAddress"
-                        select
-                        label="Recipient"
-                        value={this.state.accountAddress}
-                        onChange={this.handleTextMenuChange('accountAddress')}
-                        helperText="select a recipient"
-                        margin="normal"
-                        variant="filled"
-                    >
-                        {this.state.addresses.map(option => (
-                            <MenuItem key={option.value} value={option.value}>
-                                {option.label}
-                            </MenuItem>
-                        ))}
-                    </TextField>
-                </ListItem>
-                <ListItem>
                     <ListItemText>Token Address:</ListItemText>
                     <TextField
                         id="tokenAddress"

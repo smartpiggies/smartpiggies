@@ -374,11 +374,6 @@ class Home extends Component {
                 {/** Search & Buy "component" - should show if the persistent action bar button has been clicked */}
                 {this.state.showSearchAndBuy &&
                   <div>
-                    <Paper>
-                    <br></br><br></br><br></br><br></br>
-                    SEARCH AND BUY FORM GOES HERE
-                    <br></br><br></br><br></br><br></br>
-                    </Paper>
                     <SatisfyAuction piggies={this.state.piggyDetailMap}/>
                   </div>
                 }

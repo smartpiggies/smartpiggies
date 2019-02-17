@@ -8,6 +8,11 @@ import Button from '@material-ui/core/Button'
 import MenuItem from '@material-ui/core/MenuItem'
 import TextField from '@material-ui/core/TextField'
 import Paper from '@material-ui/core/Paper'
+import Typography from '@material-ui/core/Typography'
+import Divider from '@material-ui/core/Divider'
+import List from '@material-ui/core/List'
+import ListItem from '@material-ui/core/ListItem'
+import ListItemText from '@material-ui/core/ListItemText'
 
 //import GetStats from '../../Layout/GetStats'
 //import AccountAddress from '../Displays/AccountAddress'
@@ -153,88 +158,12 @@ class SatisfyAuction extends Component {
     return (
       <div className="App">
       <Paper>
-        {/**<AccountAddress accounts={this.props.accounts}  account={this.state.accountAddress} /> */}
-        {/**<TokenBalance owner={this.state.accountAddress} token={this.state.tokenAddress} /> */}
-      </Paper>
-      <Paper>
-      <div>
-        <h2>Satisfy an Auction for a SmartPiggies token</h2>
-      </div>
-        <table>
-          <tbody>
-            <tr>
-              <td>account address:</td>
-              <td>
-                <TextField
-                  id="accountAddress"
-                  select
-                  label="AccountAddress"
-                  value={this.state.accountAddress}
-                  onChange={this.handleTextMenuChange('accountAddress')}
-                  helperText="select an account"
-                  margin="normal"
-                  variant="filled"
-                  >
-                  {this.state.addresses.map(option => (
-                    <MenuItem key={option.label} value={option.value}>
-                    {option.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </td>
-            </tr>
-            <tr>
-              <td>token address:</td>
-              <td>
-                <TextField
-                  id="tokenAddress"
-                  select
-                  label="TokenAddress"
-                  value={this.state.tokenAddress}
-                  onChange={this.handleTextMenuChange('tokenAddress')}
-                  helperText="select a token contract"
-                  margin="normal"
-                  variant="filled"
-                  >
-                  {this.state.currencies.map(option => (
-                    <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </td>
-            </tr>
-            <tr height="10em"></tr>
-            <tr>
-              <td>
-                <Button type="Button" variant="contained" onClick={this.handlepiggyIdsButton}>Get Ids</Button>
-              </td>
-            </tr>
-            <tr>
-              <td>Owned Tokens:</td>
-              <td>
-                <TextField
-                  id="piggyId"
-                  select
-                  label="Token ID"
-                  value={this.state.piggyId}
-                  onChange={this.handleTextMenuChange('piggyId')}
-                  helperText="select a piggyId"
-                  margin="normal"
-                  variant="filled"
-                  >
-                  {this.state.piggyIds.map(option => (
-                    <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </td>
-            </tr>
-            <tr>
-              <td>Token ID:</td>
-              <td>
-                <TextField
+        <Typography variant="h5" style={{marginBottom: "15px"}}>Satisfy an Auction for a SmartPiggies Token</Typography>
+        <Divider />
+        <List>
+          <ListItem>
+            <ListItemText>Token ID to Browse:</ListItemText>
+            <TextField
                   id="piggyId"
                   label="piggyId"
                   value={this.state.piggyId}
@@ -242,37 +171,13 @@ class SatisfyAuction extends Component {
                   margin="normal"
                   variant="filled"
                 />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <table align="center">
-          <tbody>
-            <tr height="10em"></tr>
-            <tr>
-              <td>
-                <Button type="Button" variant="contained" onClick={this.handleSatisfyButton}>Satisfy</Button>
-              </td>
-              <td width="20em" ></td>
-              <td>
-                {/**<GetStats /> */}
-              </td>
-            </tr>
-            <tr height="10em"></tr>
-          </tbody>
-        </table>
-        <div className="section">
-          <h2>Token Info</h2>
-          <p>
-            Get SmartPiggies token info
-          </p>
-          <PiggyDetail piggies={this.props.piggyDetailMap} />
-        </div>
-        <table>
-          <tbody>
-          <tr height="10em"></tr>
-          </tbody>
-        </table>
+          </ListItem>
+          <ListItem>
+            <ListItemText>Token Info:</ListItemText>
+            <PiggyDetail piggies={this.props.piggyDetailMap} />
+          </ListItem>
+        </List>
+        <Button type="Button" variant="contained" color="primary" style={{marginBottom: "15px"}}onClick={this.handleSatisfyButton}>Satisfy</Button>
       </Paper>
       </div>
     )

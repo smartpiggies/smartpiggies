@@ -95,36 +95,37 @@ class Home extends Component {
       activeAccount: '',
       open: true,
       selectedPiggy: '',
-      piggyOnAuction: false, // PLACEHOLDER FOR TESTING - FETCH LATER
-      piggyHasBeenCleared: false,
       ownedPiggies: [],
       piggyDetailMap: [],
+      piggyAuctionMap: [],
+
       //datakeys
       dataKeyGetOwnedPiggies: '',
       dataKeyGetDetails: '',
+      dataKeyGetActionDetails: '',
+
       // visibility state management
       // easiest way to handle these is if you have event handlers for clicks that set all to false except the ones that should be true
+      piggyOnAuction: false, // PLACEHOLDER FOR TESTING - FETCH LATER
+      piggyHasBeenCleared: false,
       showDefaultPage: true,  // should be true on initial load, and if we ever get redirected back here after a special action
       showPiggyDetails: false, // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
       showCreatePiggy: false,
       //showAuctionDetails: false, // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
       //showAdminArea: false,  // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
+
+      //Auction details state
+      startBlock: '',
+      expiryBlock: '',
+      startPrice: '',
+      reservePrice: '',
+      timeStep: '',
+      priceStep: '',
     }
   }
 
   componentDidMount() {
-
-    /*
-    this.contracts.StableToken.methods.balanceOf(
-      this.props.accounts[0]
-    )
-    .call({from: this.props.accounts[0]})
-    .then(result => {
-      console.log(result.toString())
-    })
-    */
     // If Drizzle is initialized (and therefore web3, accounts and contracts), continue.
-
     if (this.props.drizzleStatus.initialized) {
         // Declare this call to be cached and synchronized. We'll receive the store key for recall.
         globalDataKeyGetOwnedPiggies = this.contracts.SmartPiggies.methods['getOwnedPiggies'].cacheCall(this.props.accounts[0])
@@ -146,23 +147,38 @@ class Home extends Component {
     if (this.props.SmartPiggies !== prevProps.SmartPiggies) {
       let piggyIds = []
       let piggyDataKeys = []
+      let piggyAuctionDataKeys = []
       if(this.props.SmartPiggies.getOwnedPiggies[this.state.dataKeyGetOwnedPiggies] !== undefined) {
         piggyIds = this.props.SmartPiggies.getOwnedPiggies[this.state.dataKeyGetOwnedPiggies].value
         this.setState({
           ownedPiggies: this.props.SmartPiggies.getOwnedPiggies[this.state.dataKeyGetOwnedPiggies].value
         })
         for (let i = 0; i < piggyIds.length; i++) {
+          //create data keys return array
           piggyDataKeys.push(
             {
               value: this.contracts.SmartPiggies.methods['getDetails'].cacheCall(piggyIds[i]),
               label: piggyIds[i]
             }
           )
+          //create Auction details data keys return array
+          piggyAuctionDataKeys.push(
+            {
+              value: this.contracts.SmartPiggies.methods['getAuctionDetails'].cacheCall(piggyIds[i]),
+              label: piggyIds[i]
+            }
+          )
         }
+
+        //set state
         this.setState({
-          piggyDetailMap: piggyDataKeys
+          piggyDetailMap: piggyDataKeys,
+          piggyAuctionMap: piggyAuctionDataKeys
         })
       }
+      //console.log(piggyAuctionDataKeys.map(items => items.value))
+      //console.log(this.props.SmartPiggies[])
+      //console.log()
     }
   }
 
@@ -179,12 +195,31 @@ class Home extends Component {
     this.setState({ open: true });
   };
 
-  handleSelectPiggy = name => () => {
+  handleSelectPiggy = value => () => {
+    let auctionArray = []
+    let auctionActive = false
+    let result = this.state.piggyAuctionMap.filter(items => items.label === value)
+    if (result.length > 0) {
+      auctionArray = this.props.SmartPiggies.getAuctionDetails[result[0].value].value
+      auctionActive = auctionArray[6]
+    }
+    if (auctionActive) {
+
+      this.setState({
+        startBlock: auctionArray[0],
+        expiryBlock: auctionArray[1],
+        startPrice: auctionArray[2],
+        reservePrice: auctionArray[3],
+        timeStep: auctionArray[4],
+        priceStep: auctionArray[5],
+      })
+    }
 
     this.setState({
-      piggyId: name,
+      piggyId: value,
       showPiggyDetails: true,
       showDefaultPage: false,
+      piggyOnAuction: auctionActive
     })
     //console.log(this.props.SmartPiggies.getDetails[dataKey])
     //console.log(dataKey)
@@ -309,30 +344,11 @@ class Home extends Component {
                           <Typography variant="h5">Core Piggy Details</Typography>
                         </ExpansionPanelSummary>
                         <ExpansionPanelDetails>
-                        <PiggyDetail piggyId={this.state.piggyId} piggies={this.state.piggyDetailMap} />
-                        {/*
-                        <List>
-                          pull in the various detail fields here as list items
-                          <ListItem>
-                            Collateral Contract address: 0x000...
-                          </ListItem>
-                          <ListItem>
-                            Payments ERC-20 Contract address: 0x000...
-                          </ListItem>
-                          <ListItem>
-                            Resolver address: 0x000...
-                          </ListItem>
-                          <ListItem>
-                            etc.
-                          </ListItem>
-                          <ListItem>
-                            etc.
-                          </ListItem>
-                        </List>
-                        */}
+                          <PiggyDetail piggyId={this.state.piggyId} piggies={this.state.piggyDetailMap} />
                         </ExpansionPanelDetails>
                       </ExpansionPanel>
                     </div>
+                    {/* Auction process */}
                     <div>
                       <Divider />
                       <ExpansionPanel defaultExpanded={this.state.piggyOnAuction}>
@@ -342,7 +358,7 @@ class Home extends Component {
                         {this.state.piggyOnAuction &&
                           <ExpansionPanelDetails>
                             <List>
-                              pull in the various auction detail fields here as list items
+                              Auction Details
                               <ListItem>
                                 On auction: {this.state.piggyOnAuction}
                               </ListItem>
@@ -353,10 +369,16 @@ class Home extends Component {
                                 Expiry block: 655000
                               </ListItem>
                               <ListItem>
-                                etc.
+                                Start Price:
                               </ListItem>
                               <ListItem>
-                                etc.
+                                Reserve Price:
+                              </ListItem>
+                              <ListItem>
+                                Time Step:
+                              </ListItem>
+                              <ListItem>
+                                Price Step:
                               </ListItem>
                             </List>
                           </ExpansionPanelDetails>
@@ -432,6 +454,8 @@ const mapStateToProps = state => {
     StableToken: state.contracts.StableToken,
     RopstenLINK: state.contracts.RopstenLINK,
     drizzleStatus: state.drizzleStatus,
+    transactionStack: state.transactionStack,
+    transactions: state.transactions
   };
 };
 

@@ -9,8 +9,8 @@ contract ChainlinkCoinCapETHUSD is Chainlinked {
   string public dataSource;
   string public underlying;
   string public oracle;
-  string public endpoint;
-  string public path; //https://api.coincap.io/v2/rates/ethereum
+  string public endpoint; //https://api.coincap.io/v2/rates/ethereum
+  string public path; //"data.rateUsd"
   bytes32 public jobId; //493610cff14346f786f88ed791ab7704
   address public oracleTokenAddress;
 
@@ -61,6 +61,7 @@ contract ChainlinkCoinCapETHUSD is Chainlinked {
 
     Chainlink.Request memory run = newRequest(jobId, address(this), this.getPriceCallback.selector);
     run.add("get", endpoint);
+    run.add("path", path);
     run.addInt("times", 100);
     bytes32 requestId = chainlinkRequest(run, _oracleFee);
     lastId = requestId; //for testing | live network

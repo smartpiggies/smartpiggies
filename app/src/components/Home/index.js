@@ -13,8 +13,14 @@ import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import Divider from '@material-ui/core/Divider';
+import ExpansionPanel from '@material-ui/core/ExpansionPanel';
+import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
+import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
+import Typography from '@material-ui/core/Typography';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 
 import ERC20Stats from '../ERC20Stats';  // try to render this at the top of the left sidebar
+//import { Typography } from "@material-ui/core";
 
 /*
 background
@@ -67,22 +73,22 @@ const grid = {
 }
 
 const spArray = [
-    {
-      label: '1',
-      value: '1234'
-    },
-    {
-      label: '2',
-      value: '5678',
-    },
-    {
-      label: '3',
-      value: '9123'
-    },
-    {
-      label: '4',
-      value: '2345'
-    }
+  {
+    label: '1',
+    value: '1234'
+  },
+  {
+    label: '2',
+    value: '5678',
+  },
+  {
+    label: '3',
+    value: '9123'
+  },
+  {
+    label: '4',
+    value: '2345'
+  }
 ]
 
 class Home extends Component {
@@ -101,6 +107,14 @@ class Home extends Component {
       activeAccount: '',
       open: true,
       selectedPiggy: '',
+      piggyOnAuction: false, // PLACEHOLDER FOR TESTING - FETCH LATER
+
+      // visibility state management
+      // easiest way to handle these is if you have event handlers for clicks that set all to false except the ones that should be true
+      showDefaultPage: true,  // should be true on initial load, and if we ever get redirected back here after a special action
+      showAdminArea: false,  // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
+      showPiggyDetails: false, // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
+      showAuctionDetails: false, // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
     }
   }
 
@@ -115,7 +129,7 @@ class Home extends Component {
   groomAddress(address) {
     let groomed
     if (address !== '0x0000000000000000000000000000000000000000') {
-      groomed = address.slice(0,6)
+      groomed = address.slice(0, 6)
       groomed = groomed + "...." + address.slice(-4)
     }
     return groomed
@@ -138,69 +152,149 @@ class Home extends Component {
     let groomedAddress = this.groomAddress(this.state.activeAccount)
     //console.log(this.state.piggyId)
     let piggies = spArray.map(item =>
-        <ListItem button key={item.label} value={item.value} onClick={this.handleSelectPiggy(item.value)}>
+      <ListItem button key={item.label} value={item.value} onClick={this.handleSelectPiggy(item.value)}>
         <ListItemText>
           {item.label}
         </ListItemText>
-          {item.value}
-        </ListItem>)
+        {item.value}
+      </ListItem>)
     return (
       <div>
-      <AppBar
-        style={appBar}
-        color="default"
-      >
-      <table>
-        <tbody>
-          <tr>
-            <td>Contract:</td>
-            <td></td>
-            <td>{this.state.spContractAddress}</td>
-          </tr>
-        </tbody>
-      </table>
-      </AppBar>
+        <AppBar
+          style={appBar}
+          color="default"
+        >
+          <table>
+            <tbody>
+              <tr>
+                <td>Contract:</td>
+                <td></td>
+                <td>{this.state.spContractAddress}</td>
+              </tr>
+            </tbody>
+          </table>
+        </AppBar>
 
-      <Grid container style={grid}>
-        <Grid item>
-          <Grid container>
-            <Paper style={leftPane}>
-              {/**  ERC-20 information */}
-              <ERC20Stats />
-              {/**  Account + piggy information */}
-              <List>
-                <ListItem>
-                  <ListItemText>
-                    Account:
-                  </ListItemText>
-                  {groomedAddress}
-                </ListItem>
-                <Divider />
-                <ListItem>
-                  <ListItemText>
-                    <h3>Piggies:</h3>
-                  </ListItemText>
-                </ListItem>
+        <Grid container style={grid}>
+          <Grid item>
+            <Grid container>
+              <Paper style={leftPane}>
 
-                {piggies}
+                {/**  Account + piggy information */}
+                <List>
 
-              </List>
+                  <ListItem>
+                    <Typography variant="h6">Account:</Typography>
+                    {groomedAddress}
+                  </ListItem>
+                  <Divider />
+                  <ListItem>
+                    <ListItemText>
+                      <h3>Piggies:</h3>
+                    </ListItemText>
+                  </ListItem>
 
-            </Paper>
-          </Grid>
-        </Grid>
-        <Divider light />
-        <Grid item>
-          <Grid container>
-              <Paper style={main}>
-              Current Piggy: {this.state.piggyId}
+                  {piggies}
+
+                </List>
+                {/**  ERC-20 information */}
+                <ERC20Stats />
+
               </Paper>
+            </Grid>
+          </Grid>
+          <Divider light />
+          <Grid item>
+            <Grid container>
+              <Paper style={main}>
+                {/** Default Screen "component" - should show if all "component state management" bools are false*/}
+                
+                {this.state.showDefaultPage &&
+                
+                  <div>
+                    Load a happy pig picture
+                    also a button inviting the user to create a new piggy
+                  </div>
+                }
+
+                {/** Create Piggy "component" - should show if a "Create Piggy" button has been clicked on in the list above, or default screen*/}
+                
+                {/** Piggy Details "component" - should show if a piggy has been clicked on in the list above*/}
+                {this.state.showPiggyDetails &&
+                  <div>
+                    Current Piggy: {this.state.piggyId}
+                    <div>
+                      <ExpansionPanel defaultExpanded={true}>
+                        <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+                          <Typography variant="h5">Core Piggy Details</Typography>
+                        </ExpansionPanelSummary>
+                        <ExpansionPanelDetails>
+                        <List>
+                          pull in the various detail fields here as list items
+                          <ListItem>
+                            Collateral Contract address: 0x000...
+                          </ListItem>
+                          <ListItem>
+                            Payments ERC-20 Contract address: 0x000...
+                          </ListItem>
+                          <ListItem>
+                            Resolver address: 0x000...
+                          </ListItem>
+                          <ListItem>
+                            etc.
+                          </ListItem>
+                          <ListItem>
+                            etc.
+                          </ListItem>
+                        </List>
+                        </ExpansionPanelDetails>
+                      </ExpansionPanel>
+                    </div>
+                    <div>
+                      <Divider />
+                      <ExpansionPanel defaultExpanded={this.state.piggyOnAuction}>
+                        <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+                          <Typography variant="h5">Piggy Auction Management</Typography>
+                        </ExpansionPanelSummary>
+                        {this.state.piggyOnAuction &&
+                          <ExpansionPanelDetails>
+                            <List>
+                              pull in the various auction detail fields here as list items
+                              <ListItem>
+                                On auction: {this.state.piggyOnAuction}
+                              </ListItem>
+                              <ListItem>
+                                Start block: 654321
+                              </ListItem>
+                              <ListItem>
+                                Expiry block: 655000
+                              </ListItem>
+                              <ListItem>
+                                etc.
+                              </ListItem>
+                              <ListItem>
+                                etc.
+                              </ListItem>
+                            </List>
+                          </ExpansionPanelDetails>
+                        }
+                        {!this.state.piggyOnAuction &&
+                          <ExpansionPanelDetails>
+                            Form goes here for auction start
+                            Button at bottom to "Start Auction" or "cancel" (which clears input fields)
+                          </ExpansionPanelDetails>
+                        }
+                      </ExpansionPanel>
+                    </div>
+                  </div>}
+
+              </Paper>
+            </Grid>
           </Grid>
         </Grid>
-      </Grid>
 
 
-        </div>
+      </div>
     )
   }
 }

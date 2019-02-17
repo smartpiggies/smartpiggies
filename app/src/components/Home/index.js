@@ -204,7 +204,9 @@ class Home extends Component {
 
   handleSelectPiggy = value => () => {
     let auctionArray = []
+    let clearedArray = []
     let auctionActive = false
+    let clearedActive = false
     let result = this.state.piggyAuctionMap.filter(items => items.label === value)
     if (result.length > 0) {
       if (this.props.SmartPiggies.getAuctionDetails[result[0].value] !== undefined) {
@@ -225,6 +227,16 @@ class Home extends Component {
         priceStep: auctionArray[5],
       })
     }
+    let cleared = this.state.piggyDetailMap.filter(items => items.label === value)
+    if (cleared.length > 0) {
+      if (this.props.SmartPiggies.getDetails[cleared[0].value] !== undefined) {
+        clearedArray = this.props.SmartPiggies.getDetails[cleared[0].value].value
+      }
+      if (clearedArray.length === 3) {
+        clearedActive = clearedArray[2][3]
+      }
+    }
+
 
     this.setState({
       piggyId: value,
@@ -233,6 +245,7 @@ class Home extends Component {
       piggyOnAuction: auctionActive,
       showSearchAndBuy: false,
       showClaimPayout: false,
+      piggyHasBeenCleared: clearedActive
     })
     window.scrollTo(0,0);
   }

@@ -281,6 +281,7 @@ class Home extends Component {
                   <Divider />
                   <ListItem>
                     <ListItemText primary="Piggies:" primaryTypographyProps={{variant: "h6"}} />
+                    <Button variant="contained" color="primary" onClick={this.handleCreatePiggy}>Create New</Button>
                   </ListItem>
 
                   {piggies}
@@ -303,11 +304,11 @@ class Home extends Component {
                   <div>
                     <img src={logo} alt="drizzle-logo" />
                     <br></br>
-                    <Divider light variant="middle" />
-                    <br></br>
-                    <Typography variant="h5">
+                    <Typography variant="h4">
                       Welcome to SmartPiggies!
                     </Typography>
+                    <br></br>
+                    <Divider light variant="middle" />
                     <br></br>
                     <Typography variant="h6">
                       To get started, create a new SmartPiggy using the button below:

@@ -18,6 +18,7 @@ import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
 import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import Typography from '@material-ui/core/Typography';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import PiggyDetail from '../PiggyDetail'
 
 import ERC20Stats from '../ERC20Stats';  // try to render this at the top of the left sidebar
 //import { Typography } from "@material-ui/core";
@@ -72,25 +73,6 @@ const grid = {
   }
 }
 
-const spArray = [
-  {
-    label: '1',
-    value: '1234'
-  },
-  {
-    label: '2',
-    value: '5678',
-  },
-  {
-    label: '3',
-    value: '9123'
-  },
-  {
-    label: '4',
-    value: '2345'
-  }
-]
-
 class Home extends Component {
   constructor(props, context) {
     super(props)
@@ -111,9 +93,9 @@ class Home extends Component {
       // visibility state management
       // easiest way to handle these is if you have event handlers for clicks that set all to false except the ones that should be true
       showDefaultPage: true,  // should be true on initial load, and if we ever get redirected back here after a special action
-      showAdminArea: false,  // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
       showPiggyDetails: false, // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
-      showAuctionDetails: false, // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
+      //showAuctionDetails: false, // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
+      //showAdminArea: false,  // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
     }
   }
 
@@ -127,6 +109,7 @@ class Home extends Component {
       console.log(result.toString())
     })
     */
+    const dataKeyGetOwnedPiggies = this.contracts.SmartPiggies.methods['getOwnedPiggies'].cacheCall(this.props.accounts[0])
     this.setState({
       spContractAddress: this.contracts.SmartPiggies.address,
       activeAccount: this.props.accounts[0]
@@ -147,8 +130,12 @@ class Home extends Component {
   };
 
   handleSelectPiggy = name => () => {
-    //console.log(name)
-    this.setState({ piggyId: name })
+    this.setState({
+      piggyId: name,
+      showPiggyDetails: true,
+      showDefaultPage: false,
+
+    })
   }
 
   render() {
@@ -232,6 +219,7 @@ class Home extends Component {
                           <Typography variant="h5">Core Piggy Details</Typography>
                         </ExpansionPanelSummary>
                         <ExpansionPanelDetails>
+                        <PiggyDetail />
                         <List>
                           pull in the various detail fields here as list items
                           <ListItem>

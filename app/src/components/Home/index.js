@@ -19,9 +19,14 @@ import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import Typography from '@material-ui/core/Typography';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import PiggyDetail from '../PiggyDetail'
+import Button from '@material-ui/core/Button';
+import Icon from '@material-ui/core/Icon';
+
 
 import ERC20Stats from '../ERC20Stats';  // try to render this at the top of the left sidebar
 //import { Typography } from "@material-ui/core";
+
+import logo from '../../Assets/Logo/logo.png'
 
 /*
 background
@@ -53,7 +58,7 @@ const leftPane = {
 
 const main = {
   backgroundColor: '#FFCBCB',
-  height: '60em', // COMMENT THIS OUT LATER WHEN THERE IS CONTENT TO PUT IN
+  //height: '60em', // COMMENT THIS OUT LATER WHEN THERE IS CONTENT TO PUT IN
   width: '50em',
   margin: '1em',
   textAlign: 'center',
@@ -94,6 +99,7 @@ class Home extends Component {
       // easiest way to handle these is if you have event handlers for clicks that set all to false except the ones that should be true
       showDefaultPage: true,  // should be true on initial load, and if we ever get redirected back here after a special action
       showPiggyDetails: false, // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
+      showCreatePiggy: false,
       //showAuctionDetails: false, // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
       //showAdminArea: false,  // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
     }
@@ -135,6 +141,14 @@ class Home extends Component {
       showPiggyDetails: true,
       showDefaultPage: false,
 
+    })
+  }
+
+  handleCreatePiggy = () => {
+    this.setState({
+      showDefaultPage: false,
+      showPiggyDetails: false,
+      showCreatePiggy: true,
     })
   }
 
@@ -202,16 +216,40 @@ class Home extends Component {
                 {this.state.showDefaultPage &&
 
                   <div>
-                    Load a happy pig picture
-                    <br>
-                    </br>
-
-                    also a button inviting the user to create a new piggy
+                    <img src={logo} alt="drizzle-logo" />
+                    <br></br>
+                    <Divider light variant="middle" />
+                    <br></br>
+                    <Typography variant="h5">
+                      Welcome to SmartPiggies!
+                    </Typography>
+                    <br></br>
+                    <Typography variant="h6">
+                      To get started, create a new SmartPiggy using the button below:
+                    </Typography>
+                    <br></br>
+                    <Button variant="contained" color="primary" size="large" onClick={this.handleCreatePiggy}>
+                    Create New Piggy
+                    {/* This Button uses a Font Icon, see the installation instructions in the docs. */}
+                  </Button>
                   </div>
                 }
 
                 {/** Create Piggy "component" - should show if a "Create Piggy" button has been clicked on in the list above, or default screen*/}
-
+                {this.state.showCreatePiggy &&
+                  <div>
+                    <Paper>
+                    <br></br><br></br><br></br><br></br>
+                    FORM GOES HERE
+                    <br></br><br></br><br></br><br></br>
+                    </Paper>
+                    <br></br>
+                    <Divider />
+                    <br></br>
+                    <Button variant="contained" color="secondary" size="large" style={{marginRight: "10px"}}>Cancel</Button>
+                    <Button variant="contained" color="primary" size="large">Create Piggy</Button>
+                  </div>
+                }
                 {/** Piggy Details "component" - should show if a piggy has been clicked on in the list above*/}
                 {this.state.showPiggyDetails &&
                   <div>

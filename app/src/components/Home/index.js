@@ -89,7 +89,11 @@ class Home extends Component {
       open: true,
       selectedPiggy: '',
       piggyOnAuction: false, // PLACEHOLDER FOR TESTING - FETCH LATER
+      ownedPiggies: [],
 
+      //datakeys
+      dataKeyGetOwnedPiggies: '',
+      dataKeyGetDetails: '',
       // visibility state management
       // easiest way to handle these is if you have event handlers for clicks that set all to false except the ones that should be true
       showDefaultPage: true,  // should be true on initial load, and if we ever get redirected back here after a special action
@@ -109,11 +113,34 @@ class Home extends Component {
       console.log(result.toString())
     })
     */
-    const dataKeyGetOwnedPiggies = this.contracts.SmartPiggies.methods['getOwnedPiggies'].cacheCall(this.props.accounts[0])
+    // If Drizzle is initialized (and therefore web3, accounts and contracts), continue.
+
+    if (this.props.drizzleStatus.initialized) {
+        // Declare this call to be cached and synchronized. We'll receive the store key for recall.
+        const dataKeyGetOwnedPiggies = this.contracts.SmartPiggies.methods['getOwnedPiggies'].cacheCall(this.props.accounts[0])
+        const dataKeyGetDetails = this.contracts.SmartPiggies.methods['getDetails'].cacheCall(8)
+        // Use the dataKey to display data from the store.
+        this.setState({
+          dataKeyGetOwnedPiggies: dataKeyGetOwnedPiggies,
+          dataKeyGetDetails: dataKeyGetDetails
+        })
+    }
+
+
     this.setState({
       spContractAddress: this.contracts.SmartPiggies.address,
       activeAccount: this.props.accounts[0]
     })
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.SmartPiggies !== prevProps.SmartPiggies) {
+      if(this.props.SmartPiggies.getOwnedPiggies[this.state.dataKeyGetOwnedPiggies] !== undefined) {
+        this.setState({
+          ownedPiggies: this.props.SmartPiggies.getOwnedPiggies[this.state.dataKeyGetOwnedPiggies].value
+        })
+      }
+    }
   }
 
   groomAddress(address) {
@@ -139,15 +166,18 @@ class Home extends Component {
   }
 
   render() {
+    //console.log(this.state.ownedPiggies)
     let groomedAddress = this.groomAddress(this.state.activeAccount)
-    //console.log(this.state.piggyId)
-    let piggies = spArray.map(item =>
-      <ListItem button key={item.label} value={item.value} onClick={this.handleSelectPiggy(item.value)}>
-        <ListItemText>
-          {item.label}
-        </ListItemText>
-        {item.value}
-      </ListItem>)
+    let piggies
+    if (this.state.ownedPiggies.length > 0) {
+      piggies = this.state.ownedPiggies.map((item, i) =>
+        <ListItem button key={i} value={item} onClick={this.handleSelectPiggy(item)}>
+          <ListItemText>
+            tokenId:
+          </ListItemText>
+          {item}
+        </ListItem>)
+    }
     return (
       <div>
         <AppBar
@@ -219,7 +249,8 @@ class Home extends Component {
                           <Typography variant="h5">Core Piggy Details</Typography>
                         </ExpansionPanelSummary>
                         <ExpansionPanelDetails>
-                        <PiggyDetail />
+                        <PiggyDetail dataKey={this.state.dataKeyGetDetails} piggyId={this.state.piggyId} />
+                        {/*
                         <List>
                           pull in the various detail fields here as list items
                           <ListItem>
@@ -238,6 +269,7 @@ class Home extends Component {
                             etc.
                           </ListItem>
                         </List>
+                        */}
                         </ExpansionPanelDetails>
                       </ExpansionPanel>
                     </div>

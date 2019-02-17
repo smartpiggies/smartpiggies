@@ -21,12 +21,44 @@ class PiggyDetail extends Component {
     this.handleTextInputChange = this.handleTextInputChange.bind(this)
     this.handleButton = this.handleButton.bind(this)
     this.state = {
-      piggyID: 0
+      piggyId: 0,
+      piggyDetails: []
     }
   }
 
   componentDidMount() {
-    //this.setState({invalidAddress: false})
+      if(this.props.SmartPiggies.getDetails[this.props.dataKey] !== undefined) {
+        this.setState({
+          piggyDetails: this.props.SmartPiggies.getDetails[this.props.dataKey].value
+        })
+        let detailArray = this.props.SmartPiggies.getDetails[this.props.dataKey].value
+        if (detailArray.length === 3) {
+          console.log(detailArray)
+          addressValues = <AddressItems item={detailArray[0]} />
+          uintValues = <UintItems item={detailArray[1]} />
+          boolValues = <BoolItems item={detailArray[2]} />
+        }
+      }
+    this.setState({
+      piggyId: this.props.piggyId
+    })
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.SmartPiggies !== prevProps.SmartPiggies) {
+      if(this.props.SmartPiggies.getDetails[this.props.dataKey] !== undefined) {
+        this.setState({
+          piggyDetails: this.props.SmartPiggies.getDetails[this.props.dataKey].value,
+        })
+        let detailArray = this.props.SmartPiggies.getDetails[this.props.dataKey].value
+        if (detailArray.length === 3) {
+          console.log(detailArray)
+          addressValues = <AddressItems item={detailArray[0]} />
+          uintValues = <UintItems item={detailArray[1]} />
+          boolValues = <BoolItems item={detailArray[2]} />
+        }
+      }
+    }
   }
 
   handleTextInputChange = name => event => {
@@ -51,26 +83,6 @@ class PiggyDetail extends Component {
     return (
       <div>
       <Paper>
-      <table>
-        <tbody>
-          <tr>
-            <td>
-              <TextField
-                id="piggyID"
-                label="piggyID"
-                value={this.state.piggyID}
-                onChange={this.handleTextInputChange('piggyID')}
-                margin="normal"
-                variant="filled"
-              />
-              </td>
-              <td>
-                <Button type="Button" variant="contained" onClick={this.handleButton}>Get Info</Button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        {/*{items}*/}
         {addressValues}
         {uintValues}
         {boolValues}

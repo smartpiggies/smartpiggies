@@ -150,7 +150,7 @@ class Home extends Component {
 
   componentDidUpdate(prevProps) {
     if (this.props.SmartPiggies !== prevProps.SmartPiggies) {
-      console.log(this.props.SmartPiggies)
+      //console.log(this.props.SmartPiggies)
       let piggyIds = []
       let piggyDataKeys = []
       let piggyAuctionDataKeys = []
@@ -379,7 +379,7 @@ class Home extends Component {
                     SEARCH AND BUY FORM GOES HERE
                     <br></br><br></br><br></br><br></br>
                     </Paper>
-                    <SatisfyAuction />
+                    <SatisfyAuction piggies={this.state.piggyDetailMap}/>
                   </div>
                 }
 
@@ -407,9 +407,9 @@ class Home extends Component {
                         <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
                           <Typography variant="h5">Core Piggy Details</Typography>
                         </ExpansionPanelSummary>
-                        <ExpansionPanelDetails>
+                        {/*<ExpansionPanelDetails>*/}
                           <PiggyDetail piggyId={this.state.piggyId} piggies={this.state.piggyDetailMap} />
-                        </ExpansionPanelDetails>
+                        {/*</ExpansionPanelDetails>*/}
                       </ExpansionPanel>
                     </div>
                     {/* Auction process */}

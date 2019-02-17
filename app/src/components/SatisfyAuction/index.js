@@ -176,7 +176,7 @@ class SatisfyAuction extends Component {
                   variant="filled"
                   >
                   {this.state.addresses.map(option => (
-                    <MenuItem key={option.value} value={option.value}>
+                    <MenuItem key={option.label} value={option.value}>
                     {option.label}
                     </MenuItem>
                   ))}
@@ -266,7 +266,7 @@ class SatisfyAuction extends Component {
           <p>
             Get SmartPiggies token info
           </p>
-          <PiggyDetail />
+          <PiggyDetail piggies={this.props.piggyDetailMap} />
         </div>
         <table>
           <tbody>

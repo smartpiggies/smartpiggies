@@ -47,11 +47,14 @@ class CreatePiggy extends Component {
     this.handleCreateButton = this.handleCreateButton.bind(this)
 
     this.state = {
-      addresses: [],
       oracles: [
         {
-          value: '0xbf7E70D51758ccC20C303b01c864BA71bb8b8710',
+          value: '0x3efa1b0060b7dda3fc91f7267653204181050f2e',
           label: 'CL-IEX-SPY',
+        },
+        {
+          value: '0x02a77167324c0ab1cc3b29646a965027f63a449f',
+          label: 'CL-CoinCap-ETHUSD',
         },
       ],
       currencies: [
@@ -90,14 +93,6 @@ class CreatePiggy extends Component {
     currencyArray.push({value: this.contracts.StableToken.address, label: 'STBLE'})
     currencyArray.push({value: this.contracts.RopstenLINK.address, label: 'Link'})
     //oracleArray.push({value: this.contracts.OracleResolver.address, label: 'OracleIEXSPY'})
-    for (var i = 0; i < 4; i++) {
-      addressArray.push(
-        {
-          value: this.props.accounts[i],
-          label: "account " + i
-        },
-      )
-    }
     this.setState({
       accountAddress: this.props.accounts[0],
       addresses: addressArray,
@@ -146,7 +141,8 @@ class CreatePiggy extends Component {
   }
 
   handleCreateButton() {
-    this.contracts.SmartPiggies.methods.createPiggy(
+    let stackId = this.contracts.SmartPiggies.methods.createPiggy
+    .cacheSend(
       this.state.collateralAddress,
       this.state.premiumAddress,
       this.state.oracleNowAddress,
@@ -157,8 +153,9 @@ class CreatePiggy extends Component {
       this.state.blockExpiration,
       this.state.checkedEuro,
       this.state.checkedPut,
-      this.state.checkedRFP
-    ).send({from: this.state.accountAddress, gas: 500000}).then(result => {console.log(result)})
+      this.state.checkedRFP,
+      {from: this.state.accountAddress, gas: 500000, gasPrice: 1100000000})
+    
   }
 
   render() {
@@ -173,19 +170,12 @@ class CreatePiggy extends Component {
                 <ListItemText>Account Address:</ListItemText>
                 <TextField
                     id="accountAddress"
-                    select
                     label="AccountAddress"
                     value={this.state.accountAddress}
                     onChange={this.handleTextMenuChange('accountAddress')}
-                    helperText="select an account"
                     margin="normal"
                     variant="filled"
                 >
-                    {this.state.addresses.map(option => (
-                        <MenuItem key={option.value} value={option.value}>
-                            {option.label}
-                        </MenuItem>
-                    ))}
                 </TextField>
             </ListItem>
             <ListItem>

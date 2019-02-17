@@ -197,7 +197,6 @@ class Home extends Component {
     this.setState({ open: true });
   };
 
-<<<<<<< HEAD
   handleSelectPiggy = value => () => {
     let auctionArray = []
     let auctionActive = false
@@ -222,17 +221,9 @@ class Home extends Component {
       piggyId: value,
       showPiggyDetails: true,
       showDefaultPage: false,
-      piggyOnAuction: auctionActive
-=======
-  handleSelectPiggy = name => () => {
-    this.setState({
-      piggyId: name,
-      showDefaultPage: false,
-      showPiggyDetails: true,
-      showDefaultPage: false,
+      piggyOnAuction: auctionActive,
       showSearchAndBuy: false,
       showClaimPayout: false,
->>>>>>> 3a8c8190aa79f0ae25f9703e9562e15f098ad890
     })
     window.scrollTo(0,0);
   }
@@ -352,7 +343,7 @@ class Home extends Component {
                   </Button>
                   </div>
                 }
-                
+
                 {/** Persistent Action Bar "component" - should show UNLESS all "component state management" bools are false */}
                 {!this.state.showDefaultPage &&
                   <div>
@@ -423,27 +414,26 @@ class Home extends Component {
                         {this.state.piggyOnAuction &&
                           <ExpansionPanelDetails>
                             <List>
-                              Auction Details
                               <ListItem>
-                                On auction: {this.state.piggyOnAuction}
+                                On auction: {this.state.piggyOnAuction ? 'true' : 'false'}
                               </ListItem>
                               <ListItem>
-                                Start block: 654321
+                                Start block: {this.state.startBlock}
                               </ListItem>
                               <ListItem>
-                                Expiry block: 655000
+                                Expiry block: {this.state.expiryBlock}
                               </ListItem>
                               <ListItem>
-                                Start Price:
+                                Start Price: {this.state.startPrice}
                               </ListItem>
                               <ListItem>
-                                Reserve Price:
+                                Reserve Price: {this.state.reservePrice}
                               </ListItem>
                               <ListItem>
-                                Time Step:
+                                Time Step: {this.state.timeStep}
                               </ListItem>
                               <ListItem>
-                                Price Step:
+                                Price Step: {this.state.priceStep}
                               </ListItem>
                             </List>
                           </ExpansionPanelDetails>

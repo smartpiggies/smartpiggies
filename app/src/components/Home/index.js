@@ -367,19 +367,6 @@ class Home extends Component {
                   </Button>
                   </div>
                 }
-<<<<<<< HEAD
-
-                {/** Persistent Action Bar "component" - should show UNLESS all "component state management" bools are false */}
-                {!this.state.showDefaultPage &&
-                  <div>
-                    <Paper style={{marginBottom: "10px"}}>
-                      <Button variant="contained" onClick={this.handleSearchAndBuy} style={{marginRight: "10px", marginTop: "15px", marginBottom: "15px"}}>Search and Buy Piggies</Button>
-                      <Button variant="contained" onClick={this.handleClaimPayouts}>Claim Payouts</Button>
-                    </Paper>
-                  </div>
-                }
-=======
->>>>>>> alex-dev
 
                 {/** Search & Buy "component" - should show if the persistent action bar button has been clicked */}
                 {this.state.showSearchAndBuy &&

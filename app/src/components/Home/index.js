@@ -21,7 +21,7 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import PiggyDetail from '../PiggyDetail'
 import Claim from '../Claim';
 import Button from '@material-ui/core/Button';
-import Icon from '@material-ui/core/Icon';
+//import Icon from '@material-ui/core/Icon';
 
 
 import ERC20Stats from '../ERC20Stats';  // try to render this at the top of the left sidebar
@@ -84,7 +84,7 @@ const grid = {
   }
 }
 
-let globalDataKeyGetOwnedPiggies, globalDataKeyGetDetails
+let globalDataKeyGetOwnedPiggies
 
 class Home extends Component {
   constructor(props, context) {

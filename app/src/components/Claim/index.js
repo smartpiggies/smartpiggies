@@ -64,10 +64,6 @@ class Claim extends Component {
           value: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
           label: 'USD Coin',
         },
-        {
-          value: '0x20fE562d797A42Dcb3399062AE9546cd06f63280',
-          label: 'Link',
-        },
       ],
     }
   }
@@ -75,15 +71,6 @@ class Claim extends Component {
   componentDidMount() {
     this.state.currencies.push({value: this.contracts.StableToken.address, label: 'STBLE'})
     this.state.currencies.push({value: this.contracts.RopstenLINK.address, label: 'LINK'})
-    for (var i = 0; i < 4; i++)
-    {
-      this.state.addresses.push(
-        {
-          value: this.props.accounts[i],
-          label: "account " + i
-        },
-      )
-    }
     this.setState({
       accountAddress: this.props.accounts[0],
       tokenAddress: this.contracts.StableToken.address
@@ -131,11 +118,12 @@ class Claim extends Component {
   }
 
   handleButton() {
-    this.contracts.SmartPiggies.methods.claimPayout(
+    let stackId = this.contracts.SmartPiggies.methods.claimPayout
+    .cacheSend(
       this.state.tokenAddress,
       this.state.claimAmount,
-    ).send({from: this.state.accountAddress, gas: 1000000})
-    //this.contracts.ERC20TobyToken.methods["burn"].cacheSend(this.state.burnAmount, {from: this.props.accounts[0]})
+      {from: this.state.accountAddress, gas: 1000000, gasPrice: 1100000000})
+      console.log(stackId)
   }
 
   render() {

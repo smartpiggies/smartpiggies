@@ -8,6 +8,11 @@ import Button from '@material-ui/core/Button'
 import MenuItem from '@material-ui/core/MenuItem'
 import TextField from '@material-ui/core/TextField'
 import Paper from '@material-ui/core/Paper'
+import Typography from '@material-ui/core/Typography'
+import Divider from '@material-ui/core/Divider'
+import List from '@material-ui/core/List'
+import ListItem from '@material-ui/core/ListItem'
+import ListItemText from '@material-ui/core/ListItemText'
 
 //import GetStats from '../../Layout/GetStats'
 //import AccountAddress from '../Displays/AccountAddress'
@@ -53,7 +58,8 @@ class StartAuction extends Component {
 
   componentDidMount() {
     this.setState({
-      accountAddress: this.props.accounts[0]
+      accountAddress: this.props.accounts[0],
+      piggyId: this.props.tokenId,
     })
   }
 
@@ -114,29 +120,12 @@ class StartAuction extends Component {
 
     return (
       <div className="App">
-      <Paper>
-        {/*<AccountAddress accounts={this.props.accounts}  account={this.state.accountAddress} />*/}
-        {/*<TokenBalance owner={this.state.accountAddress} token={this.state.tokenAddress} />*/}
-      </Paper>
-      <Paper>
-        <table>
-          <tbody>
-          <tr>
-            <td>Token ID:</td>
-            <td>
-              <TextField
-                id="piggyId"
-                label="piggyId"
-                value={this.state.piggyId}
-                onChange={this.handleTextMenuChange('piggyId')}
-                margin="normal"
-                variant="filled"
-              />
-            </td>
-          </tr>
-            <tr>
-            <td></td>
-            <td>
+        <Paper>
+          <Typography variant="h5" style={{ marginBottom: "15px" }}>Auction a SmartPiggies Token</Typography>
+          <Divider />
+          <List>
+            <ListItem>
+              <ListItemText>Units Denomination:</ListItemText>
               <TextField
                 id="denomination"
                 select
@@ -146,105 +135,71 @@ class StartAuction extends Component {
                 helperText="select a denomination"
                 margin="normal"
                 variant="filled"
-                >
+              >
                 {amounts.map(option => (
                   <MenuItem key={option.value} value={option.value}>
-                  {option.label}
+                    {option.label}
                   </MenuItem>
                 ))}
               </TextField>
-            </td>
-            </tr>
-            <tr>
-              <td>Start Amount:</td>
-              <td>
-                <TextField
-                  id="startPrice"
-                  label="Starting Price"
-                  value={this.state.startPrice}
-                  onChange={this.handleTextMenuChange('startPrice')}
-                  margin="normal"
-                  variant="filled"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>Reserve Amount:</td>
-              <td>
-                <TextField
-                  id="reservePrice"
-                  label="Reserve"
-                  value={this.state.reservePrice}
-                  onChange={this.handleTextMenuChange('reservePrice')}
-                  margin="normal"
-                  variant="filled"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>Auction Duration:</td>
-              <td>
-                <TextField
-                  id="auctionLength"
-                  label="Blocks"
-                  value={this.state.auctionLength}
-                  onChange={this.handleTextMenuChange('auctionLength')}
-                  margin="normal"
-                  variant="filled"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>Time Step:</td>
-              <td>
-                <TextField
-                  id="timeStep"
-                  label="Blocks"
-                  value={this.state.timeStep}
-                  onChange={this.handleTextMenuChange('timeStep')}
-                  margin="normal"
-                  variant="filled"
-                />
-              </td>
-            </tr>
-            {/*
-            <tr>
-              <td>Current Block:</td>
-              <td><GetBlockNumber /></td>
-            </tr>
-            */}
-            <tr height="10em"></tr>
-            <tr>
-              <td>Price Step:</td>
-              <td>
-                <TextField
-                  id="priceStep"
-                  label="Interval Value"
-                  value={this.state.priceStep}
-                  onChange={this.handleTextMenuChange('priceStep')}
-                  margin="normal"
-                  variant="filled"
-                />
-              </td>
-            </tr>
-
-          </tbody>
-        </table>
-        <table align="center">
-          <tbody>
-            <tr height="10em"></tr>
-            <tr>
-              <td>
-                <Button type="Button" variant="contained" onClick={this.handleStartButton}>Start</Button>
-              </td>
-              <td width="20em" ></td>
-              <td>
-                {/*<GetStats />*/}
-              </td>
-            </tr>
-            <tr height="10em"></tr>
-          </tbody>
-        </table>
+            </ListItem>
+            <ListItem>
+              <ListItemText>Start Amount:</ListItemText>
+              <TextField
+                id="startPrice"
+                label="Starting Price"
+                value={this.state.startPrice}
+                onChange={this.handleTextMenuChange('startPrice')}
+                margin="normal"
+                variant="filled"
+              />
+            </ListItem>
+            <ListItem>
+              <ListItemText>Reserve Amount:</ListItemText>
+              <TextField
+                id="reservePrice"
+                label="Reserve"
+                value={this.state.reservePrice}
+                onChange={this.handleTextMenuChange('reservePrice')}
+                margin="normal"
+                variant="filled"
+              />
+            </ListItem>
+            <ListItem>
+              <ListItemText>Auction Duration:</ListItemText>
+              <TextField
+                id="auctionLength"
+                label="Blocks"
+                value={this.state.auctionLength}
+                onChange={this.handleTextMenuChange('auctionLength')}
+                margin="normal"
+                variant="filled"
+              />
+            </ListItem>
+            <ListItem>
+              <ListItemText>Time Step:</ListItemText>
+              <TextField
+                id="timeStep"
+                label="Blocks"
+                value={this.state.timeStep}
+                onChange={this.handleTextMenuChange('timeStep')}
+                margin="normal"
+                variant="filled"
+              />
+            </ListItem>
+            <ListItem>
+              <ListItemText>Price Step:</ListItemText>
+              <TextField
+                id="priceStep"
+                label="Interval Value"
+                value={this.state.priceStep}
+                onChange={this.handleTextMenuChange('priceStep')}
+                margin="normal"
+                variant="filled"
+              />
+            </ListItem>
+          </List>
+          <Button type="Button" variant="contained" color="primary" style={{ marginBottom: "15px" }} onClick={this.handleStartButton}>Start Auction</Button>
         </Paper>
       </div>
     )

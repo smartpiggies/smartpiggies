@@ -450,7 +450,7 @@ class Home extends Component {
                         }
                         {!this.state.piggyOnAuction &&
                           <ExpansionPanelDetails>
-                            <StartAuction />
+                            <StartAuction tokenId={this.state.selectedPiggy} />
                           </ExpansionPanelDetails>
                         }
                       </ExpansionPanel>

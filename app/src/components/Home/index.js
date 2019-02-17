@@ -113,7 +113,7 @@ class Home extends Component {
       // visibility state management
       // easiest way to handle these is if you have event handlers for clicks that set all to false except the ones that should be true
       piggyOnAuction: false, // PLACEHOLDER FOR TESTING - FETCH LATER
-      piggyHasBeenCleared: false,
+      piggyHasBeenCleared: true,  // PLACEHOLDER FOR TESTING - FETCH LATER
       showDefaultPage: true,  // should be true on initial load, and if we ever get redirected back here after a special action
       showPiggyDetails: false, // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
       showCreatePiggy: false,
@@ -463,7 +463,7 @@ class Home extends Component {
                         </ExpansionPanelSummary>
                         {this.state.piggyHasBeenCleared &&
                           <ExpansionPanelDetails>
-                            <Settlement />
+                            <Settlement tokenId={this.state.selectedPiggy} />
                           </ExpansionPanelDetails>
                         }
                         {!this.state.piggyHasBeenCleared &&

@@ -8,6 +8,11 @@ import Button from '@material-ui/core/Button'
 import MenuItem from '@material-ui/core/MenuItem'
 import TextField from '@material-ui/core/TextField'
 import Paper from '@material-ui/core/Paper'
+import Typography from '@material-ui/core/Typography'
+import Divider from '@material-ui/core/Divider'
+import List from '@material-ui/core/List'
+import ListItem from '@material-ui/core/ListItem'
+import ListItemText from '@material-ui/core/ListItemText'
 
 //import ClaimPayout from '../../Layout/ClaimPayout'
 
@@ -46,7 +51,8 @@ class Settlement extends Component {
     }
     this.setState({
       accountAddress: this.props.accounts[0],
-      addresses: addressArray
+      addresses: addressArray,
+      tokenId: this.props.tokenId,
     })
   }
 
@@ -122,86 +128,12 @@ class Settlement extends Component {
     return (
       <div className="App">
       <Paper>
-      <div>
-        <h2>Settle a SmartPiggies token</h2>
-      </div>
-      <table>
-        <tbody>
-        <tr>
-          <td>account address:</td>
-          <td>
-            <TextField
-              id="accountAddress"
-              select
-              label="AccountAddress"
-              value={this.state.accountAddress}
-              onChange={this.handleTextMenuChange('accountAddress')}
-              helperText="select an account"
-              margin="normal"
-              variant="filled"
-              >
-              {this.state.addresses.map(option => (
-                <MenuItem key={option.value} value={option.value}>
-                {option.label}
-                </MenuItem>
-              ))}
-            </TextField>
-          </td>
-        </tr>
-        <tr>
-          <td>Owned Tokens:</td>
-          <td>
-            <TextField
-              id="tokenId"
-              select
-              label="Token ID"
-              value={this.state.tokenId}
-              onChange={this.handleTextMenuChange('tokenId')}
-              helperText="select a tokenId"
-              margin="normal"
-              variant="filled"
-              >
-              {this.state.tokenIds.map(option => (
-                <MenuItem key={option.value} value={option.value}>
-                {option.label}
-                </MenuItem>
-              ))}
-            </TextField>
-          </td>
-        </tr>
-          <tr>
-            <td>Token ID:</td>
-            <td>
-              <TextField
-                id="tokenId"
-                label="tokenId"
-                value={this.state.tokenId}
-                onChange={this.handleTextMenuChange('tokenId')}
-                margin="normal"
-                variant="filled"
-              />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <table align="center">
-        <tbody>
-          <tr>
-            <td>
-              <Button type="Button" variant="contained" onClick={this.handleTokenIdsButton}>Get Ids</Button>
-            </td>
-            <td width="20em" ></td>
-            <td>
-              <Button type="Button" variant="contained" onClick={this.handleButton}>Settle</Button>
-            </td>
-            <td width="20em" ></td>
-            <td>
-              {/**<ClaimPayout /> */}
-            </td>
-          </tr>
-          <tr height="10em"></tr>
-        </tbody>
-      </table>
+        <Typography variant="h5" style={{marginBottom: "15px"}}>Settle a SmartPiggies Token</Typography>
+        <Divider />
+        <br></br>
+        <Typography variant="h6" style={{marginLeft: "10px", marginRight: "10px"}}>This token is ready to be cleared! Click below to query the oracle:</Typography>
+        <br></br>
+        <Button type="Button" variant="contained" color="primary" style={{marginBottom: "15px"}} onClick={this.handleButton}>Settle</Button>
       </Paper>
       </div>
     )

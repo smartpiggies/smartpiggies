@@ -226,6 +226,17 @@ class Home extends Component {
     window.scrollTo(0,0);
   }
 
+  handleHome = () => {
+    this.setState({
+      showDefaultPage: true,
+      showPiggyDetails: false,
+      showCreatePiggy: false,
+      showSearchAndBuy: false,
+      showClaimPayout: false,
+    })
+    window.scrollTo(0,0);
+  }
+
   render() {
     //console.log(this.state.ownedPiggies)
     let groomedAddress = this.groomAddress(this.state.activeAccount)
@@ -313,6 +324,7 @@ class Home extends Component {
                 {!this.state.showDefaultPage &&
                   <div>
                     <Paper style={{marginBottom: "10px"}}>
+                      <Button variant="contained" onClick={this.handleHome} style={{marginRight: "10px"}}>Home</Button>
                       <Button variant="contained" onClick={this.handleSearchAndBuy} style={{marginRight: "10px", marginTop: "15px", marginBottom: "15px"}}>Search and Buy Piggies</Button>
                       <Button variant="contained" onClick={this.handleClaimPayouts}>Claim Payouts</Button>
                     </Paper>

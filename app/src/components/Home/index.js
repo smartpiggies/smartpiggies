@@ -30,6 +30,7 @@ import ERC20Stats from '../ERC20Stats';  // try to render this at the top of the
 import logo from '../../Assets/Logo/logo.png'
 import SatisfyAuction from "../SatisfyAuction";
 import CreatePiggy from '../CreatePiggy';
+import StartAuction from '../StartAuction'
 
 /*
 background
@@ -206,8 +207,12 @@ class Home extends Component {
     let auctionActive = false
     let result = this.state.piggyAuctionMap.filter(items => items.label === value)
     if (result.length > 0) {
-      auctionArray = this.props.SmartPiggies.getAuctionDetails[result[0].value].value
-      auctionActive = auctionArray[6]
+      if (this.props.SmartPiggies.getAuctionDetails[result[0].value] !== undefined) {
+        auctionArray = this.props.SmartPiggies.getAuctionDetails[result[0].value].value
+      }
+      if (auctionArray.length > 5) {
+        auctionActive = auctionArray[6]
+      }
     }
     if (auctionActive) {
 
@@ -443,8 +448,7 @@ class Home extends Component {
                         }
                         {!this.state.piggyOnAuction &&
                           <ExpansionPanelDetails>
-                            Form goes here for auction start
-                            Button at bottom to "Start Auction" or "cancel" (which clears input fields)
+                            <StartAuction />
                           </ExpansionPanelDetails>
                         }
                       </ExpansionPanel>

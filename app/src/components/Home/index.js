@@ -94,6 +94,7 @@ class Home extends Component {
       open: true,
       selectedPiggy: '',
       piggyOnAuction: false, // PLACEHOLDER FOR TESTING - FETCH LATER
+      piggyHasBeenCleared: false,
       ownedPiggies: [],
 
       //datakeys
@@ -346,6 +347,45 @@ class Home extends Component {
                           <ExpansionPanelDetails>
                             Form goes here for auction start
                             Button at bottom to "Start Auction" or "cancel" (which clears input fields)
+                          </ExpansionPanelDetails>
+                        }
+                      </ExpansionPanel>
+                    </div>
+                    <div>
+                      <Divider />
+                      <ExpansionPanel>
+                      <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+                          <Typography variant="h5">Piggy Settlement Management</Typography>
+                        </ExpansionPanelSummary>
+                        {this.state.piggyHasBeenCleared &&
+                          <ExpansionPanelDetails>
+                          <List>
+                            pull in the various auction detail fields here as list items
+                            <ListItem>
+                              On auction: {this.state.piggyOnAuction}
+                            </ListItem>
+                            <ListItem>
+                              Start block: 654321
+                            </ListItem>
+                            <ListItem>
+                              Expiry block: 655000
+                            </ListItem>
+                            <ListItem>
+                              etc.
+                            </ListItem>
+                            <ListItem>
+                              etc.
+                            </ListItem>
+                          </List>
+                        </ExpansionPanelDetails>
+                        }
+                        {!this.state.piggyHasBeenCleared &&
+                          <ExpansionPanelDetails>
+                            <Paper>
+                              <br></br><br></br><br></br>
+                              EXPLANATION + BUTTON TO CLEAR PIGGY GOES HERE
+                              <br></br><br></br><br></br>
+                            </Paper>
                           </ExpansionPanelDetails>
                         }
                       </ExpansionPanel>

@@ -78,6 +78,8 @@ const grid = {
   }
 }
 
+let globalDataKeyGetOwnedPiggies, globalDataKeyGetDetails
+
 class Home extends Component {
   constructor(props, context) {
     super(props)
@@ -95,7 +97,7 @@ class Home extends Component {
       selectedPiggy: '',
       piggyOnAuction: false, // PLACEHOLDER FOR TESTING - FETCH LATER
       ownedPiggies: [],
-
+      piggyDetailMap: [],
       //datakeys
       dataKeyGetOwnedPiggies: '',
       dataKeyGetDetails: '',
@@ -110,6 +112,7 @@ class Home extends Component {
   }
 
   componentDidMount() {
+
     /*
     this.contracts.StableToken.methods.balanceOf(
       this.props.accounts[0]
@@ -123,15 +126,14 @@ class Home extends Component {
 
     if (this.props.drizzleStatus.initialized) {
         // Declare this call to be cached and synchronized. We'll receive the store key for recall.
-        const dataKeyGetOwnedPiggies = this.contracts.SmartPiggies.methods['getOwnedPiggies'].cacheCall(this.props.accounts[0])
-        const dataKeyGetDetails = this.contracts.SmartPiggies.methods['getDetails'].cacheCall(8)
+        globalDataKeyGetOwnedPiggies = this.contracts.SmartPiggies.methods['getOwnedPiggies'].cacheCall(this.props.accounts[0])
+        //const dataKeyGetDetails = this.contracts.SmartPiggies.methods['getDetails'].cacheCall()
         // Use the dataKey to display data from the store.
         this.setState({
-          dataKeyGetOwnedPiggies: dataKeyGetOwnedPiggies,
-          dataKeyGetDetails: dataKeyGetDetails
+          dataKeyGetOwnedPiggies: globalDataKeyGetOwnedPiggies,
+          //dataKeyGetDetails: dataKeyGetDetails
         })
     }
-
 
     this.setState({
       spContractAddress: this.contracts.SmartPiggies.address,
@@ -141,9 +143,23 @@ class Home extends Component {
 
   componentDidUpdate(prevProps) {
     if (this.props.SmartPiggies !== prevProps.SmartPiggies) {
+      let piggyIds = []
+      let piggyDataKeys = []
       if(this.props.SmartPiggies.getOwnedPiggies[this.state.dataKeyGetOwnedPiggies] !== undefined) {
+        piggyIds = this.props.SmartPiggies.getOwnedPiggies[this.state.dataKeyGetOwnedPiggies].value
         this.setState({
           ownedPiggies: this.props.SmartPiggies.getOwnedPiggies[this.state.dataKeyGetOwnedPiggies].value
+        })
+        for (let i = 0; i < piggyIds.length; i++) {
+          piggyDataKeys.push(
+            {
+              value: this.contracts.SmartPiggies.methods['getDetails'].cacheCall(piggyIds[i]),
+              label: piggyIds[i]
+            }
+          )
+        }
+        this.setState({
+          piggyDetailMap: piggyDataKeys
         })
       }
     }
@@ -163,12 +179,14 @@ class Home extends Component {
   };
 
   handleSelectPiggy = name => () => {
+
     this.setState({
       piggyId: name,
       showPiggyDetails: true,
       showDefaultPage: false,
-
     })
+    //console.log(this.props.SmartPiggies.getDetails[dataKey])
+    //console.log(dataKey)
   }
 
   handleCreatePiggy = () => {
@@ -290,7 +308,7 @@ class Home extends Component {
                           <Typography variant="h5">Core Piggy Details</Typography>
                         </ExpansionPanelSummary>
                         <ExpansionPanelDetails>
-                        <PiggyDetail dataKey={this.state.dataKeyGetDetails} piggyId={this.state.piggyId} />
+                        <PiggyDetail piggyId={this.state.piggyId} piggies={this.state.piggyDetailMap} />
                         {/*
                         <List>
                           pull in the various detail fields here as list items

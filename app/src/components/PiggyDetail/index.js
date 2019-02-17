@@ -22,42 +22,55 @@ class PiggyDetail extends Component {
     this.handleButton = this.handleButton.bind(this)
     this.state = {
       piggyId: 0,
-      piggyDetails: []
+      detailDataKey: ''
     }
   }
 
   componentDidMount() {
-      if(this.props.SmartPiggies.getDetails[this.props.dataKey] !== undefined) {
+    let result
+    if (this.props.piggies.length > 0) {
+      result = this.props.piggies.filter(items => items.label === this.props.piggyId)
+      if (result.length > 0) {
+        let detailArray = this.props.SmartPiggies.getDetails[result[0].value].value
+
+        addressValues = <AddressItems item={detailArray[0]} />
+        uintValues = <UintItems item={detailArray[1]} />
+        boolValues = <BoolItems item={detailArray[2]} />
+
         this.setState({
-          piggyDetails: this.props.SmartPiggies.getDetails[this.props.dataKey].value
+          detailDataKey: result[0].value
         })
-        let detailArray = this.props.SmartPiggies.getDetails[this.props.dataKey].value
-        if (detailArray.length === 3) {
-          console.log(detailArray)
-          addressValues = <AddressItems item={detailArray[0]} />
-          uintValues = <UintItems item={detailArray[1]} />
-          boolValues = <BoolItems item={detailArray[2]} />
-        }
       }
+
+    }
+
     this.setState({
       piggyId: this.props.piggyId
     })
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.SmartPiggies !== prevProps.SmartPiggies) {
-      if(this.props.SmartPiggies.getDetails[this.props.dataKey] !== undefined) {
-        this.setState({
-          piggyDetails: this.props.SmartPiggies.getDetails[this.props.dataKey].value,
-        })
-        let detailArray = this.props.SmartPiggies.getDetails[this.props.dataKey].value
-        if (detailArray.length === 3) {
-          console.log(detailArray)
+    if (this.props.piggyId !== prevProps.piggyId) {
+      let result
+      if (this.props.piggies.length > 0) {
+        result = this.props.piggies.filter(items => items.label === this.props.piggyId)
+        if (result.length > 0) {
+          let detailArray = this.props.SmartPiggies.getDetails[result[0].value].value
+
           addressValues = <AddressItems item={detailArray[0]} />
           uintValues = <UintItems item={detailArray[1]} />
           boolValues = <BoolItems item={detailArray[2]} />
+
+          this.setState({
+            detailDataKey: result[0].value
+          })
         }
+
       }
+
+      this.setState({
+        piggyId: this.props.piggyId
+      })
     }
   }
 

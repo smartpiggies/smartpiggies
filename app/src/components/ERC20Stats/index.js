@@ -11,13 +11,14 @@ import FormControl from '@material-ui/core/FormControl';
 import InputLabel from '@material-ui/core/InputLabel';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
-import Input from '@material-ui/core/Input';
 
 class ERC20Stats extends Component {
     constructor(props, context) {
       super(props)
       this.contracts = context.drizzle.contracts
       this.drizzle = context.drizzle
+
+      this.handleERC20Select = this.handleERC20Select.bind(this)
 
       // state for handling ERC-20 contract info
       this.state = {
@@ -105,38 +106,63 @@ class ERC20Stats extends Component {
       }
 
     handleERC20Select = event => {
-        this.setState({ currentERC20: event.target.value });
+      let statusCopy = Object.assign({}, this.state);
+      statusCopy.currentERC20 = event.target.value;
+
+      if (this.props.StableToken.balanceOf[this.state.dataKeyUB_STBLE] !== undefined) {
+          statusCopy.ERC20s['STBLE']['userBalance'] = this.props.StableToken.balanceOf[this.state.dataKeyUB_STBLE].value;
+      }
+      if (this.props.StableToken.allowance[this.state.dataKeyATSP_STBLE] !== undefined) {
+          statusCopy.ERC20s['STBLE']['approvedToSP'] = this.props.StableToken.allowance[this.state.dataKeyATSP_STBLE].value;
+      }
+      if(this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE] !== undefined) {
+          statusCopy.ERC20s['STBLE']['availablePayout'] = this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE].value;
+      }
+      if (this.props.RopstenLINK.balanceOf[this.state.dataKeyUB_Link] !== undefined) {
+          statusCopy.ERC20s['Link']['userBalance'] = this.props.RopstenLINK.balanceOf[this.state.dataKeyUB_Link].value;
+      }
+      if (this.props.RopstenLINK.allowance[this.state.dataKeyATSP_Link] !== undefined) {
+          statusCopy.ERC20s['Link']['approvedToSP'] = this.props.RopstenLINK.allowance[this.state.dataKeyATSP_Link].value;
+      }
+      if(this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_Link] !== undefined) {
+          statusCopy.ERC20s['Link']['availablePayout'] = this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_Link].value;
+      }
+      this.setState(statusCopy);
     };
 
+    /* delete
     // use Drizzle's Redux store to manage state fetched from on-chain contracts
-    setCachedValues() {
+    setCachedValues(event) {
         let statusCopy = Object.assign({}, this.state);
+        statusCopy.currentERC20 = event.target.value;
+
         if (this.props.StableToken.balanceOf[this.state.dataKeyUB_STBLE] !== undefined) {
-            statusCopy.ERC20s['STBLE']['userBalance'].value = this.props.StableToken.balanceOf[this.state.dataKeyUB_STBLE].value;
+            statusCopy.ERC20s['STBLE']['userBalance'] = this.props.StableToken.balanceOf[this.state.dataKeyUB_STBLE].value;
         }
         if (this.props.StableToken.allowance[this.state.dataKeyATSP_STBLE] !== undefined) {
-            statusCopy.ERC20s['STBLE']['approvedToSP'].value = this.props.StableToken.allowance[this.state.dataKeyATSP_STBLE].value;
+            statusCopy.ERC20s['STBLE']['approvedToSP'] = this.props.StableToken.allowance[this.state.dataKeyATSP_STBLE].value;
         }
         if(this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE] !== undefined) {
-            statusCopy.ERC20s['STBLE']['availablePayout'].value = this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE].value;
+            statusCopy.ERC20s['STBLE']['availablePayout'] = this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE].value;
         }
         if (this.props.RopstenLINK.balanceOf[this.state.dataKeyUB_Link] !== undefined) {
-            statusCopy.ERC20s['Link']['userBalance'].value = this.props.RopstenLINK.balanceOf[this.state.dataKeyUB_Link].value;
+            statusCopy.ERC20s['Link']['userBalance'] = this.props.RopstenLINK.balanceOf[this.state.dataKeyUB_Link].value;
         }
         if (this.props.RopstenLINK.allowance[this.state.dataKeyATSP_Link] !== undefined) {
-            statusCopy.ERC20s['Link']['approvedToSP'].value = this.props.RopstenLINK.allowance[this.state.dataKeyATSP_Link].value;
+            statusCopy.ERC20s['Link']['approvedToSP'] = this.props.RopstenLINK.allowance[this.state.dataKeyATSP_Link].value;
         }
         if(this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_Link] !== undefined) {
-            statusCopy.ERC20s['Link']['availablePayout'].value = this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_Link].value;
+            statusCopy.ERC20s['Link']['availablePayout'] = this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_Link].value;
         }
         this.setState(statusCopy);
     }
+    */
 
     render() {
+
         return(
             <div>
                 <Paper>
-
                 <List>
                     <ListItem>
                         <Typography variant="h5" component="h3">
@@ -151,8 +177,9 @@ class ERC20Stats extends Component {
                                 <Select
                                     value={this.state.currentERC20}
                                     onChange={this.handleERC20Select}
+                                    name="currentERC20"
                                 >
-                                    <MenuItem value="">
+                                    <MenuItem value="None">
                                     <em>None</em>
                                     </MenuItem>
 

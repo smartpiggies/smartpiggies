@@ -118,6 +118,7 @@ class Home extends Component {
   }
 
   componentDidMount() {
+    /*
     this.contracts.StableToken.methods.balanceOf(
       this.props.accounts[0]
     )
@@ -125,7 +126,7 @@ class Home extends Component {
     .then(result => {
       console.log(result.toString())
     })
-
+    */
     this.setState({
       spContractAddress: this.contracts.SmartPiggies.address,
       activeAccount: this.props.accounts[0]
@@ -210,9 +211,9 @@ class Home extends Component {
             <Grid container>
               <Paper style={main}>
                 {/** Default Screen "component" - should show if all "component state management" bools are false*/}
-                
+
                 {this.state.showDefaultPage &&
-                
+
                   <div>
                     Load a happy pig picture
                     also a button inviting the user to create a new piggy
@@ -220,7 +221,7 @@ class Home extends Component {
                 }
 
                 {/** Create Piggy "component" - should show if a "Create Piggy" button has been clicked on in the list above, or default screen*/}
-                
+
                 {/** Piggy Details "component" - should show if a piggy has been clicked on in the list above*/}
                 {this.state.showPiggyDetails &&
                   <div>

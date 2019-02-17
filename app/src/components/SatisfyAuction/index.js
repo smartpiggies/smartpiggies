@@ -5,7 +5,7 @@ import web3 from 'web3'
 
 
 import Button from '@material-ui/core/Button'
-import MenuItem from '@material-ui/core/MenuItem'
+//import MenuItem from '@material-ui/core/MenuItem'
 import TextField from '@material-ui/core/TextField'
 import Paper from '@material-ui/core/Paper'
 import Typography from '@material-ui/core/Typography'
@@ -30,33 +30,9 @@ class SatisfyAuction extends Component {
 
     this.handleTextMenuChange = this.handleTextMenuChange.bind(this)
     this.handleSatisfyButton = this.handleSatisfyButton.bind(this)
-    this.handlepiggyIdsButton = this.handlepiggyIdsButton.bind(this)
 
     this.state = {
-      addresses: [],
-      resolvers: [
-        {
-          value: '0xf2F63e91EB0a25cb1FE7cB9A8D41aac034C493E0',
-          label: 'CL-IEX-SPY',
-        },
-      ],
-      currencies: [
-        {
-          value: '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359',
-          label: 'Dai',
-        },
-        {
-          value: '0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd',
-          label: 'Gemini Dollar',
-        },
-        {
-          value: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-          label: 'USD Coin',
-        },
-      ],
-      piggyIds: [],
       accountAddress: '0x0000000000000000000000000000000000000000',
-      tokenAddress: '0x0000000000000000000000000000000000000000',
       piggyId: '0',
       startPrice: '',
       reservePrice: '',
@@ -67,23 +43,8 @@ class SatisfyAuction extends Component {
   }
 
   componentDidMount() {
-    let addressArray = []
-    let currencyArray = this.state.currencies
-    currencyArray.push({value: this.contracts.StableToken.address, label: 'STBLE'})
-    currencyArray.push({value: this.contracts.RopstenLINK.address, label: 'Link'})
-    //this.state.resolvers.push({value: this.contracts.OracleResolver.address, label: 'OracleIEXSPY'})
-    for (var i = 0; i < 4; i++) {
-      addressArray.push(
-        {
-          value: this.props.accounts[i],
-          label: "account " + i
-        },
-      )
-    }
     this.setState({
       accountAddress: this.props.accounts[0],
-      addresses: addressArray,
-      currencies: currencyArray
     })
   }
 
@@ -128,30 +89,17 @@ class SatisfyAuction extends Component {
   }
 
   handleSatisfyButton() {
+    //let stackId
     if (this.state.accountAddress !== '0x0000000000000000000000000000000000000000') {
-      this.contracts.SmartPiggies.methods.satisfyAuction(
-        this.state.piggyId
-      ).send({from: this.state.accountAddress, gas: 500000}).then(result => {console.log(result)})
+      this.contracts.SmartPiggies.methods.satisfyAuction(this.state.piggyId)
+      .send(
+        {from: this.state.accountAddress, gas: 100000, gasPrice: 1100000000})
+        .then(result => {
+          console.log(result)
+        })
     }
-  }
 
-  handlepiggyIdsButton() {
-    if (this.state.accountAddress !== '0x0000000000000000000000000000000000000000') {
-      this.contracts.SmartPiggies.methods.getOwnedPiggies(
-        this.state.accountAddress
-      ).call({from: this.state.accountAddress})
-      .then(result => {
-        for (let i =0; i < result.length; i++) {
-          this.state.piggyIds.push(
-            {
-              value: result[i],
-              label: "token " + (i +1)
-            }
-          )
-        }
-      })
-    }
-   }
+  }
 
   render() {
 

@@ -40,7 +40,7 @@ display
 */
 const appBar = {
   backgroundColor: 'default',
-  height: 50,
+  //height: 50,
   display: 'block',
   padding: 10,
 };
@@ -263,6 +263,11 @@ class Home extends Component {
                 <td></td>
                 <td>{this.state.spContractAddress}</td>
               </tr>
+              <tr>
+                <td>User:</td>
+                <td></td>
+                <td>{groomedAddress}</td>
+              </tr>
             </tbody>
           </table>
         </AppBar>
@@ -274,15 +279,11 @@ class Home extends Component {
 
                 {/**  Account + piggy information */}
                 <List>
-
-                  <ListItem>
-                    <ListItemText primary="Account:" primaryTypographyProps={{variant: "h6"}} secondary={groomedAddress} />
-                  </ListItem>
-                  <Divider />
                   <ListItem>
                     <ListItemText primary="Piggies:" primaryTypographyProps={{variant: "h6"}} />
                     <Button variant="contained" color="primary" onClick={this.handleCreatePiggy}>Create New</Button>
                   </ListItem>
+                  <Divider light />
 
                   {piggies}
 

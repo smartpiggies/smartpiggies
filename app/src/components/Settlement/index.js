@@ -5,14 +5,9 @@ import web3 from 'web3'
 
 
 import Button from '@material-ui/core/Button'
-import MenuItem from '@material-ui/core/MenuItem'
-import TextField from '@material-ui/core/TextField'
 import Paper from '@material-ui/core/Paper'
 import Typography from '@material-ui/core/Typography'
 import Divider from '@material-ui/core/Divider'
-import List from '@material-ui/core/List'
-import ListItem from '@material-ui/core/ListItem'
-import ListItemText from '@material-ui/core/ListItemText'
 
 //import ClaimPayout from '../../Layout/ClaimPayout'
 
@@ -29,29 +24,16 @@ class Settlement extends Component {
     this.handleTextInputChange = this.handleTextInputChange.bind(this)
     this.handleCheckedInputChange = this.handleCheckedInputChange.bind(this)
     this.handleButton = this.handleButton.bind(this)
-    this.handleTokenIdsButton = this.handleTokenIdsButton.bind(this)
 
     this.state = {
       tokenId: '0',
-      tokenIds: [],
-      addresses: [],
       accountAddress: '0x0000000000000000000000000000000000000000',
     }
   }
 
   componentDidMount() {
-    let addressArray = []
-    for (var i = 0; i < 4; i++) {
-      addressArray.push(
-        {
-          value: this.props.accounts[i],
-          label: "account " + i
-        },
-      )
-    }
     this.setState({
       accountAddress: this.props.accounts[0],
-      addresses: addressArray,
       tokenId: this.props.tokenId,
     })
   }
@@ -99,29 +81,11 @@ class Settlement extends Component {
   handleButton() {
     this.contracts.SmartPiggies.methods.settlePiggy(
       this.state.tokenId
-    ).send({from: this.state.accountAddress, gas: 1000000})
+    ).send({from: this.state.accountAddress, gas: 1000000, gasPrice: 1100000000})
     .then(result => {
       console.log(result)
     })
   }
-
-  handleTokenIdsButton() {
-    if (this.state.accountAddress !== '0x0000000000000000000000000000000000000000') {
-      this.contracts.SmartPiggies.methods.getOwnedPiggies(
-        this.state.accountAddress
-      ).call({from: this.state.accountAddress})
-      .then(result => {
-        for (let i =0; i < result.length; i++) {
-          this.state.tokenIds.push(
-            {
-              value: result[i],
-              label: "token " + (i +1)
-            }
-          )
-        }
-      })
-    }
-   }
 
   render() {
     //console.log(addresses)

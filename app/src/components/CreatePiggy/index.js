@@ -49,11 +49,11 @@ class CreatePiggy extends Component {
     this.state = {
       oracles: [
         {
-          value: '0x3efa1b0060b7dda3fc91f7267653204181050f2e',
+          value: '0x9B4bF94BF1B5dFE88316BC96071e7c3F23B61434',
           label: 'CL-IEX-SPY',
         },
         {
-          value: '0x02a77167324c0ab1cc3b29646a965027f63a449f',
+          value: '0x0000000000000000000000000000000000000000',
           label: 'CL-CoinCap-ETHUSD',
         },
       ],
@@ -141,8 +141,9 @@ class CreatePiggy extends Component {
   }
 
   handleCreateButton() {
-    let stackId = this.contracts.SmartPiggies.methods.createPiggy
-    .cacheSend(
+    //console.log(this.contracts.SmartPiggies.methods)
+
+    this.contracts.SmartPiggies.methods.createPiggy(
       this.state.collateralAddress,
       this.state.premiumAddress,
       this.state.oracleNowAddress,
@@ -153,9 +154,13 @@ class CreatePiggy extends Component {
       this.state.blockExpiration,
       this.state.checkedEuro,
       this.state.checkedPut,
-      this.state.checkedRFP,
-      {from: this.state.accountAddress, gas: 500000, gasPrice: 1100000000})
-    
+      this.state.checkedRFP)
+      .send(
+      {from: this.state.accountAddress, gas: 5000000, gasPrice: 1100000000})
+      .then(result => {
+        console.log(result)
+      })
+
   }
 
   render() {

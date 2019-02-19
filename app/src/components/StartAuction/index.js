@@ -98,16 +98,18 @@ class StartAuction extends Component {
   }
 
   handleStartButton() {
-    let stackId = this.contracts.SmartPiggies.methods.startAuction
-    .cacheSend(
+    this.contracts.SmartPiggies.methods.startAuction(
       this.state.piggyId,
       this.state.startPrice,
       this.state.reservePrice,
       this.state.auctionLength,
       this.state.timeStep,
-      this.state.priceStep,
+      this.state.priceStep)
+      .send(
       {from: this.state.accountAddress, gas: 500000, gasPrice: 1100000000})
-      console.log(this.props.transactionStack[stackId])
+      .then(result => {
+        console.log(result)
+      })
   }
 
   render() {

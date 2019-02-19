@@ -42,34 +42,18 @@ class Clearing extends Component {
     this.handleTextMenuChange = this.handleTextMenuChange.bind(this)
     this.handleTextInputChange = this.handleTextInputChange.bind(this)
     this.handleButton = this.handleButton.bind(this)
-    this.handleTokenIdsButton = this.handleTokenIdsButton.bind(this)
 
     this.state = {
       tokenId: '0',
-      tokenIds: [],
-      addresses: [],
       accountAddress: '0x0000000000000000000000000000000000000000',
       oracleFee: ''
     }
   }
 
   componentDidMount() {
-    /*
-    this.contracts.OracleResolver.methods.oralceFeeAddress().call({from: this.props.accounts[0]})
-    .then(result => {console.log(result)})
-    */
-    let addressArray = []
-    for (var i = 0; i < 4; i++) {
-      addressArray.push(
-        {
-          value: this.props.accounts[i],
-          label: "account " + i
-        },
-      )
-    }
+
     this.setState({
       accountAddress: this.props.accounts[0],
-      addresses: addressArray,
       tokenId: this.props.tokenId,
     })
   }
@@ -114,29 +98,11 @@ class Clearing extends Component {
     this.contracts.SmartPiggies.methods.requestSettlementPrice(
       this.state.tokenId,
       this.state.oracleFee
-    ).send({from: this.state.accountAddress, gas: 1000000})
+    ).send({from: this.state.accountAddress, gas: 1000000, gasPrice: 1100000000})
     .then(result => {
       console.log(result)
     })
   }
-
-  handleTokenIdsButton() {
-    if (this.state.accountAddress !== '0x0000000000000000000000000000000000000000') {
-      this.contracts.SmartPiggies.methods.getOwnedPiggies(
-        this.state.accountAddress
-      ).call({from: this.state.accountAddress})
-      .then(result => {
-        for (let i =0; i < result.length; i++) {
-          this.state.tokenIds.push(
-            {
-              value: result[i],
-              label: "token " + (i +1)
-            }
-          )
-        }
-      })
-    }
-   }
 
   render() {
 
@@ -192,7 +158,7 @@ Clearing.contextTypes = {
 const mapStateToProps = state => {
   return {
     accounts: state.accounts,
-    TableToken: state.contracts.TableToken,
+    StableToken: state.contracts.StableToken,
     drizzleStatus: state.drizzleStatus,
     transactionStack: state.transactionStack,
     transactions: state.transactions

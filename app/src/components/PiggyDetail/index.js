@@ -28,11 +28,12 @@ class PiggyDetail extends Component {
       if (this.props.piggies.length > 0) {
         result = this.props.piggies.filter(items => items.label === this.props.piggyId)
         if (result.length > 0) {
-          let detailArray = this.props.SmartPiggies.getDetails[result[0].value].value
-
-          addressValues = <AddressItems item={detailArray[0]} />
-          uintValues = <UintItems item={detailArray[1]} />
-          boolValues = <BoolItems item={detailArray[2]} />
+          if (this.props.SmartPiggies.getDetails[result[0].value] !== undefined) {
+            let detailArray = this.props.SmartPiggies.getDetails[result[0].value].value
+            addressValues = <AddressItems item={detailArray[0]} />
+            uintValues = <UintItems item={detailArray[1]} />
+            boolValues = <BoolItems item={detailArray[2]} />
+          }
 
           this.setState({
             detailDataKey: result[0].value
@@ -50,12 +51,13 @@ class PiggyDetail extends Component {
         if (this.props.piggies.length > 0) {
           result = this.props.piggies.filter(items => items.label === this.props.piggyId)
           if (result.length > 0) {
-            let detailArray = this.props.SmartPiggies.getDetails[result[0].value].value
+            if (this.props.SmartPiggies.getDetails[result[0].value] !== undefined) {
+              let detailArray = this.props.SmartPiggies.getDetails[result[0].value].value
 
-            addressValues = <AddressItems item={detailArray[0]} />
-            uintValues = <UintItems item={detailArray[1]} />
-            boolValues = <BoolItems item={detailArray[2]} />
-
+              addressValues = <AddressItems item={detailArray[0]} />
+              uintValues = <UintItems item={detailArray[1]} />
+              boolValues = <BoolItems item={detailArray[2]} />
+            }
             this.setState({
               detailDataKey: result[0].value
             })

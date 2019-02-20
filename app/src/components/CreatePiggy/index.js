@@ -49,12 +49,12 @@ class CreatePiggy extends Component {
     this.state = {
       oracles: [
         {
-          value: '0x9B4bF94BF1B5dFE88316BC96071e7c3F23B61434',
+          value: '0x6819727F25AB306aE48878387bB0F4C1374Ea9Ff',
           label: 'CL-IEX-SPY',
         },
         {
-          value: '0x0000000000000000000000000000000000000000',
-          label: 'CL-CoinCap-ETHUSD',
+          value: '0x83B5789821e118c49A85Bf5e1bbDE022D356E8Fd',
+          label: 'Self Return',
         },
       ],
       currencies: [

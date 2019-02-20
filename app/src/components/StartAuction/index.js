@@ -104,6 +104,15 @@ class StartAuction extends Component {
   }
 
   handleStartButton() {
+
+    console.log(this.state.piggyId)
+    console.log(this.state.startPrice)
+    console.log(this.state.reservePrice)
+    console.log(this.state.auctionLength)
+    console.log(this.state.timeStep)
+    console.log(this.state.priceStep)
+    console.log(this.state.accountAddress)
+
     this.contracts.SmartPiggies.methods.startAuction(
       this.state.piggyId,
       this.state.startPrice,
@@ -112,7 +121,7 @@ class StartAuction extends Component {
       this.state.timeStep,
       this.state.priceStep)
       .send(
-      {from: this.state.accountAddress, gas: 500000, gasPrice: 1100000000})
+      {from: this.state.accountAddress, gas: 1000000, gasPrice: 1100000000})
       .then(result => {
         console.log(result)
       })
@@ -139,7 +148,7 @@ class StartAuction extends Component {
                 variant="filled"
               >
                 {amounts.map(option => (
-                  <MenuItem key={option.value} value={option.value}>
+                  <MenuItem key={option.label} value={option.value}>
                     {option.label}
                   </MenuItem>
                 ))}

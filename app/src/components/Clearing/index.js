@@ -38,9 +38,7 @@ class Clearing extends Component {
 
     this.contracts = context.drizzle.contracts
 
-    this.handleInputChange = this.handleInputChange.bind(this)
     this.handleTextMenuChange = this.handleTextMenuChange.bind(this)
-    this.handleTextInputChange = this.handleTextInputChange.bind(this)
     this.handleButton = this.handleButton.bind(this)
 
     this.state = {
@@ -58,43 +56,14 @@ class Clearing extends Component {
     })
   }
 
-  handleTextInputChange(event) {
-        this.setState({ [event.target.name]: event.target.value })
-  }
-
   handleTextMenuChange = name => event => {
     this.setState({ [name]: event.target.value })
   }
 
-  handleInputChange(event) {
-    if (event.target.value.match(/^[0-9]{1,40}$/)) {
-      var amount = new BN(event.target.value)
-      if (amount.gte(0)) {
-        this.setState({ [event.target.name]: amount.toString() })
-        //this.setTXParamValue(amount)
-      } else {
-        this.setState({ [event.target.name]: '' })
-        //this.setTXParamValue(0)
-      }
-    } else {
-        this.setState({ [event.target.name]: '' })
-        //this.setTXParamValue(0)
-      }
-  }
-
-  setTXParamValue(_value) {
-    if (web3.utils.isBN(_value)) {
-      this.setState({
-        detail: _value.toString()
-      })
-    } else {
-      this.setState({
-        detail: ''
-      })
-    }
-  }
-
   handleButton() {
+    console.log("tokenId: ", this.state.tokenId)
+    console.log("oracleFee: ", this.state.oracleFee)
+    console.log("account: ", this.state.accountAddress)
     this.contracts.SmartPiggies.methods.requestSettlementPrice(
       this.state.tokenId,
       this.state.oracleFee

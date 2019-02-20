@@ -53,7 +53,7 @@ class LoadingContainer extends Component {
         <div className="App">
         <img src={logo} alt="drizzle-logo" />
           <div className="section">
-            <h1>Loading logo</h1>
+            <h1>Loading SmartPiggies</h1>
             <p>Loading dapp...</p>
           </div>
         </div>

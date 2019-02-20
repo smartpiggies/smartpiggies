@@ -48,52 +48,17 @@ class SatisfyAuction extends Component {
     })
   }
 
-  handleTextInputChange(event) {
-        this.setState({ [event.target.name]: event.target.value })
-  }
-
   handleTextMenuChange = name => event => {
     this.setState({ [name]: event.target.value })
   }
 
-  handleCheckedInputChange = name => event => {
-    this.setState({ [name]: event.target.checked })
-  }
-
-  handleInputChange(event) {
-    if (event.target.value.match(/^[0-9]{1,40}$/)) {
-      var amount = new BN(event.target.value)
-      if (amount.gte(0)) {
-        this.setState({ [event.target.name]: amount.toString() })
-        //this.setTXParamValue(amount)
-      } else {
-        this.setState({ [event.target.name]: '' })
-        //this.setTXParamValue(0)
-      }
-    } else {
-        this.setState({ [event.target.name]: '' })
-        //this.setTXParamValue(0)
-      }
-  }
-
-  setTXParamValue(_value) {
-    if (web3.utils.isBN(_value)) {
-      this.setState({
-        detail: _value.toString()
-      })
-    } else {
-      this.setState({
-        detail: ''
-      })
-    }
-  }
-
   handleSatisfyButton() {
-    //let stackId
     if (this.state.accountAddress !== '0x0000000000000000000000000000000000000000') {
+      console.log("id: ", this.state.piggyId)
+      console.log("account: ", this.state.accountAddress)
       this.contracts.SmartPiggies.methods.satisfyAuction(this.state.piggyId)
       .send(
-        {from: this.state.accountAddress, gas: 100000, gasPrice: 1100000000})
+        {from: this.state.accountAddress, gas: 1000000, gasPrice: 1100000000})
         .then(result => {
           console.log(result)
         })

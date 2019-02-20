@@ -91,11 +91,12 @@ class Settlement extends Component {
     //console.log(addresses)
     return (
       <div className="App">
-      <Paper>
+      <Paper align="center">
         <Typography variant="h5" style={{marginBottom: "15px"}}>Settle a SmartPiggies Token</Typography>
         <Divider />
         <br></br>
-        <Typography variant="h6" style={{marginLeft: "10px", marginRight: "10px"}}>This token is ready to be cleared! Click below to query the oracle:</Typography>
+        <Typography variant="h6" style={{marginLeft: "10px", marginRight: "10px"}}>This token is ready to be cleared!</Typography>
+        <Typography variant="h6" style={{marginLeft: "10px", marginRight: "10px"}}>Click the Settle button to caluculate the payout.</Typography>
         <br></br>
         <Button type="Button" variant="contained" color="primary" style={{marginBottom: "15px"}} onClick={this.handleButton}>Settle</Button>
       </Paper>

@@ -241,7 +241,7 @@ class Home extends Component {
 
 
     this.setState({
-      piggyId: value,
+      selectedPiggy: value,
       showPiggyDetails: true,
       showDefaultPage: false,
       piggyOnAuction: auctionActive,
@@ -297,7 +297,7 @@ class Home extends Component {
   }
 
   render() {
-    //console.log(this.state.ownedPiggies)
+    //console.log(this.state.selectedPiggy)
     let groomedAddress = this.groomAddress(this.state.activeAccount)
     let piggies
     if (this.state.ownedPiggies.length > 0) {
@@ -344,7 +344,7 @@ class Home extends Component {
                   </ListItem>
                 </List>
                 <List style={{maxHeight: 450, overflow: 'auto'}}>
-                  
+
 
                   {piggies}
 
@@ -426,7 +426,7 @@ class Home extends Component {
                           <Typography variant="h5">Core Piggy Details</Typography>
                         </ExpansionPanelSummary>
                         {/*<ExpansionPanelDetails>*/}
-                          <PiggyDetail piggyId={this.state.piggyId} piggies={this.state.piggyDetailMap} />
+                          <PiggyDetail piggyId={this.state.selectedPiggy} piggies={this.state.piggyDetailMap} />
                         {/*</ExpansionPanelDetails>*/}
                       </ExpansionPanel>
                     </div>

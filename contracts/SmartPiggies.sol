@@ -581,6 +581,7 @@ function _getERC20Decimals(address _ERC20)
     {
       _dataResolver = piggies[_tokenId].addresses.dataResolverAtExpiry;
     } else {
+      require(msg.sender == piggies[_tokenId].addresses.holder, "only the holder can settle an American style option before expiry");
       _dataResolver = piggies[_tokenId].addresses.dataResolverNow;
     }
     require(_callResolver(_dataResolver, msg.sender, _oracleFee, _tokenId), "call to resolver did not return true");

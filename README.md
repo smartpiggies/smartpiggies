@@ -4,8 +4,6 @@
 
 ### An open source standard for a free peer-to-peer global derivatives market.
 
---
-
 [SmartPiggies](https://smartpiggies.com) are non-fungible digital contracts that provide their owners with protection against undesirable changes in the price of any asset, product, or service. In traditional finance terms, SmartPiggies could be compared to a capped option. For more information on the project and to read the pinkpaper please visit the [website](https://smartpiggies.com).
 
 This repository is a front-end dApp that will connect to the testnet contracts defining a SmartPiggies implementation.

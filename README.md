@@ -1,8 +1,9 @@
-# SmartPiggies
-
+SmartPiggies
 <img align="right" width="300" src="app/src/Assets/Logo/piggieface_02.png">
+=
 
-### An open source standard for a free peer-to-peer global derivatives market.
+An open source standard for a free peer-to-peer global derivatives market.
+-
 
 [SmartPiggies](https://smartpiggies.com) are non-fungible digital contracts that provide their owners with protection against undesirable changes in the price of any asset, product, or service. In traditional finance terms, SmartPiggies could be compared to a capped option. For more information on the project and to read the pinkpaper please visit the [website](https://smartpiggies.com).
 

@@ -29,6 +29,8 @@ contract ('SmartPiggies', function(accounts) {
   var user02 = accounts[2];
   var addr00 = "0x0000000000000000000000000000000000000000";
   var decimal = 18;
+  //multiply a BN
+  //var aNum = web3.utils.toBN(decimals).mul(web3.utils.toBN('1000'))
   var decimals = web3.utils.toBN(Math.pow(10,decimal));
   var supply = web3.utils.toWei("1000", "ether");
   var approveAmount = web3.utils.toWei("100", "ether");
@@ -193,6 +195,7 @@ contract ('SmartPiggies', function(accounts) {
       });
       //end test block
     });
+
     //end describe block
   });
 /*

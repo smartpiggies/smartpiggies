@@ -1,3 +1,23 @@
+/**
+This application is for use with SmartPiggies.
+
+SmartPiggies is an open source standard for
+a free peer to peer global derivatives market.
+Copyright (C) <2019>  <Arief, Algya, Lee>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+**/
 import React, { Component } from "react"
 import { drizzleConnect } from "drizzle-react"
 
@@ -18,32 +38,20 @@ import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
 import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import Typography from '@material-ui/core/Typography';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import PiggyDetail from '../PiggyDetail'
-import Claim from '../Claim';
 import Button from '@material-ui/core/Button';
 //import Icon from '@material-ui/core/Icon';
 
-
-import ERC20Stats from '../ERC20Stats';  // try to render this at the top of the left sidebar
-//import { Typography } from "@material-ui/core";
-
 import logo from '../../Assets/Logo/logo.png'
+import ERC20Stats from '../ERC20Stats';
+import PiggyDetail from '../PiggyDetail'
 import SatisfyAuction from "../SatisfyAuction";
 import CreatePiggy from '../CreatePiggy';
 import StartAuction from '../StartAuction'
 import Clearing from '../Clearing';
 import Settlement from '../Settlement';
+import Claim from '../Claim';
+import Approvals from '../Approvals';
 
-/*
-background
-width
-height
-padding
-border
-margin
-textAlign
-display
-*/
 const appBar = {
   backgroundColor: 'default',
   //height: 50,
@@ -92,7 +100,7 @@ class Home extends Component {
     this.contracts = context.drizzle.contracts
     this.drizzle = context.drizzle
 
-    this.handleDrawerOpen = this.handleDrawerOpen.bind(this)
+    //this.handleDrawerOpen = this.handleDrawerOpen.bind(this)
     this.handleSelectPiggy = this.handleSelectPiggy.bind(this)
     this.groomAddress = this.groomAddress.bind(this)
 
@@ -119,6 +127,7 @@ class Home extends Component {
       showCreatePiggy: false,
       showSearchAndBuy: false,
       showClaimPayout: false,
+      showApprovals: false,
       //showAuctionDetails: false, // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
       //showAdminArea: false,  // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
 
@@ -247,6 +256,7 @@ class Home extends Component {
       piggyOnAuction: auctionActive,
       showSearchAndBuy: false,
       showClaimPayout: false,
+      showApprovals: false,
       piggyHasBeenCleared: clearedActive
     })
     window.scrollTo(0,0);
@@ -259,6 +269,7 @@ class Home extends Component {
       showCreatePiggy: true,
       showSearchAndBuy: false,
       showClaimPayout: false,
+      showApprovals: false,
     })
     window.scrollTo(0,0);
   }
@@ -270,6 +281,7 @@ class Home extends Component {
       showCreatePiggy: false,
       showSearchAndBuy: true,
       showClaimPayout: false,
+      showApprovals: false,
     })
     window.scrollTo(0,0);
   }
@@ -281,6 +293,19 @@ class Home extends Component {
       showCreatePiggy: false,
       showSearchAndBuy: false,
       showClaimPayout: true,
+      showApprovals: false,
+    })
+    window.scrollTo(0,0);
+  }
+
+  handleApprovals = () => {
+    this.setState({
+      showDefaultPage: false,
+      showPiggyDetails: false,
+      showCreatePiggy: false,
+      showSearchAndBuy: false,
+      showClaimPayout: false,
+      showApprovals: true,
     })
     window.scrollTo(0,0);
   }
@@ -292,6 +317,7 @@ class Home extends Component {
       showCreatePiggy: false,
       showSearchAndBuy: false,
       showClaimPayout: false,
+      showApprovals: false,
     })
     window.scrollTo(0,0);
   }
@@ -366,7 +392,8 @@ class Home extends Component {
                     <Paper style={{marginBottom: "10px"}}>
                       <Button variant="contained" onClick={this.handleHome} style={{marginRight: "10px"}}>Home</Button>
                       <Button variant="contained" onClick={this.handleSearchAndBuy} style={{marginRight: "10px", marginTop: "15px", marginBottom: "15px"}}>Search and Buy Piggies</Button>
-                      <Button variant="contained" onClick={this.handleClaimPayouts}>Claim Payouts</Button>
+                      <Button variant="contained" onClick={this.handleClaimPayouts} style={{marginRight: "10px"}}>Claim Payouts</Button>
+                      <Button variant="contained" onClick={this.handleApprovals} style={{marginRight: "10px"}}>Approvals</Button>
                     </Paper>
                   </div>
 
@@ -405,6 +432,13 @@ class Home extends Component {
                 {this.state.showClaimPayout &&
                   <div>
                     <Claim />
+                  </div>
+                }
+
+                {/** Approve Transfers "component" - should show if the persistent action bar button has been clicked */}
+                {this.state.showApprovals &&
+                  <div>
+                    <Approvals />
                   </div>
                 }
 

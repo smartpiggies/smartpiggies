@@ -22,6 +22,7 @@ class LoadingContainer extends Component {
               <h1>OOPS!</h1>
               <p>This browser has no connection to the Ethereum network.</p>
               <p>Please use the Chrome/FireFox extension MetaMask, or dedicated Ethereum browsers Mist or Parity.</p>
+              <p>SmartPiggies is currently running on the Ropsten or Rinkeby networks.</p>
             </div>
           </div>
       )
@@ -34,7 +35,9 @@ class LoadingContainer extends Component {
           <img src={logo} alt="drizzle-logo" />
             <div className="section">
               <h1>ARRG!</h1>
-              <p><strong>We can't find any Ethereum accounts!</strong> Please check and make sure Metamask or your browser are pointed at the correct network and your account is unlocked.</p>
+              <p><strong>We can't find any Ethereum accounts!</strong></p>
+              <p>Please check and make sure Metamask or your browser are pointed at the correct network and your account is unlocked.</p>
+              <p>SmartPiggies is currently running on the Ropsten or Rinkeby networks.</p>
             </div>
           </div>
       )

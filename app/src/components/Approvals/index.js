@@ -61,29 +61,25 @@ class Approvals extends Component {
 
     this.contracts = context.drizzle.contracts
 
-    this.handleInputChange = this.handleInputChange.bind(this)
     this.handleTextMenuChange = this.handleTextMenuChange.bind(this)
-    this.handleTextInputChange = this.handleTextInputChange.bind(this)
-    this.handleCheckedInputChange = this.handleCheckedInputChange.bind(this)
     this.handleButton = this.handleButton.bind(this)
+    this.handleOracleButton = this.handleOracleButton.bind(this)
 
     this.state = {
       addresses: [],
       accountAddress: '0x0000000000000000000000000000000000000000',
       tokenAddress: '0x0000000000000000000000000000000000000000',
-      claimAmount: '',
-      currencies: [
+      resolverAddress: '0x0000000000000000000000000000000000000000',
+      approveAmount: '',
+      currencies: [],
+      resolvers: [
         {
-          value: '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359',
-          label: 'Dai',
+          value: '0x6819727F25AB306aE48878387bB0F4C1374Ea9Ff',
+          label: 'IEX SPY',
         },
         {
-          value: '0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd',
-          label: 'Gemini Dollar',
-        },
-        {
-          value: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-          label: 'USD Coin',
+          value: '0x83B5789821e118c49A85Bf5e1bbDE022D356E8Fd',
+          label: 'Resolve 27000',
         },
       ],
     }
@@ -98,16 +94,8 @@ class Approvals extends Component {
     })
   }
 
-  handleTextInputChange(event) {
-        this.setState({ [event.target.name]: event.target.value })
-  }
-
   handleTextMenuChange = name => event => {
     this.setState({ [name]: event.target.value })
-  }
-
-  handleCheckedInputChange = name => event => {
-    this.setState({ [name]: event.target.checked })
   }
 
   handleInputChange(event) {
@@ -139,9 +127,20 @@ class Approvals extends Component {
   }
 
   handleButton() {
-    this.contracts.SmartPiggies.methods.claimPayout(
-      this.state.tokenAddress,
-      this.state.claimAmount)
+    this.contracts.StableToken.methods.approve(
+      this.contracts.SmartPiggies.address,
+      this.state.approveAmount)
+      .send(
+      {from: this.state.accountAddress, gas: 1000000, gasPrice: 1100000000})
+      .then(result => {
+        console.log(result)
+      })
+  }
+
+  handleOracleButton() {
+    this.contracts.RopstenLINK.methods.approve(
+      this.state.resolverAddress,
+      this.state.approveAmount)
       .send(
       {from: this.state.accountAddress, gas: 1000000, gasPrice: 1100000000})
       .then(result => {
@@ -150,11 +149,11 @@ class Approvals extends Component {
   }
 
   render() {
-    //console.log(addresses)
     return (
       <div className="App">
+      <Typography variant="h6" align="left"><a href='https://docs.chain.link/docs/acquire-link' target='new'>To get test LINK click here</a></Typography>
         <Paper>
-            <Typography variant="h5" style={{marginBottom: "15px"}}>Claim a Payout</Typography>
+            <Typography variant="h5" style={{marginBottom: "15px"}}>Approve Stable Token Transfer</Typography>
             <Divider />
             <List>
                 <ListItem>
@@ -182,8 +181,8 @@ class Approvals extends Component {
                         id="denomination"
                         select
                         label="denomination"
-                        value={this.state.claimAmount}
-                        onChange={this.handleTextMenuChange('claimAmount')}
+                        value={this.state.approveAmount}
+                        onChange={this.handleTextMenuChange('approveAmount')}
                         helperText="select a denomination"
                         margin="normal"
                         variant="filled"
@@ -196,18 +195,105 @@ class Approvals extends Component {
                     </TextField>
                 </ListItem>
                 <ListItem>
-                    <ListItemText>Withdrawal Amount:</ListItemText>
+                    <ListItemText>Approval Amount:</ListItemText>
                     <TextField
-                        id="claimAmount"
+                        id="approveAmount"
                         label="Amount"
-                        value={this.state.claimAmount}
-                        onChange={this.handleTextMenuChange('claimAmount')}
+                        value={this.state.approveAmount}
+                        onChange={this.handleTextMenuChange('approveAmount')}
                         margin="normal"
                         variant="filled"
                     />
                 </ListItem>
             </List>
-            <Button type="Button" variant="contained" color="primary" size="large" onClick={this.handleButton} style={{marginBottom: "15px"}}>Claim Payout</Button>
+            <Button type="Button" variant="contained" color="primary" size="large" onClick={this.handleButton} style={{marginBottom: "15px"}}>Approve</Button>
+          </Paper>
+
+          <Paper>
+            <Typography variant="h5" style={{marginBottom: "15px"}}>Approve Oracle Fee Transfer</Typography>
+            <Divider />
+            <List>
+                <ListItem>
+                    <ListItemText>Oracel Fee Address:</ListItemText>
+                    <TextField
+                        id="tokenAddress"
+                        select
+                        label="TokenAddress"
+                        value={this.state.tokenAddress}
+                        onChange={this.handleTextMenuChange('tokenAddress')}
+                        helperText="select a token contract"
+                        margin="normal"
+                        variant="filled"
+                    >
+                        {this.state.currencies.map(option => (
+                            <MenuItem key={option.value} value={option.value}>
+                                {option.label}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                </ListItem>
+                <ListItem>
+                    <ListItemText>Units Denomination:</ListItemText>
+                    <TextField
+                        id="denomination"
+                        select
+                        label="denomination"
+                        value={this.state.approveAmount}
+                        onChange={this.handleTextMenuChange('approveAmount')}
+                        helperText="select a denomination"
+                        margin="normal"
+                        variant="filled"
+                    >
+                        {amounts.map(option => (
+                            <MenuItem key={option.value} value={option.value}>
+                                {option.label}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                </ListItem>
+                <ListItem>
+                    <ListItemText>Approve Amount:</ListItemText>
+                    <TextField
+                        id="approveAmount"
+                        label="Amount"
+                        value={this.state.approveAmount}
+                        onChange={this.handleTextMenuChange('approveAmount')}
+                        margin="normal"
+                        variant="filled"
+                    />
+                </ListItem>
+                <ListItem>
+                    <ListItemText>Resolvers:</ListItemText>
+                    <TextField
+                        id="resolvers"
+                        select
+                        label="resolvers"
+                        value={this.state.resolverAddress}
+                        onChange={this.handleTextMenuChange('resolverAddress')}
+                        helperText="select a resolver"
+                        margin="normal"
+                        variant="filled"
+                    >
+                        {this.state.resolvers.map(option => (
+                            <MenuItem key={option.value} value={option.value}>
+                                {option.label}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                </ListItem>
+                <ListItem>
+                    <ListItemText>Approve Amount:</ListItemText>
+                    <TextField
+                        id="approveAmount"
+                        label="Amount"
+                        value={this.state.approveAmount}
+                        onChange={this.handleTextMenuChange('approveAmount')}
+                        margin="normal"
+                        variant="filled"
+                    />
+                </ListItem>
+            </List>
+            <Button type="Button" variant="contained" color="primary" size="large" onClick={this.handleOracleButton} style={{marginBottom: "15px"}}>Approve</Button>
         </Paper>
       </div>
     )
@@ -223,6 +309,7 @@ const mapStateToProps = state => {
   return {
     accounts: state.accounts,
     StableToken: state.contracts.StableToken,
+    RopstenLINK: state.contracts.RopstenLINK,
     SmartPiggies: state.contracts.SmartPiggies,
     drizzleStatus: state.drizzleStatus,
     transactionStack: state.transactionStack,

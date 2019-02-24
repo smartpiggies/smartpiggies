@@ -3,7 +3,8 @@ This Oracle Resolver is a solidity proxy contract for use
 with Smartpiggies.
 SmartPiggies is an open source standard for
 a free peer to peer global derivatives market.
-Copyright (C) <2019>  <Arief, Algya, Lee>
+
+Copyright (C) 2019, Arief, Algya, Lee
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

@@ -248,7 +248,7 @@ const mapStateToProps = state => {
     accounts: state.accounts,
     SmartPiggies: state.contracts.SmartPiggies,
     StableToken: state.contracts.StableToken,
-    RopstenLINK: state.contracts.RopstenLINK,
+    TestnetLINK: state.contracts.TestnetLINK,
     drizzleStatus: state.drizzleStatus,
     transactionStack: state.transactionStack,
     transactions: state.transactions

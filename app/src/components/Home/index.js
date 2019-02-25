@@ -52,6 +52,7 @@ import Clearing from '../Clearing';
 import Settlement from '../Settlement';
 import Claim from '../Claim';
 import Approvals from '../Approvals';
+import Faucet from '../Faucet';
 
 const appBar = {
   backgroundColor: 'default',
@@ -129,6 +130,7 @@ class Home extends Component {
       showSearchAndBuy: false,
       showClaimPayout: false,
       showApprovals: false,
+      showFaucet: false,
       //showAuctionDetails: false, // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
       //showAdminArea: false,  // PLACEHOLDER FOR TESTING - DEFAULT SHOULD PROBABLY BE FALSE
 
@@ -195,9 +197,6 @@ class Home extends Component {
           piggyAuctionMap: piggyAuctionDataKeys
         })
       }
-      //console.log(piggyAuctionDataKeys.map(items => items.value))
-      //console.log(this.props.SmartPiggies[])
-      //console.log()
     }
   }
 
@@ -258,6 +257,7 @@ class Home extends Component {
       showSearchAndBuy: false,
       showClaimPayout: false,
       showApprovals: false,
+      showFaucet: false,
       piggyHasBeenCleared: clearedActive
     })
     window.scrollTo(0,0);
@@ -271,6 +271,7 @@ class Home extends Component {
       showSearchAndBuy: false,
       showClaimPayout: false,
       showApprovals: false,
+      showFaucet: false,
     })
     window.scrollTo(0,0);
   }
@@ -283,6 +284,7 @@ class Home extends Component {
       showSearchAndBuy: true,
       showClaimPayout: false,
       showApprovals: false,
+      showFaucet: false,
     })
     window.scrollTo(0,0);
   }
@@ -295,6 +297,7 @@ class Home extends Component {
       showSearchAndBuy: false,
       showClaimPayout: true,
       showApprovals: false,
+      showFaucet: false,
     })
     window.scrollTo(0,0);
   }
@@ -307,6 +310,20 @@ class Home extends Component {
       showSearchAndBuy: false,
       showClaimPayout: false,
       showApprovals: true,
+      showFaucet: false,
+    })
+    window.scrollTo(0,0);
+  }
+
+  handleFaucet = () => {
+    this.setState({
+      showDefaultPage: false,
+      showPiggyDetails: false,
+      showCreatePiggy: false,
+      showSearchAndBuy: false,
+      showClaimPayout: false,
+      showApprovals: false,
+      showFaucet: true,
     })
     window.scrollTo(0,0);
   }
@@ -319,6 +336,7 @@ class Home extends Component {
       showSearchAndBuy: false,
       showClaimPayout: false,
       showApprovals: false,
+      showFaucet: false,
     })
     window.scrollTo(0,0);
   }
@@ -395,6 +413,7 @@ class Home extends Component {
                       <Button variant="contained" onClick={this.handleSearchAndBuy} style={{marginRight: "10px", marginTop: "15px", marginBottom: "15px"}}>Search and Buy Piggies</Button>
                       <Button variant="contained" onClick={this.handleClaimPayouts} style={{marginRight: "10px"}}>Claim Payouts</Button>
                       <Button variant="contained" onClick={this.handleApprovals} style={{marginRight: "10px"}}>Approvals</Button>
+                      <Button variant="contained" onClick={this.handleFaucet} style={{marginRight: "10px"}}>Faucet</Button>
                     </Paper>
                   </div>
 
@@ -440,6 +459,13 @@ class Home extends Component {
                 {this.state.showApprovals &&
                   <div>
                     <Approvals />
+                  </div>
+                }
+
+                {/** Faucet "component" - should show if the persistent action bar button has been clicked */}
+                {this.state.showFaucet &&
+                  <div>
+                    <Faucet />
                   </div>
                 }
 
@@ -546,7 +572,7 @@ const mapStateToProps = state => {
     accounts: state.accounts,
     SmartPiggies: state.contracts.SmartPiggies,
     StableToken: state.contracts.StableToken,
-    RopstenLINK: state.contracts.RopstenLINK,
+    TestnetLINK: state.contracts.TestnetLINK,
     drizzleStatus: state.drizzleStatus,
     transactionStack: state.transactionStack,
     transactions: state.transactions

@@ -87,7 +87,8 @@ class Approvals extends Component {
 
   componentDidMount() {
     this.state.currencies.push({value: this.contracts.StableToken.address, label: 'STBLE'})
-    this.state.currencies.push({value: this.contracts.RopstenLINK.address, label: 'LINK'})
+    this.state.currencies.push({value: this.contracts.StableTokenFaucet.address, label: 'STBLE-F'})
+    this.state.currencies.push({value: this.contracts.TestnetLINK.address, label: 'LINK'})
     this.setState({
       accountAddress: this.props.accounts[0],
       tokenAddress: this.contracts.StableToken.address
@@ -127,18 +128,31 @@ class Approvals extends Component {
   }
 
   handleButton() {
-    this.contracts.StableToken.methods.approve(
-      this.contracts.SmartPiggies.address,
-      this.state.approveAmount)
-      .send(
-      {from: this.state.accountAddress, gas: 1000000, gasPrice: 1100000000})
-      .then(result => {
-        console.log(result)
-      })
+    if (this.state.tokenAddress === this.contracts.StableToken.address) {
+      this.contracts.StableToken.methods.approve(
+        this.contracts.SmartPiggies.address,
+        this.state.approveAmount)
+        .send(
+        {from: this.state.accountAddress, gas: 1000000, gasPrice: 1100000000})
+        .then(result => {
+          console.log(result)
+        })
+    } else if (this.state.tokenAddress === this.contracts.StableTokenFaucet.address) {
+          this.contracts.StableTokenFaucet.methods.approve(
+            this.contracts.SmartPiggies.address,
+            this.state.approveAmount)
+            .send(
+            {from: this.state.accountAddress, gas: 1000000, gasPrice: 1100000000})
+            .then(result => {
+              console.log(result)
+            })
+        } else {
+          console.log("Error Approving Collateral.")
+        }
   }
 
   handleOracleButton() {
-    this.contracts.RopstenLINK.methods.approve(
+    this.contracts.TestnetLINK.methods.approve(
       this.state.resolverAddress,
       this.state.approveAmount)
       .send(
@@ -151,7 +165,6 @@ class Approvals extends Component {
   render() {
     return (
       <div className="App">
-      <Typography variant="h6" align="left"><a href='https://docs.chain.link/docs/acquire-link' target='new'>To get test LINK click here</a></Typography>
         <Paper>
             <Typography variant="h5" style={{marginBottom: "15px"}}>Approve Stable Token Transfer</Typography>
             <Divider />
@@ -208,7 +221,8 @@ class Approvals extends Component {
             </List>
             <Button type="Button" variant="contained" color="primary" size="large" onClick={this.handleButton} style={{marginBottom: "15px"}}>Approve</Button>
           </Paper>
-
+          <br></br>
+          <Typography variant="h6" align="left"><a href='https://docs.chain.link/docs/acquire-link' target='new'>To get test LINK click here</a></Typography>
           <Paper>
             <Typography variant="h5" style={{marginBottom: "15px"}}>Approve Oracle Fee Transfer</Typography>
             <Divider />
@@ -309,7 +323,8 @@ const mapStateToProps = state => {
   return {
     accounts: state.accounts,
     StableToken: state.contracts.StableToken,
-    RopstenLINK: state.contracts.RopstenLINK,
+    StableTokenFaucet: state.contracts.StableTokenFaucet,
+    TestnetLINK: state.contracts.TestnetLINK,
     SmartPiggies: state.contracts.SmartPiggies,
     drizzleStatus: state.drizzleStatus,
     transactionStack: state.transactionStack,

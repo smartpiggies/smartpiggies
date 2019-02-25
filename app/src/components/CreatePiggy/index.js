@@ -83,14 +83,6 @@ class CreatePiggy extends Component {
           value: '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359',
           label: 'Dai',
         },
-        {
-          value: '0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd',
-          label: 'Gemini Dollar',
-        },
-        {
-          value: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-          label: 'USD Coin',
-        },
       ],
       accountAddress: '0x0000000000000000000000000000000000000000',
       collateralAddress: '0x0000000000000000000000000000000000000000',
@@ -112,7 +104,8 @@ class CreatePiggy extends Component {
     //let oracleArray = this.state.oracles
     let currencyArray = this.state.currencies
     currencyArray.push({value: this.contracts.StableToken.address, label: 'STBLE'})
-    currencyArray.push({value: this.contracts.RopstenLINK.address, label: 'Link'})
+    currencyArray.push({value: this.contracts.StableTokenFaucet.address, label: 'STBLE-F'})
+    currencyArray.push({value: this.contracts.TestnetLINK.address, label: 'Link'})
     //oracleArray.push({value: this.contracts.OracleResolver.address, label: 'OracleIEXSPY'})
     this.setState({
       accountAddress: this.props.accounts[0],
@@ -388,7 +381,8 @@ const mapStateToProps = state => {
     accounts: state.accounts,
     SmartPiggies: state.contracts.SmartPiggies,
     StableToken: state.contracts.StableToken,
-    RopstenLINK: state.contracts.RopstenLINK,
+    StableTokenFaucet: state.contracts.StableTokenFaucet,
+    TestnetLINK: state.contracts.TestnetLINK,
     drizzleStatus: state.drizzleStatus,
     transactionStack: state.transactionStack,
     transactions: state.transactions

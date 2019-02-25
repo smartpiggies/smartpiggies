@@ -77,21 +77,14 @@ class Claim extends Component {
           value: '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359',
           label: 'Dai',
         },
-        {
-          value: '0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd',
-          label: 'Gemini Dollar',
-        },
-        {
-          value: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-          label: 'USD Coin',
-        },
       ],
     }
   }
 
   componentDidMount() {
     this.state.currencies.push({value: this.contracts.StableToken.address, label: 'STBLE'})
-    this.state.currencies.push({value: this.contracts.RopstenLINK.address, label: 'LINK'})
+    this.state.currencies.push({value: this.contracts.StableTokenFaucet.address, label: 'STBLE-F'})
+    this.state.currencies.push({value: this.contracts.TestnetLINK.address, label: 'LINK'})
     this.setState({
       accountAddress: this.props.accounts[0],
       tokenAddress: this.contracts.StableToken.address
@@ -223,6 +216,8 @@ const mapStateToProps = state => {
   return {
     accounts: state.accounts,
     StableToken: state.contracts.StableToken,
+    StableTokenFacuet: state.contracts.StableTokenFacuet,
+    TestnetLINK: state.contracts.TestnetLINK,
     SmartPiggies: state.contracts.SmartPiggies,
     drizzleStatus: state.drizzleStatus,
     transactionStack: state.transactionStack,

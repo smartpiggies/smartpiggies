@@ -34,7 +34,7 @@ interface PaymentToken {
 import "./ERC165.sol";
 import "./SafeMath.sol";
 
-/** @title ERC-59 (or whatever) Smart Option Standard
+/** @title ERC-59 (subject to change) Smart Option Standard
 */
 contract SmartPiggies is ERC165 {
   using SafeMath for uint256;
@@ -56,7 +56,7 @@ contract SmartPiggies is ERC165 {
     uint256 lotSize;
     uint256 strikePrice;
     uint256 expiry;
-    uint256 settlementPrice; //***added settlementPrice here!!!
+    uint256 settlementPrice;
     uint256 reqCollateral;
     uint8 collateralDecimals;  // to store decimals from ERC-20 contract
   }
@@ -80,17 +80,11 @@ contract SmartPiggies is ERC165 {
   }
 
   struct Piggy {
-    DetailAddresses addresses;
+    DetailAddresses addresses; //address details
     DetailUints uintDetails; //number details
     BoolFlags flags; //parameter switches
   }
 
-  //tokenId to ERC20 Contract
-  //I think we can depricate this one - Toby
-  //mapping (uint256 => address) private tokenERC20s;
-  //1st address is ERC20 Contract, 2nd address is Account
-  //If this is account address -> ERC20 Contract address -> uint256 that may
-  //solve our claimPayout issue, name could just be balances?
   mapping (address => mapping(address => uint256)) private ERC20balances;
   mapping (address => uint256[]) private ownedPiggies; //again, public?
   mapping (uint256 => uint256) private ownedPiggiesIndex;
@@ -109,13 +103,12 @@ contract SmartPiggies is ERC165 {
   constructor()
     public
   {
-    //what needs to be declared here?
+    //declarations here
     owner = msg.sender; //so we can delete if from the testnet
   }
 
 
-  // could use this as a way to avoid retyping this routine everywhere, maybe...
-  // not sure if this actually will work, though
+  // abstract ERC-20 TransferFrom attepmts
   function attemptPaymentTransfer(address _ERC20, address _from, address _to, uint256 _amount)
     private
     returns (bool)
@@ -217,7 +210,6 @@ contract SmartPiggies is ERC165 {
 
    // write the values to storage, including _isRequest flag
    Piggy storage p = piggies[tokenId];
-   //p.addresses.writer = msg.sender;  // if this does not need to be conditionally determined based on _isRequest, uncomment this
    p.addresses.holder = msg.sender;
    p.addresses.collateralERC = _collateralERC;
    p.addresses.premiumERC = _premiumERC;
@@ -233,7 +225,6 @@ contract SmartPiggies is ERC165 {
 
    // conditional state variable assignments based on _isRequest:
    if (_isRequest) {
-     //p.addresses.writer = address(0); // ? or is this going to break something else ?
      p.uintDetails.reqCollateral = _collateral;
    } else {
      p.addresses.writer = msg.sender;
@@ -260,7 +251,7 @@ function _getERC20Decimals(address _ERC20)
    return uint8(_ERCdecimals);
 }
 
-  // this is a helper function to allow view of important info from outside of the contract
+  // helper function to view info from about the piggy outside of the contract
   function getDetails(uint256 _tokenId)
     public
     view
@@ -309,9 +300,7 @@ function _getERC20Decimals(address _ERC20)
     _internalTransfer(_from, _to, _tokenId);
   }
 
-  //TODO: add an internalTransfer function here
-  // then use that function everywhere below that the contract itself would want to transfer tokens
-  // s.t. it is consistent
+  // internal transfer for transfers made on behalf of the contract
   function _internalTransfer(address _from, address _to, uint256 _tokenId)
     internal
   {
@@ -335,7 +324,7 @@ function _getERC20Decimals(address _ERC20)
     uint256 _lotSize,
     uint256 _strikePrice,
     uint256 _expiry,
-    bool _isEuro,  // these MUST be specified
+    bool _isEuro,  // MUST be specified
     bool _isPut    // MUST be specified
   )
     public
@@ -365,7 +354,7 @@ function _getERC20Decimals(address _ERC20)
       piggies[_tokenId].uintDetails.strikePrice = _strikePrice;
     }
     if (_expiry != 0) {
-      // should this redo the expiry calculation? I guess, to be consistent w/ how the creation function works ?
+      // should this redo the expiry calculation? to be consistent w/ how the creation function works ?
       uint256 expiryBlock = _expiry.add(block.number);
       piggies[_tokenId].uintDetails.expiry = expiryBlock;
     }
@@ -422,10 +411,9 @@ function _getERC20Decimals(address _ERC20)
     require(piggies[_tokenId].uintDetails.expiry > _auctionExpiry, "auction cannot expire after the option");
     require(!piggies[_tokenId].flags.hasBeenCleared, "option cannot have been cleared");
     require(!auctions[_tokenId].auctionActive, "auction cannot already be running");
-    // as specified below, this is not needd if we change the function (as I have done) to accept an _auctionLength rather than a direct _auctionExpiry value
+    // as specified below, this is not needed if we change the function (as I have done) to accept an _auctionLength rather than a direct _auctionExpiry value
     //require(_auctionExpiry > block.number, "auction must expire in the future");  // DO WE WANT TO ALSO ADD A BUFFER HERE? LIKE IT MUST EXPIRE AT LEAST XX BLOCKS IN THE FUTURE?
     if (piggies[_tokenId].flags.isRequest) {
-      // WE MAY WANT TO FACTOR THIS OUT AS A SEPARATE FUNCTION IF IT WOULD SAVE ON GAS SINCE IT IS USED TWICE AND MAY BE USED AGAIN
       bool success = attemptPaymentTransfer(
         piggies[_tokenId].addresses.premiumERC,
         msg.sender,
@@ -453,7 +441,6 @@ function _getERC20Decimals(address _ERC20)
     require(piggies[_tokenId].addresses.holder == msg.sender, "you must own a token to auction it");
     require(auctions[_tokenId].auctionActive, "auction must be active to cancel it");
     require(!auctions[_tokenId].satisfyInProgress, "auction cannot be in the process of being satisfied");  // this should be added to other functions as well
-    //auctions[_tokenId].auctionActive = false;  // handled by _clearAuctionDetails below now
     if (piggies[_tokenId].flags.isRequest) {
       // refund the _reservePrice premium
       uint256 _premiumToReturn = auctions[_tokenId].reservePrice;
@@ -461,7 +448,7 @@ function _getERC20Decimals(address _ERC20)
       PaymentToken(piggies[_tokenId].addresses.premiumERC).transfer(msg.sender, _premiumToReturn);
     }
     _clearAuctionDetails(_tokenId);
-    // probably should emit an "auction cancelled" type event
+    // emit an "auction cancelled" type event
     return true;
   }
 
@@ -484,9 +471,7 @@ function _getERC20Decimals(address _ERC20)
     }
   }
 
-  // thinking about this you shouldn't even need to pass in a price. you would just pay the lowest amount that satisfies the auction based on its params.
-  // unless of course this transaction gets stuck for a long time...
-  // consider possible attacks and then rewrite if we have to
+  // consider possible attacks and refactor if needed
   function satisfyAuction(uint256 _tokenId)
     public
     returns (bool)
@@ -546,7 +531,7 @@ function _getERC20Decimals(address _ERC20)
       bool success = attemptPaymentTransfer(
         piggies[_tokenId].addresses.premiumERC,
         msg.sender,
-        piggies[_tokenId].addresses.holder,  // okay to transfer directly to holder like this ? or should the SP contract escrow it first?
+        piggies[_tokenId].addresses.holder,  // should the SP contract escrow it first?
         _adjPremium
       );
       if (!success) {
@@ -583,7 +568,6 @@ function _getERC20Decimals(address _ERC20)
        expiry of the option
       @return The settlement price from the oracle to be used in `settleOption()`
    */
-  // might need to be payable if oracle demands ETH
   function requestSettlementPrice(uint256 _tokenId, uint256 _oracleFee) // this should be renamed perhaps, s.t. it is obvious that this is the "clearing phase"
     public
     returns (bool)
@@ -615,10 +599,7 @@ function _getERC20Decimals(address _ERC20)
       abi.encodeWithSignature("fetchData(address,uint256,uint256)", _feePayer, _oracleFee, _tokenId)
     );
     require(success, "fetch success did not return true");
-    //piggies[_tokenId].oracleReceipt.dataResolver = _dataResolver;
-    //oracleReceipts[oracleReturn].tokenId = _tokenId;
-    //piggies[_tokenId].requestId = oracleReturn;
-    //requestIds[_requestId] = _tokenId;
+
     return true;
   }
 
@@ -628,13 +609,6 @@ function _getERC20Decimals(address _ERC20)
   )
     public
   {
-    //restrict only msg.sender can be dataResolver address
-    //***Warning this will not work if callback happens in the same block***
-    /**
-    ** Reinstate the below require for prime time!!!!
-    **/
-    //require(msg.sender == oracleReceipts[_requestId].dataResolver); //reinstate me!!!
-    //Change above check to ->
     address _dataResolver;
     if (piggies[_tokenId].flags.isEuro || (piggies[_tokenId].uintDetails.expiry < block.number))
     {
@@ -642,10 +616,9 @@ function _getERC20Decimals(address _ERC20)
     } else {
       _dataResolver = piggies[_tokenId].addresses.dataResolverNow;
     }
-    require(msg.sender == _dataResolver, "resolve address was not correct");
+    require(msg.sender == _dataResolver, "resolve address was not correct"); // MUST restrict a call to only the resolver address
     piggies[_tokenId].uintDetails.settlementPrice = _price;
     piggies[_tokenId].flags.hasBeenCleared = true;
-    //oracleReceipts[_requestId].priceReturned = true;
   }
 
   // this appears to basically be redundant w/ requestSettlementPrice
@@ -735,9 +708,6 @@ function _getERC20Decimals(address _ERC20)
 
   // claim payout - pull payment
   // sends any reference ERC-20 which the _claimant is owed (as a result of an auction or settlement)
-  // I guess this would basically just dispatch a call to the reference ERC-20 contract ?
-  // calling that contract's equivalent of "transferFrom()" with msg.sender (non-forwarded) as
-  // the "from" address, and _claimant as the "to" address?
   function claimPayout(address _paymentToken, uint256 _amount)
     public
     returns (bool)

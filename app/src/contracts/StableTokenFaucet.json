@@ -3594,8 +3594,8 @@
       "transactionHash": "0x1da02f10396c36a14b094a22d24a0d356dc1b1443d7d07c9275ccd1edac3af54"
     }
   },
-  "schemaVersion": "3.0.1",
-  "updatedAt": "2019-02-24T23:24:40.972Z",
+  "schemaVersion": "3.0.2",
+  "updatedAt": "2019-03-10T18:13:56.305Z",
   "devdoc": {
     "methods": {
       "allowance(address,address)": {

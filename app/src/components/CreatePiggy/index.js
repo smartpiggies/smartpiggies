@@ -340,7 +340,7 @@ class CreatePiggy extends Component {
                 <ListItemText>Is this a European Option?:</ListItemText>
                 <Checkbox
                     checked={this.state.checkedEuro}
-                    onChange={this.handleCheckedInputChange('checkedAmerican')}
+                    onChange={this.handleCheckedInputChange('checkedEuro')}
                     value="checkedAmerican"
                     color="default"
                 />

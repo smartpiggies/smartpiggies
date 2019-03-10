@@ -1664,7 +1664,11 @@
     }
   },
   "schemaVersion": "3.0.2",
+<<<<<<< HEAD
   "updatedAt": "2019-03-10T23:38:39.466Z",
+=======
+  "updatedAt": "2019-03-10T18:13:56.302Z",
+>>>>>>> master
   "devdoc": {
     "methods": {
       "allowance(address,address)": {

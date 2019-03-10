@@ -91,6 +91,10 @@ class ERC20Stats extends Component {
         let ERC20Array = this.state.ERC20Keys
         ERC20Array.push('STBLE', 'STBLE-F', 'LINK')
         // request a bunch of values to get set in the Drizzle Redux store, cache keys to state
+        /*
+        * All these data keys are the same, i.e. dataKeyUB_STBLE === dataKeyUB_STBLE_F === dataKeyUB_LINK
+        * explain this and then delete the superfluous calls
+        */
         const dataKeyUB_STBLE = this.contracts.StableToken.methods['balanceOf'].cacheCall(this.state.accountAddress)
         const dataKeyATSP_STBLE = this.contracts.StableToken.methods['allowance'].cacheCall(this.state.accountAddress, this.contracts.SmartPiggies.address)
         const dataKeyAP_STBLE = this.contracts.SmartPiggies.methods['getERC20balance'].cacheCall(this.state.accountAddress, this.contracts.StableToken.address)
@@ -102,6 +106,7 @@ class ERC20Stats extends Component {
         const dataKeyUB_LINK = this.contracts.TestnetLINK.methods['balanceOf'].cacheCall(this.state.accountAddress)
         const dataKeyATSP_LINK = this.contracts.TestnetLINK.methods['allowance'].cacheCall(this.state.accountAddress, this.contracts.SmartPiggies.address)
         const dataKeyAP_LINK = this.contracts.SmartPiggies.methods['getERC20balance'].cacheCall(this.state.accountAddress, this.contracts.TestnetLINK.address)
+
         this.setState({
             dataKeyUB_STBLE: dataKeyUB_STBLE,
             dataKeyATSP_STBLE: dataKeyATSP_STBLE,
@@ -113,6 +118,7 @@ class ERC20Stats extends Component {
             dataKeyATSP_LINK: dataKeyATSP_LINK,
             dataKeyAP_LINK: dataKeyAP_LINK,
         })
+
         // update the object mapping keys to ERC-20 contract values
         let ERC20Mapping = this.state.ERC20s
         ERC20Mapping['STBLE'] = {
@@ -162,7 +168,7 @@ class ERC20Stats extends Component {
       if(this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE_F] !== undefined) {
           statusCopy.ERC20s['STBLE-F']['availablePayout'] = this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE_F].value;
       }
-      if (this.props.TestnetLINK.balanceOf[this.state.dataKeyUB_Link] !== undefined) {
+      if (this.props.TestnetLINK.balanceOf[this.state.dataKeyUB_LINK] !== undefined) {
           statusCopy.ERC20s['LINK']['userBalance'] = this.props.TestnetLINK.balanceOf[this.state.dataKeyUB_LINK].value;
       }
       if (this.props.TestnetLINK.allowance[this.state.dataKeyATSP_LINK] !== undefined) {
@@ -175,7 +181,7 @@ class ERC20Stats extends Component {
     };
 
     render() {
-
+      
         return(
             <div>
                 <Paper>

@@ -4,7 +4,7 @@
 
 Promise = require("bluebird");
 var StableToken = artifacts.require("./StableToken.sol");
-var RopstenLINK = artifacts.require("./RopstenLINK.sol");
+var TestnetLINK = artifacts.require("./TestnetLINK.sol");
 var SmartPiggies = artifacts.require("./SmartPiggies.sol");
 var Resolver = artifacts.require("./ResolverSelfReturn.sol");
 
@@ -48,7 +48,7 @@ contract ('SmartPiggies', function(accounts) {
     return StableToken.new({from: owner})
     .then(instance => {
       tokenInstance = instance;
-      return RopstenLINK.new({from: owner});
+      return TestnetLINK.new({from: owner});
     })
     .then(instance => {
       linkInstance = instance;
@@ -81,7 +81,7 @@ contract ('SmartPiggies', function(accounts) {
       return linkInstance.approve(resolverInstance.address, approveAmount, {from: owner});
     });
   });
-
+/*
   //test default values
   it("Should have correct default values", function() {
     return resolverInstance.getOwner({from: owner})
@@ -198,6 +198,213 @@ contract ('SmartPiggies', function(accounts) {
 
     //end describe block
   });
+*/
+  //Test American Put
+  describe("Create an American Put piggy", function() {
+
+    it("Should create an American Put piggy", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = 500
+      isEuro = false
+      isPut = true
+      isRequest = false
+      tokenId = 0
+      oracleFee = web3.utils.toBN('1000000000000000000')
+      strikePriceBN = web3.utils.toBN(strikePrice)
+      settlementPriceBN = web3.utils.toBN('0')
+      ownerBalanceBefore = web3.utils.toBN('0')
+      userBalanceBefore = web3.utils.toBN('0')
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        //console.log(JSON.stringify(result.receipt.status, null, 4));
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.transferFrom(owner, user01, tokenId, {from: owner});
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "transfer function did not return true")
+        //mint link tokens for user01
+        return linkInstance.mint(user01, supply, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "mint function did not return true")
+        //approve LINK transfer on behalf of the new holder (user01)
+        return linkInstance.approve(resolverInstance.address, approveAmount, {from: user01})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "approve function did not return true")
+        //clear piggy (request the price from the oracle)
+        return piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "requestSettlementPrice function did not return true")
+        return piggyInstance.getDetails(tokenId, {from: user01})
+      })
+      .then(result => {
+        settlementPriceBN = web3.utils.toBN(result[1].settlementPrice)
+        assert.strictEqual(result[1].settlementPrice, '27000', "settlementPrice did not return correctly")
+        //get the ERC20 balance for the owner
+        return piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})
+      })
+      .then(result => {
+        ownerBalanceBefore = result
+        //get the ERC20 balance for user01
+        return piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})
+      })
+      .then(result => {
+        userBalanceBefore = result
+        return piggyInstance.settlePiggy(tokenId, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "settlePiggy function did not return true")
+        return piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})
+      })
+      .then(balance => {
+        lotSizeBN = web3.utils.toBN(lotSize)
+        //console.log(JSON.stringify(strikePriceBN.sub(settlementPriceBN).mul(lotSizeBN).mul(decimals).toString(), null, 4))
+        //console.log(payout.idivn(100).toString())
+        //we are 100x off because of the cents inclusion in the price
+        payout = strikePriceBN.sub(settlementPriceBN).mul(lotSizeBN).mul(decimals).idivn(100)
+        //console.log(collateral.sub(payout).toString())
+        assert.strictEqual(balance.toString(), collateral.sub(payout).toString(), "owner balance did not return 0")
+        return piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})
+      })
+      .then(balance => {
+        assert.strictEqual(balance.toString(), payout.toString(), "owner balance did not return 0")
+      });
+      //end test block
+    });
+
+    //end describe block
+  });
+
+  //Test American Put
+  describe("Create an American Put piggy", function() {
+
+    it("Should create an American Put piggy", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 27850
+      expiry = 500
+      isEuro = false
+      isPut = true
+      isRequest = false
+      tokenId = 0
+      oracleFee = web3.utils.toBN('1000000000000000000')
+      strikePriceBN = web3.utils.toBN(strikePrice)
+      settlementPriceBN = web3.utils.toBN('0')
+      ownerBalanceBefore = web3.utils.toBN('0')
+      userBalanceBefore = web3.utils.toBN('0')
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        //console.log(JSON.stringify(result.receipt.status, null, 4));
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.transferFrom(owner, user01, tokenId, {from: owner});
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "transfer function did not return true")
+        //mint link tokens for user01
+        return linkInstance.mint(user01, supply, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "mint function did not return true")
+        //approve LINK transfer on behalf of the new holder (user01)
+        return linkInstance.approve(resolverInstance.address, approveAmount, {from: user01})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "approve function did not return true")
+        //clear piggy (request the price from the oracle)
+        return piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "requestSettlementPrice function did not return true")
+        return piggyInstance.getDetails(tokenId, {from: user01})
+      })
+      .then(result => {
+        settlementPriceBN = web3.utils.toBN(result[1].settlementPrice)
+        assert.strictEqual(result[1].settlementPrice, '27000', "settlementPrice did not return correctly")
+        //get the ERC20 balance for the owner
+        return piggyInstance.getERC20balance(owner, collateralERC, {from: owner})
+      })
+      .then(result => {
+        ownerBalanceBefore = result
+        //get the ERC20 balance for user01
+        return piggyInstance.getERC20balance(user01, collateralERC, {from: owner})
+      })
+      .then(result => {
+        userBalanceBefore = result
+        return piggyInstance.settlePiggy(tokenId, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "settlePiggy function did not return true")
+        return piggyInstance.getERC20balance(owner, collateralERC, {from: owner})
+      })
+      .then(balance => {
+        lotSizeBN = web3.utils.toBN(lotSize)
+        //console.log(JSON.stringify(strikePriceBN.sub(settlementPriceBN).mul(lotSizeBN).mul(decimals).toString(), null, 4))
+        //we are 100x off because of the cents inclusion in the price
+        payout = strikePriceBN.sub(settlementPriceBN).mul(lotSizeBN).mul(decimals).idivn(100)
+        console.log("owner balance", balance.toString())
+        //assert.strictEqual(balance.toString(), collateral.sub(payout).toString(), "owner balance did not return 0")
+        return piggyInstance.getERC20balance(user01, collateralERC, {from: owner})
+      })
+      .then(balance => {
+        console.log("user01 balance", balance.toString())
+        assert.strictEqual(balance.toString(), payout.toString(), "owner balance did not return 0")
+      });
+      //end test block
+    });
+
+    //end describe block
+  });
+
 /*
   //Test Ownable
   describe("Ownable Contract functionality", function() {

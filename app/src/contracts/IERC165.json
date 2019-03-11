@@ -276,8 +276,8 @@
     "version": "0.5.2+commit.1df8f40c.Emscripten.clang"
   },
   "networks": {},
-  "schemaVersion": "3.0.1",
-  "updatedAt": "2019-02-17T19:31:29.761Z",
+  "schemaVersion": "3.0.2",
+  "updatedAt": "2019-03-10T23:51:31.563Z",
   "devdoc": {
     "details": "https://github.com/ethereum/EIPs/blob/master/EIPS/eip-165.md",
     "methods": {

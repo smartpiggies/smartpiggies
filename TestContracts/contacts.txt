@@ -12,3 +12,67 @@ SmartPiggies: "0x39C8D13072B3D5e54D3425257157eF8C0213A825"
 RopstenLINK: "0x01BE23585060835E02B77ef475b0Cc51aA1e0709"
 Chainlink IEX SPY NOW: "0x749b61357Cf4BbeC0fc876cD87eF52e80D29E7D8"
 Chainlink CoinCap ETHUSD: 0x02a77167324c0ab1cc3b29646a965027f63a449f
+
+TestnetLINK:
+"networks": {
+  "3": {
+    "events": {},
+    "links": {},
+    "address": "0x20fE562d797A42Dcb3399062AE9546cd06f63280",
+    "transactionHash": "0x6f01dcdfb184e1cbcf29ec99e1e0becdad20f925f08f1f334422b13bb30cf829"
+  },
+  "4": {
+    "events": {},
+    "links": {},
+    "address": "0x01BE23585060835E02B77ef475b0Cc51aA1e0709",
+    "transactionHash": "0x590e005420ecdbb33d689be5a258198d2e502690dfd24d1344b0291e60a1d23a"
+  }
+},
+
+StableTokenFaucet:
+"networks": {
+  "3": {
+    "events": {},
+    "links": {},
+    "address": "0xb3aac6573EE4Eb2eC717c10dA2dF795a5469e662",
+    "transactionHash": "0x25d0261314da7864a9734f1453aa2252aef3e886913553364e9377c5a0af10b1"
+  },
+  "4": {
+    "events": {},
+    "links": {},
+    "address": "0x185563d1CCa039FD751CF91a2d611BDC19E2b9c6",
+    "transactionHash": "0x1da02f10396c36a14b094a22d24a0d356dc1b1443d7d07c9275ccd1edac3af54"
+  }
+},
+
+StableToken:
+"networks": {
+  "3": {
+    "events": {},
+    "links": {},
+    "address": "0x288ee61F0bC2c4AccB18ab385cc20fFCeD5c4D4D",
+    "transactionHash": "0xcf55b65cd334bfcedd9b636722dbdd5c2bc202dd84b6c0f248dba5c26f4ee411"
+  },
+  "4": {
+    "events": {},
+    "links": {},
+    "address": "0x288ee61F0bC2c4AccB18ab385cc20fFCeD5c4D4D",
+    "transactionHash": "0x6c02375b2a21b32be1e4d718c4d74362ab20844d13d9f7858b37a7d40c862a72"
+  }
+},
+
+SmartPiggies:
+"networks": {
+  "3": {
+    "events": {},
+    "links": {},
+    "address": "0x83B5789821e118c49A85Bf5e1bbDE022D356E8Fd",
+    "transactionHash": "0xc338fea423bdee2e5ae4ca233ba7478653653cbfeda3b86f614879007ff5342f"
+  },
+  "4": {
+    "events": {},
+    "links": {},
+    "address": "0x568328e64f053D5Eb86C93Eaa96f2A22f2aad874",
+    "transactionHash": "0x0dbe070b730059e0af7b23a89e3cc9104c5f05d4aca4cee65f323a212955b001"
+  }
+},

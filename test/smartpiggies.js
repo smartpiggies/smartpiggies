@@ -81,7 +81,7 @@ contract ('SmartPiggies', function(accounts) {
       return linkInstance.approve(resolverInstance.address, approveAmount, {from: owner});
     });
   });
-/*
+
   //test default values
   it("Should have correct default values", function() {
     return resolverInstance.getOwner({from: owner})
@@ -198,7 +198,7 @@ contract ('SmartPiggies', function(accounts) {
 
     //end describe block
   });
-*/
+
   //Test American Put
   describe("Create an American Put piggy", function() {
 
@@ -303,7 +303,7 @@ contract ('SmartPiggies', function(accounts) {
   });
 
   //Test American Put
-  describe("Create an American Put piggy", function() {
+  describe("Create an American Put piggy with split payout", function() {
 
     it("Should create an American Put piggy", function() {
       collateralERC = tokenInstance.address
@@ -389,14 +389,11 @@ contract ('SmartPiggies', function(accounts) {
       .then(balance => {
         lotSizeBN = web3.utils.toBN(lotSize)
         //console.log(JSON.stringify(strikePriceBN.sub(settlementPriceBN).mul(lotSizeBN).mul(decimals).toString(), null, 4))
-        //we are 100x off because of the cents inclusion in the price
         payout = strikePriceBN.sub(settlementPriceBN).mul(lotSizeBN).mul(decimals).idivn(100)
-        console.log("owner balance", balance.toString())
-        //assert.strictEqual(balance.toString(), collateral.sub(payout).toString(), "owner balance did not return 0")
+        assert.strictEqual(balance.toString(), collateral.sub(payout).toString(), "owner balance did not return 0")
         return piggyInstance.getERC20balance(user01, collateralERC, {from: owner})
       })
       .then(balance => {
-        console.log("user01 balance", balance.toString())
         assert.strictEqual(balance.toString(), payout.toString(), "owner balance did not return 0")
       });
       //end test block

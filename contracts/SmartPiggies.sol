@@ -654,7 +654,7 @@ function _getERC20Decimals(address _ERC20)
     if (!_isPut && (_exercisePrice > _strikePrice)) {
       _payout = _exercisePrice.sub(_strikePrice);
     }
-    _payout = _payout.mul(10**uint256(_decimals)).mul(_lotSize);
+    _payout = _payout.mul(10**uint256(_decimals)).mul(_lotSize).div(100);
     return _payout;
   }
 

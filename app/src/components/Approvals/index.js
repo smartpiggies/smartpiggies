@@ -129,37 +129,25 @@ class Approvals extends Component {
 
   handleButton() {
     if (this.state.tokenAddress === this.contracts.StableToken.address) {
-      this.contracts.StableToken.methods.approve(
+      this.contracts.StableToken.methods.approve.cacheSend(
         this.contracts.SmartPiggies.address,
-        this.state.approveAmount)
-        .send(
+        this.state.approveAmount,
         {from: this.state.accountAddress, gas: 1000000, gasPrice: 1100000000})
-        .then(result => {
-          console.log(result)
-        })
     } else if (this.state.tokenAddress === this.contracts.StableTokenFaucet.address) {
-          this.contracts.StableTokenFaucet.methods.approve(
+          this.contracts.StableTokenFaucet.methods.approve.cacheSend(
             this.contracts.SmartPiggies.address,
-            this.state.approveAmount)
-            .send(
+            this.state.approveAmount,
             {from: this.state.accountAddress, gas: 1000000, gasPrice: 1100000000})
-            .then(result => {
-              console.log(result)
-            })
         } else {
           console.log("Error Approving Collateral.")
         }
   }
 
   handleOracleButton() {
-    this.contracts.TestnetLINK.methods.approve(
+    this.contracts.TestnetLINK.methods.approve.cacheSend(
       this.state.resolverAddress,
-      this.state.approveAmount)
-      .send(
+      this.state.approveAmount,
       {from: this.state.accountAddress, gas: 1000000, gasPrice: 1100000000})
-      .then(result => {
-        console.log(result)
-      })
   }
 
   render() {

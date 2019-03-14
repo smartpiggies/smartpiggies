@@ -155,9 +155,7 @@ class CreatePiggy extends Component {
   }
 
   handleCreateButton() {
-    //console.log(this.contracts.SmartPiggies.methods)
-
-    this.contracts.SmartPiggies.methods.createPiggy(
+    this.contracts.SmartPiggies.methods.createPiggy.cacheSend(
       this.state.collateralAddress,
       this.state.premiumAddress,
       this.state.oracleNowAddress,
@@ -168,13 +166,9 @@ class CreatePiggy extends Component {
       this.state.blockExpiration,
       this.state.checkedEuro,
       this.state.checkedPut,
-      this.state.checkedRFP)
-      .send(
-      {from: this.state.accountAddress, gas: 5000000, gasPrice: 1100000000})
-      .then(result => {
-        console.log(result)
-      })
-
+      this.state.checkedRFP,
+      {from: this.state.accountAddress, gas: 5000000, gasPrice: 1100000000}
+    )
   }
 
   render() {

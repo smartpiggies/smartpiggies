@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import React, { Component } from 'react'
 import { drizzleConnect } from 'drizzle-react'
 import PropTypes from 'prop-types'
-import web3 from 'web3'
+//import web3 from 'web3'
 
 
 import Button from '@material-ui/core/Button'
@@ -36,7 +36,7 @@ import ListItem from '@material-ui/core/ListItem'
 import ListItemText from '@material-ui/core/ListItemText'
 
 
-const BN = web3.utils.BN
+//const BN = web3.utils.BN
 
 const amounts = [
   {
@@ -82,16 +82,10 @@ class Clearing extends Component {
   }
 
   handleButton() {
-    console.log("tokenId: ", this.state.tokenId)
-    console.log("oracleFee: ", this.state.oracleFee)
-    console.log("account: ", this.state.accountAddress)
-    this.contracts.SmartPiggies.methods.requestSettlementPrice(
+    this.contracts.SmartPiggies.methods.requestSettlementPrice.cacheSend(
       this.state.tokenId,
-      this.state.oracleFee
-    ).send({from: this.state.accountAddress, gas: 1000000, gasPrice: 1100000000})
-    .then(result => {
-      console.log(result)
-    })
+      this.state.oracleFee,
+      {from: this.state.accountAddress, gas: 1000000, gasPrice: 1100000000})
   }
 
   render() {

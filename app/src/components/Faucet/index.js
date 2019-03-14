@@ -48,12 +48,8 @@ class Faucet extends Component {
   }
 
   handleButton() {
-    this.contracts.StableTokenFaucet.methods.drip()
-      .send(
+    this.contracts.StableTokenFaucet.methods.drip.cacheSend(
       {from: this.props.accounts[0], gas: 1000000, gasPrice: 1100000000})
-      .then(result => {
-        console.log(result)
-      })
   }
 
   render() {

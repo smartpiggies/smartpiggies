@@ -68,16 +68,7 @@ class CreatePiggy extends Component {
     this.handleCreateButton = this.handleCreateButton.bind(this)
 
     this.state = {
-      oracles: [
-        {
-          value: '0x6819727F25AB306aE48878387bB0F4C1374Ea9Ff',
-          label: 'CL-IEX-SPY',
-        },
-        {
-          value: '0x83B5789821e118c49A85Bf5e1bbDE022D356E8Fd',
-          label: 'Self Return',
-        },
-      ],
+      resolvers: [],
       currencies: [
         {
           value: '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359',
@@ -101,21 +92,40 @@ class CreatePiggy extends Component {
 
   componentDidMount() {
     let addressArray = []
-    //let oracleArray = this.state.oracles
+    //let oracleArray = this.state.resolvers
     let currencyArray = this.state.currencies
     currencyArray.push({value: this.contracts.StableToken.address, label: 'STBLE'})
     currencyArray.push({value: this.contracts.StableTokenFaucet.address, label: 'STBLE-F'})
-    currencyArray.push({value: this.contracts.TestnetLINK.address, label: 'Link'})
+    currencyArray.push({value: this.contracts.TestnetLINK.address, label: 'LINK'})
     //oracleArray.push({value: this.contracts.OracleResolver.address, label: 'OracleIEXSPY'})
     this.setState({
       accountAddress: this.props.accounts[0],
       addresses: addressArray,
       currencies: currencyArray
     })
+    if (this.props.drizzleStatus) {
+      if (this.props.store.getState().web3.networkId === 3) {
+        this.state.resolvers.push({value: '0x749b61357Cf4BbeC0fc876cD87eF52e80D29E7D8',label: 'IEX SPY'})
+        this.state.resolvers.push({value: '0xb03f9dc90997b2b2f8bfc97cd546ca05628b196f',label: 'Resolve 27000'})
+      }
+      if (this.props.store.getState().web3.networkId === 4) {
+        this.state.resolvers.push({value: '0x6819727F25AB306aE48878387bB0F4C1374Ea9Ff',label: 'IEX SPY'})
+        this.state.resolvers.push({value: '0xccd85a8e2918ddc29f5498c5a05412866c3cfc20',label: 'Resolve 27000'})
+      }
+    }
   }
 
-  handleTextInputChange(event) {
-        this.setState({ [event.target.name]: event.target.value })
+  componentDidUpdate(prevProps) {
+    if (this.props.drizzleStatus !== prevProps.drizzleStatus) {
+      if (this.props.store.getState().web3.networkId === 3) {
+        this.state.resolvers.push({value: '0x749b61357Cf4BbeC0fc876cD87eF52e80D29E7D8',label: 'IEX SPY'})
+        this.state.resolvers.push({value: '0xb03f9dc90997b2b2f8bfc97cd546ca05628b196f',label: 'Resolve 27000'})
+      }
+      if (this.props.store.getState().web3.networkId === 4) {
+        this.state.resolvers.push({value: '0x6819727F25AB306aE48878387bB0F4C1374Ea9Ff',label: 'IEX SPY'})
+        this.state.resolvers.push({value: '0xccd85a8e2918ddc29f5498c5a05412866c3cfc20',label: 'Resolve 27000'})
+      }
+    }
   }
 
   handleTextMenuChange = name => event => {
@@ -155,9 +165,7 @@ class CreatePiggy extends Component {
   }
 
   handleCreateButton() {
-    //console.log(this.contracts.SmartPiggies.methods)
-
-    this.contracts.SmartPiggies.methods.createPiggy(
+    this.contracts.SmartPiggies.methods.createPiggy.cacheSend(
       this.state.collateralAddress,
       this.state.premiumAddress,
       this.state.oracleNowAddress,
@@ -168,13 +176,9 @@ class CreatePiggy extends Component {
       this.state.blockExpiration,
       this.state.checkedEuro,
       this.state.checkedPut,
-      this.state.checkedRFP)
-      .send(
-      {from: this.state.accountAddress, gas: 5000000, gasPrice: 1100000000})
-      .then(result => {
-        console.log(result)
-      })
-
+      this.state.checkedRFP,
+      {from: this.state.accountAddress, gas: 5000000, gasPrice: 1100000000}
+    )
   }
 
   render() {
@@ -247,7 +251,7 @@ class CreatePiggy extends Component {
                     margin="normal"
                     variant="filled"
                 >
-                    {this.state.oracles.map(option => (
+                    {this.state.resolvers.map(option => (
                         <MenuItem key={option.value} value={option.value}>
                             {option.label}
                         </MenuItem>
@@ -266,7 +270,7 @@ class CreatePiggy extends Component {
                     margin="normal"
                     variant="filled"
                 >
-                    {this.state.oracles.map(option => (
+                    {this.state.resolvers.map(option => (
                         <MenuItem key={option.value} value={option.value}>
                             {option.label}
                         </MenuItem>

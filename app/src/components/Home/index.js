@@ -29,7 +29,6 @@ import AppBar from '@material-ui/core/AppBar'
 import Grid from '@material-ui/core/Grid'
 import Paper from '@material-ui/core/Paper'
 
-
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
@@ -53,6 +52,7 @@ import Settlement from '../Settlement';
 import Claim from '../Claim';
 import Approvals from '../Approvals';
 import Faucet from '../Faucet';
+import TXModal from '../TXModal'
 
 const appBar = {
   backgroundColor: 'default',
@@ -164,8 +164,8 @@ class Home extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.SmartPiggies !== prevProps.SmartPiggies) {
-      //console.log(this.props.SmartPiggies)
+    if (this.props.SmartPiggies.getOwnedPiggies !== prevProps.SmartPiggies.getOwnedPiggies) {
+      //console.log(this.props.SmartPiggies.getOwnedPiggies)
       let piggyIds = []
       let piggyDataKeys = []
       let piggyAuctionDataKeys = []
@@ -247,7 +247,6 @@ class Home extends Component {
         clearedActive = clearedArray[2][3]
       }
     }
-
 
     this.setState({
       selectedPiggy: value,
@@ -552,6 +551,7 @@ class Home extends Component {
                     </div>
                   </div>}
 
+                <TXModal />
               </Paper>
             </Grid>
           </Grid>

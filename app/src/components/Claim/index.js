@@ -132,14 +132,10 @@ class Claim extends Component {
   }
 
   handleButton() {
-    this.contracts.SmartPiggies.methods.claimPayout(
+    this.contracts.SmartPiggies.methods.claimPayout.cacheSend(
       this.state.tokenAddress,
-      this.state.claimAmount)
-      .send(
+      this.state.claimAmount,
       {from: this.state.accountAddress, gas: 1000000, gasPrice: 1100000000})
-      .then(result => {
-        console.log(result)
-      })
   }
 
   render() {

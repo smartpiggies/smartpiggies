@@ -67,7 +67,8 @@ class PiggyDetail extends Component {
 
   componentDidUpdate(prevProps) {
     if (this.props.piggies !== undefined) {
-      if (this.props.piggies !== prevProps.piggies) {
+      //changed from if(this.props.piggies != ...)
+      if (this.props.piggyId !== prevProps.piggyId) {
         let result
         if (this.props.piggies.length > 0) {
           result = this.props.piggies.filter(items => items.label === this.props.piggyId)

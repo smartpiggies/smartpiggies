@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import React, { Component } from 'react'
 import { drizzleConnect } from 'drizzle-react'
 import PropTypes from 'prop-types'
-import web3 from 'web3'
+//import web3 from 'web3'
 
 
 import Button from '@material-ui/core/Button'
@@ -41,7 +41,7 @@ import ListItemText from '@material-ui/core/ListItemText'
 
 import PiggyDetail from "../PiggyDetail";
 
-const BN = web3.utils.BN
+//const BN = web3.utils.BN
 
 class SatisfyAuction extends Component {
   constructor(props, context) {
@@ -75,14 +75,9 @@ class SatisfyAuction extends Component {
 
   handleSatisfyButton() {
     if (this.state.accountAddress !== '0x0000000000000000000000000000000000000000') {
-      console.log("id: ", this.state.piggyId)
-      console.log("account: ", this.state.accountAddress)
-      this.contracts.SmartPiggies.methods.satisfyAuction(this.state.piggyId)
-      .send(
+      this.contracts.SmartPiggies.methods.satisfyAuction.cacheSend(
+        this.state.piggyId,
         {from: this.state.accountAddress, gas: 1000000, gasPrice: 1100000000})
-        .then(result => {
-          console.log(result)
-        })
     }
 
   }

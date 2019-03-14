@@ -94,31 +94,32 @@ class ERC20Stats extends Component {
         /*
         * All these data keys are the same, i.e. dataKeyUB_STBLE === dataKeyUB_STBLE_F === dataKeyUB_LINK
         * explain this and then delete the superfluous calls
+        * 
+        * Answer: not all are the same, only those with the same arg sets, due to the implementation of generateArgHash in drizzle
+        * Maybe best to keep them separated for now and try to get a fix made to the drizzle functionality
         */
-        const dataKeyUB = this.contracts.StableToken.methods['balanceOf'].cacheCall(this.state.accountAddress)
-        const dataKeyATSP = this.contracts.StableToken.methods['allowance'].cacheCall(this.state.accountAddress, this.contracts.SmartPiggies.address)
-        const dataKeyAP = this.contracts.SmartPiggies.methods['getERC20balance'].cacheCall(this.state.accountAddress, this.contracts.StableToken.address)
-        /*
+        const dataKeyUB_STBLE = this.contracts.StableToken.methods['balanceOf'].cacheCall(this.state.accountAddress)
+        const dataKeyATSP_STBLE = this.contracts.StableToken.methods['allowance'].cacheCall(this.state.accountAddress, this.contracts.SmartPiggies.address)
+        const dataKeyAP_STBLE = this.contracts.SmartPiggies.methods['getERC20balance'].cacheCall(this.state.accountAddress, this.contracts.StableToken.address)
+
         const dataKeyUB_STBLE_F = this.contracts.StableTokenFaucet.methods['balanceOf'].cacheCall(this.state.accountAddress)
         const dataKeyATSP_STBLE_F = this.contracts.StableTokenFaucet.methods['allowance'].cacheCall(this.state.accountAddress, this.contracts.SmartPiggies.address)
-        const dataKeyAP_F = this.contracts.SmartPiggies.methods['getERC20balance'].cacheCall(this.state.accountAddress, this.contracts.StableTokenFaucet.address)
+        const dataKeyAP_STBLE_F = this.contracts.SmartPiggies.methods['getERC20balance'].cacheCall(this.state.accountAddress, this.contracts.StableTokenFaucet.address)
 
         const dataKeyUB_LINK = this.contracts.TestnetLINK.methods['balanceOf'].cacheCall(this.state.accountAddress)
         const dataKeyATSP_LINK = this.contracts.TestnetLINK.methods['allowance'].cacheCall(this.state.accountAddress, this.contracts.SmartPiggies.address)
         const dataKeyAP_LINK = this.contracts.SmartPiggies.methods['getERC20balance'].cacheCall(this.state.accountAddress, this.contracts.TestnetLINK.address)
-        */
-        this.contracts.StableTokenFaucet.methods['balanceOf'].cacheCall(this.state.accountAddress)
-        this.contracts.StableTokenFaucet.methods['allowance'].cacheCall(this.state.accountAddress, this.contracts.SmartPiggies.address)
-        this.contracts.SmartPiggies.methods['getERC20balance'].cacheCall(this.state.accountAddress, this.contracts.StableTokenFaucet.address)
-
-        this.contracts.TestnetLINK.methods['balanceOf'].cacheCall(this.state.accountAddress)
-        this.contracts.TestnetLINK.methods['allowance'].cacheCall(this.state.accountAddress, this.contracts.SmartPiggies.address)
-        this.contracts.SmartPiggies.methods['getERC20balance'].cacheCall(this.state.accountAddress, this.contracts.TestnetLINK.address)
 
         this.setState({
-          dataKeyUB: dataKeyUB,
-          dataKeyATSP: dataKeyATSP,
-          dataKeyAP: dataKeyAP,
+          dataKeyUB_STBLE: dataKeyUB_STBLE,
+          dataKeyUB_STBLE_F: dataKeyUB_STBLE_F,
+          dataKeyUB_LINK: dataKeyUB_LINK,
+          dataKeyATSP_STBLE: dataKeyATSP_STBLE,
+          dataKeyATSP_STBLE_F: dataKeyATSP_STBLE_F,
+          dataKeyATSP_LINK: dataKeyATSP_LINK,
+          dataKeyAP_STBLE: dataKeyAP_STBLE,
+          dataKeyAP_STBLE_F: dataKeyAP_STBLE_F,
+          dataKeyAP_LINK: dataKeyAP_LINK,
         })
 
         // update the object mapping keys to ERC-20 contract values
@@ -149,48 +150,103 @@ class ERC20Stats extends Component {
       }
 
     componentDidUpdate(prevProps) {
-      //console.log(this.state.ERC20s.STBLE.userBalance)
       /*
-      * This doesn't update yet. When it works incorporate StableTokenFaucet and TestnetLINK
+      * This appears to be working as of 3/14/2019 but may be problematic still due to error in drizzle implementation of generateArgHash()
       */
-      //If STABLE is updated
-      if (this.props.StableToken.balanceOf[this.state.dataKeyUB] !== undefined &&
-        prevProps.StableToken.balanceOf[this.state.dataKeyUB] !== undefined) {
-        //console.log(this.props.StableToken.balanceOf[this.state.dataKeyUB].value)
-        if(this.props.StableToken.balanceOf[this.state.dataKeyUB].value !== prevProps.StableToken.balanceOf[this.state.dataKeyUB].value) {
-          if (this.props.StableToken.balanceOf[this.state.dataKeyUB] !== undefined) {
+
+      // If STBLE is updated:
+      // ensure that values keyed to dataKeyUB are not undefined
+      if (this.props.StableToken.balanceOf[this.state.dataKeyUB_STBLE] !== undefined &&
+        prevProps.StableToken.balanceOf[this.state.dataKeyUB_STBLE] !== undefined) {
+        // if the userBalance value has changed in the store, update it on state
+        if (this.props.StableToken.balanceOf[this.state.dataKeyUB_STBLE].value !== prevProps.StableToken.balanceOf[this.state.dataKeyUB_STBLE].value) {
             let statusCopy = Object.assign({}, this.state);
-            if (this.props.StableToken.balanceOf[this.state.dataKeyUB] !== undefined) {
-                statusCopy.ERC20s['STBLE']['userBalance'] = this.props.StableToken.balanceOf[this.state.dataKeyUB].value
-            }
+            statusCopy.ERC20s['STBLE']['userBalance'] = this.props.StableToken.balanceOf[this.state.dataKeyUB_STBLE].value
             this.setState(statusCopy)
-          }
         }
       }
-      if (this.props.StableToken.allowance[this.state.dataKeyUB] !== undefined &&
-        prevProps.StableToken.allowance[this.state.dataKeyUB] !== undefined) {
-        //console.log(this.props.StableToken.allowance[this.state.dataKeyUB].value)
-        if(this.props.StableToken.allowance[this.state.dataKeyUB].value !== prevProps.StableToken.allowance[this.state.dataKeyUB].value) {
-          if (this.props.StableToken.allowance[this.state.dataKeyUB] !== undefined) {
+      // ensure that the values keyed to dataKeyATSP are not undefined
+      if (this.props.StableToken.allowance[this.state.dataKeyATSP_STBLE] !== undefined &&
+        prevProps.StableToken.allowance[this.state.dataKeyATSP_STBLE] !== undefined) {
+        // if the approvedToSP value has changed in the store, update it on state
+        if (this.props.StableToken.allowance[this.state.dataKeyATSP_STBLE].value !== prevProps.StableToken.allowance[this.state.dataKeyATSP_STBLE].value) {
             let statusCopy = Object.assign({}, this.state);
-            if (this.props.StableToken.allowance[this.state.dataKeyUB] !== undefined) {
-                statusCopy.ERC20s['STBLE']['approvedToSP'] = this.props.StableToken.allowance[this.state.dataKeyUB].value
-            }
+            statusCopy.ERC20s['STBLE']['approvedToSP'] = this.props.StableToken.allowance[this.state.dataKeyATSP_STBLE].value
             this.setState(statusCopy)
-          }
         }
       }
-      if (this.props.SmartPiggies.getERC20balance[this.state.dataKeyUB] !== undefined &&
-        prevProps.SmartPiggies.getERC20balance[this.state.dataKeyUB] !== undefined) {
-        //console.log(this.props.SmartPiggies.getERC20balance[this.state.dataKeyUB].value)
-        if(this.props.SmartPiggies.getERC20balance[this.state.dataKeyUB].value !== prevProps.SmartPiggies.getERC20balance[this.state.dataKeyUB].value) {
-          if (this.props.SmartPiggies.getERC20balance[this.state.dataKeyUB] !== undefined) {
+      // ensure that the values keyed to dataKeyAP are not undefined
+      if (this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE] !== undefined &&
+        prevProps.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE] !== undefined) {
+        // if the availablePayout value has changed in the store, update it on state
+        if (this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE].value !== prevProps.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE].value) {
             let statusCopy = Object.assign({}, this.state);
-            if (this.props.SmartPiggies.getERC20balance[this.state.dataKeyUB] !== undefined) {
-                statusCopy.ERC20s['STBLE']['availablePayout'] = this.props.SmartPiggies.getERC20balance[this.state.dataKeyUB].value
-            }
+            statusCopy.ERC20s['STBLE']['availablePayout'] = this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE].value
             this.setState(statusCopy)
-          }
+        }
+      }
+
+      // If STBLE-F is updated:
+      // ensure that values keyed to dataKeyUB are not undefined
+      if (this.props.StableTokenFaucet.balanceOf[this.state.dataKeyUB_STBLE_F] !== undefined &&
+        prevProps.StableTokenFaucet.balanceOf[this.state.dataKeyUB_STBLE_F] !== undefined) {
+        // if the userBalance value has changed in the store, update it on state
+        if (this.props.StableTokenFaucet.balanceOf[this.state.dataKeyUB_STBLE_F].value !== prevProps.StableTokenFaucet.balanceOf[this.state.dataKeyUB_STBLE_F].value) {
+            let statusCopy = Object.assign({}, this.state);
+            statusCopy.ERC20s['STBLE-F']['userBalance'] = this.props.StableTokenFaucet.balanceOf[this.state.dataKeyUB_STBLE_F].value
+            this.setState(statusCopy)
+        }
+      }
+      // ensure that the values keyed to dataKeyATSP are not undefined
+      if (this.props.StableTokenFaucet.allowance[this.state.dataKeyATSP_STBLE_F] !== undefined &&
+        prevProps.StableTokenFaucet.allowance[this.state.dataKeyATSP_STBLE_F] !== undefined) {
+        // if the approvedToSP value has changed in the store, update it on state
+        if (this.props.StableTokenFaucet.allowance[this.state.dataKeyATSP_STBLE_F].value !== prevProps.StableTokenFaucet.allowance[this.state.dataKeyATSP_STBLE_F].value) {
+            let statusCopy = Object.assign({}, this.state);
+            statusCopy.ERC20s['STBLE-F']['approvedToSP'] = this.props.StableTokenFaucet.allowance[this.state.dataKeyATSP_STBLE_F].value
+            this.setState(statusCopy)
+        }
+      }
+      // ensure that the values keyed to dataKeyAP are not undefined
+      if (this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE_F] !== undefined &&
+        prevProps.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE_F] !== undefined) {
+        // if the availablePayout value has changed in the store, update it on state
+        if (this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE_F].value !== prevProps.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE_F].value) {
+            let statusCopy = Object.assign({}, this.state);
+            statusCopy.ERC20s['STBLE-F']['availablePayout'] = this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE_F].value
+            this.setState(statusCopy)
+        }
+      }
+
+      // If LINK is updated:
+      // ensure that values keyed to dataKeyUB are not undefined
+      if (this.props.TestnetLINK.balanceOf[this.state.dataKeyUB_LINK] !== undefined &&
+        prevProps.TestnetLINK.balanceOf[this.state.dataKeyUB_LINK] !== undefined) {
+        // if the userBalance value has changed in the store, update it on state
+        if (this.props.TestnetLINK.balanceOf[this.state.dataKeyUB_LINK].value !== prevProps.TestnetLINK.balanceOf[this.state.dataKeyUB_LINK].value) {
+            let statusCopy = Object.assign({}, this.state);
+            statusCopy.ERC20s['LINK']['userBalance'] = this.props.TestnetLINK.balanceOf[this.state.dataKeyUB_LINK].value
+            this.setState(statusCopy)
+        }
+      }
+      // ensure that the values keyed to dataKeyATSP are not undefined
+      if (this.props.TestnetLINK.allowance[this.state.dataKeyATSP_LINK] !== undefined &&
+        prevProps.TestnetLINK.allowance[this.state.dataKeyATSP_LINK] !== undefined) {
+        // if the approvedToSP value has changed in the store, update it on state
+        if (this.props.TestnetLINK.allowance[this.state.dataKeyATSP_LINK].value !== prevProps.TestnetLINK.allowance[this.state.dataKeyATSP_LINK].value) {
+            let statusCopy = Object.assign({}, this.state);
+            statusCopy.ERC20s['LINK']['approvedToSP'] = this.props.TestnetLINK.allowance[this.state.dataKeyATSP_LINK].value
+            this.setState(statusCopy)
+        }
+      }
+      // ensure that the values keyed to dataKeyAP are not undefined
+      if (this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_LINK] !== undefined &&
+        prevProps.SmartPiggies.getERC20balance[this.state.dataKeyAP_LINK] !== undefined) {
+        // if the availablePayout value has changed in the store, update it on state
+        if (this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_LINK].value !== prevProps.SmartPiggies.getERC20balance[this.state.dataKeyAP_LINK].value) {
+            let statusCopy = Object.assign({}, this.state);
+            statusCopy.ERC20s['LINK']['availablePayout'] = this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_LINK].value
+            this.setState(statusCopy)
         }
       }
     }
@@ -199,38 +255,40 @@ class ERC20Stats extends Component {
       let statusCopy = Object.assign({}, this.state);
       statusCopy.currentERC20 = event.target.value;
 
-      if (this.props.StableToken.balanceOf[this.state.dataKeyUB] !== undefined) {
-          statusCopy.ERC20s['STBLE']['userBalance'] = this.props.StableToken.balanceOf[this.state.dataKeyUB].value;
+      // if user has selected "STBLE":
+      if (this.props.StableToken.balanceOf[this.state.dataKeyUB_STBLE] !== undefined) {
+          statusCopy.ERC20s['STBLE']['userBalance'] = this.props.StableToken.balanceOf[this.state.dataKeyUB_STBLE].value;
       }
-      if (this.props.StableToken.allowance[this.state.dataKeyATSP] !== undefined) {
-          statusCopy.ERC20s['STBLE']['approvedToSP'] = this.props.StableToken.allowance[this.state.dataKeyATSP].value;
+      if (this.props.StableToken.allowance[this.state.dataKeyATSP_STBLE] !== undefined) {
+          statusCopy.ERC20s['STBLE']['approvedToSP'] = this.props.StableToken.allowance[this.state.dataKeyATSP_STBLE].value;
       }
-      if(this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP] !== undefined) {
-          statusCopy.ERC20s['STBLE']['availablePayout'] = this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP].value;
+      if(this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE] !== undefined) {
+          statusCopy.ERC20s['STBLE']['availablePayout'] = this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE].value;
       }
-      if (this.props.StableTokenFaucet.balanceOf[this.state.dataKeyUB] !== undefined) {
-          statusCopy.ERC20s['STBLE-F']['userBalance'] = this.props.StableTokenFaucet.balanceOf[this.state.dataKeyUB].value;
+      // if user has selected "STBLE-F":
+      if (this.props.StableTokenFaucet.balanceOf[this.state.dataKeyUB_STBLE_F] !== undefined) {
+          statusCopy.ERC20s['STBLE-F']['userBalance'] = this.props.StableTokenFaucet.balanceOf[this.state.dataKeyUB_STBLE_F].value;
       }
-      if (this.props.StableTokenFaucet.allowance[this.state.dataKeyATSP] !== undefined) {
-          statusCopy.ERC20s['STBLE-F']['approvedToSP'] = this.props.StableTokenFaucet.allowance[this.state.dataKeyATSP].value;
+      if (this.props.StableTokenFaucet.allowance[this.state.dataKeyATSP_STBLE_F] !== undefined) {
+          statusCopy.ERC20s['STBLE-F']['approvedToSP'] = this.props.StableTokenFaucet.allowance[this.state.dataKeyATSP_STBLE_F].value;
       }
-      if(this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP] !== undefined) {
-          statusCopy.ERC20s['STBLE-F']['availablePayout'] = this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP].value;
+      if(this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE_F] !== undefined) {
+          statusCopy.ERC20s['STBLE-F']['availablePayout'] = this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_STBLE_F].value;
       }
-      if (this.props.TestnetLINK.balanceOf[this.state.dataKeyUB] !== undefined) {
-          statusCopy.ERC20s['LINK']['userBalance'] = this.props.TestnetLINK.balanceOf[this.state.dataKeyUB].value;
+      // if user has selected "LINK":
+      if (this.props.TestnetLINK.balanceOf[this.state.dataKeyUB_LINK] !== undefined) {
+          statusCopy.ERC20s['LINK']['userBalance'] = this.props.TestnetLINK.balanceOf[this.state.dataKeyUB_LINK].value;
       }
-      if (this.props.TestnetLINK.allowance[this.state.dataKeyATSP] !== undefined) {
-          statusCopy.ERC20s['LINK']['approvedToSP'] = this.props.TestnetLINK.allowance[this.state.dataKeyATSP].value;
+      if (this.props.TestnetLINK.allowance[this.state.dataKeyATSP_LINK] !== undefined) {
+          statusCopy.ERC20s['LINK']['approvedToSP'] = this.props.TestnetLINK.allowance[this.state.dataKeyATSP_LINK].value;
       }
-      if(this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP] !== undefined) {
-          statusCopy.ERC20s['LINK']['availablePayout'] = this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP].value;
+      if(this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_LINK] !== undefined) {
+          statusCopy.ERC20s['LINK']['availablePayout'] = this.props.SmartPiggies.getERC20balance[this.state.dataKeyAP_LINK].value;
       }
       this.setState(statusCopy);
     };
 
     render() {
-
         return(
             <div>
                 <Paper>

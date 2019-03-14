@@ -108,7 +108,7 @@ PiggyDetail.contextTypes = {
 }
 
 PiggyDetail.propTypes = {
-  piggies: PropTypes.object.isRequired,
+  piggies: PropTypes.array.isRequired,
   piggyId: PropTypes.string.isRequired
 };
 

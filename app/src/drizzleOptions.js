@@ -17,6 +17,7 @@ const options = {
   polls: {
     accounts: 1500,
   },
+  syncAlways: true,
 };
 
 export default options;

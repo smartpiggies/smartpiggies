@@ -103,7 +103,9 @@ class SatisfyAuction extends Component {
           </ListItem>
           <ListItem>
             <ListItemText>Token Info:</ListItemText>
-            <PiggyDetail piggies={this.props.piggyDetailMap} />
+            <PiggyDetail
+              piggies={this.props.piggyDetailMap}
+              piggyId={this.state.piggyId} />
           </ListItem>
         </List>
         <Button type="Button" variant="contained" color="primary" style={{marginBottom: "15px"}}onClick={this.handleSatisfyButton}>Satisfy</Button>

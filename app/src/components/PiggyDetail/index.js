@@ -107,6 +107,11 @@ PiggyDetail.contextTypes = {
   drizzle: PropTypes.object
 }
 
+PiggyDetail.propTypes = {
+  piggies: PropTypes.array.isRequired,
+  piggyId: PropTypes.string.isRequired
+};
+
 // May still need this even with data function to refresh component on updates for this contract.
 const mapStateToProps = state => {
   return {

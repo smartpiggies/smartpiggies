@@ -39,8 +39,8 @@ import ListItemText from '@material-ui/core/ListItemText'
 //import AccountAddress from '../Displays/AccountAddress'
 //import TokenBalance from '../Displays/TokenBalance'
 
-import PiggyDetail from "../PiggyDetail";
-
+//import PiggyDetail from '../PiggyDetail'
+import BrowsePiggy from '../BrowsePiggy'
 //const BN = web3.utils.BN
 
 class SatisfyAuction extends Component {
@@ -50,16 +50,14 @@ class SatisfyAuction extends Component {
     this.contracts = context.drizzle.contracts
 
     this.handleTextMenuChange = this.handleTextMenuChange.bind(this)
+    this.handleBrowseButton = this.handleBrowseButton.bind(this)
     this.handleSatisfyButton = this.handleSatisfyButton.bind(this)
 
     this.state = {
       accountAddress: '0x0000000000000000000000000000000000000000',
       piggyId: '0',
-      startPrice: '',
-      reservePrice: '',
-      auctionLength: '',
-      timeStep: '',
-      priceStep: '',
+      showDetails: false,
+      details: [],
     }
   }
 
@@ -73,17 +71,28 @@ class SatisfyAuction extends Component {
     this.setState({ [name]: event.target.value })
   }
 
+  handleBrowseButton() {
+    this.contracts.SmartPiggies.methods.getDetails(
+      this.state.piggyId)
+    .call({from: this.state.accountAddress})
+    .then(result => {
+      this.setState({
+        showDetails: true,
+        details: result
+      })
+    })
+  }
+
   handleSatisfyButton() {
     if (this.state.accountAddress !== '0x0000000000000000000000000000000000000000') {
       this.contracts.SmartPiggies.methods.satisfyAuction.cacheSend(
         this.state.piggyId,
         {from: this.state.accountAddress, gas: 1000000, gasPrice: 1100000000})
     }
-
   }
 
   render() {
-
+    //console.log(this.state.details)
     return (
       <div className="App">
       <Paper>
@@ -102,10 +111,18 @@ class SatisfyAuction extends Component {
                 />
           </ListItem>
           <ListItem>
+            <Button type="Button" variant="contained" color="default" style={{marginBottom: "15px"}}onClick={this.handleBrowseButton}>Browse</Button>
+          </ListItem>
+          <ListItem>
             <ListItemText>Token Info:</ListItemText>
-            <PiggyDetail piggies={this.props.piggyDetailMap} />
+            {/*<PiggyDetail piggies={this.props.piggyDetailMap} />*/}
           </ListItem>
         </List>
+        {this.state.showDetails &&
+          <div>
+            <BrowsePiggy details={this.state.details} />
+          </div>
+        }<br></br>
         <Button type="Button" variant="contained" color="primary" style={{marginBottom: "15px"}}onClick={this.handleSatisfyButton}>Satisfy</Button>
       </Paper>
       </div>

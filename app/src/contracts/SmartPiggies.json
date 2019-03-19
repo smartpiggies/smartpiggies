@@ -62814,7 +62814,7 @@
     }
   },
   "schemaVersion": "3.0.2",
-  "updatedAt": "2019-03-10T23:57:42.605Z",
+  "updatedAt": "2019-03-19T18:17:21.907Z",
   "devdoc": {
     "methods": {
       "createPiggy(address,address,address,address,uint256,uint256,uint256,uint256,bool,bool,bool)": {

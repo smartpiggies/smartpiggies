@@ -19,6 +19,7 @@ if (typeof web3.eth.getAccountsPromise === "undefined") {
 }
 
 contract ('SmartPiggies', function(accounts) {
+  //console.log(JSON.stringify(result, null, 4))
 
   var tokenInstance;
   var linkInstance;
@@ -151,6 +152,7 @@ contract ('SmartPiggies', function(accounts) {
       isEuro = false
       isPut = true
       isRequest = false
+      zeroParam = 0
 
       return piggyInstance.createPiggy(
         collateralERC,
@@ -192,7 +194,277 @@ contract ('SmartPiggies', function(accounts) {
         assert.isNotTrue(result[2].isEuro, "Details should have returned false for isEuro.");
         assert.isTrue(result[2].isPut, "Details should have returned true for isPut.");
         assert.isNotTrue(result[2].hasBeenCleared, "Details should have returned false for hasBeenCleared.");
-      });
+
+        return piggyInstance.getOwnedPiggies(owner, {from: owner})
+      })
+      .then(result => {
+        assert.strictEqual(result.toString(), '1', "getOwnedPiggies did not return correct piggies")
+      })
+      //end test block
+    });
+
+    //end describe block
+  });
+
+  //Test Create SmartPiggies fail cases
+  describe("Fail to Create a SmartPiggies token", function() {
+    before(function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = 500
+      isEuro = false
+      isPut = true
+      isRequest = false
+    })
+
+    it("Should fail to create a token if collateralERC is address(0)", function() {
+      return expectedExceptionPromise(
+          () => piggyInstance.createPiggy(
+            addr00,
+            premiumERC,
+            dataResolverNow,
+            dataResolverAtExpiry,
+            collateral,
+            lotSize,
+            strikePrice,
+            expiry,
+            isEuro,
+            isPut,
+            isRequest,
+            {from: owner, gas: 8000000 }),
+          3000000);
+      //end test
+    });
+
+    it("Should fail to create if premiumERC is address(0)", function() {
+      return expectedExceptionPromise(
+          () => piggyInstance.createPiggy(
+            collateralERC,
+            addr00,
+            dataResolverNow,
+            dataResolverAtExpiry,
+            collateral,
+            lotSize,
+            strikePrice,
+            expiry,
+            isEuro,
+            isPut,
+            isRequest,
+            {from: owner, gas: 8000000 }),
+          3000000);
+      //end test
+    });
+
+    it("Should fail to create if dataResolverNow is address(0)", function() {
+      return expectedExceptionPromise(
+          () => piggyInstance.createPiggy(
+            collateralERC,
+            premiumERC,
+            addr00,
+            dataResolverAtExpiry,
+            collateral,
+            lotSize,
+            strikePrice,
+            expiry,
+            isEuro,
+            isPut,
+            isRequest,
+            {from: owner, gas: 8000000 }),
+          3000000);
+      //end test
+    });
+
+    it("Should fail to create if dataResolverAtExpiry is address(0)", function() {
+      return expectedExceptionPromise(
+          () => piggyInstance.createPiggy(
+            collateralERC,
+            premiumERC,
+            dataResolverNow,
+            addr00,
+            collateral,
+            lotSize,
+            strikePrice,
+            expiry,
+            isEuro,
+            isPut,
+            isRequest,
+            {from: owner, gas: 8000000 }),
+          3000000);
+      //end test
+    });
+
+    it("Should fail to create if collateral is 0", function() {
+      return expectedExceptionPromise(
+          () => piggyInstance.createPiggy(
+            collateralERC,
+            premiumERC,
+            dataResolverNow,
+            dataResolverAtExpiry,
+            zeroParam,
+            lotSize,
+            strikePrice,
+            expiry,
+            isEuro,
+            isPut,
+            isRequest,
+            {from: owner, gas: 8000000 }),
+          3000000);
+      //end test
+    });
+
+    it("Should fail to create if lotSize is 0", function() {
+      return expectedExceptionPromise(
+          () => piggyInstance.createPiggy(
+            collateralERC,
+            premiumERC,
+            dataResolverNow,
+            dataResolverAtExpiry,
+            collateral,
+            zeroParam,
+            strikePrice,
+            expiry,
+            isEuro,
+            isPut,
+            isRequest,
+            {from: owner, gas: 8000000 }),
+          3000000);
+      //end test
+    });
+
+    it("Should fail to create if strikePrice is 0", function() {
+      return expectedExceptionPromise(
+          () => piggyInstance.createPiggy(
+            collateralERC,
+            premiumERC,
+            dataResolverNow,
+            dataResolverAtExpiry,
+            collateral,
+            lotSize,
+            zeroParam,
+            expiry,
+            isEuro,
+            isPut,
+            isRequest,
+            {from: owner, gas: 8000000 }),
+          3000000);
+      //end test
+    });
+
+    it("Should fail to create if expiry is 0", function() {
+      return expectedExceptionPromise(
+          () => piggyInstance.createPiggy(
+            collateralERC,
+            premiumERC,
+            dataResolverNow,
+            dataResolverAtExpiry,
+            collateral,
+            lotSize,
+            strikePrice,
+            zeroParam,
+            isEuro,
+            isPut,
+            isRequest,
+            {from: owner, gas: 8000000 }),
+          3000000);
+      //end test
+    });
+
+    it("Should fail to create if approval payment transfer fails", function() {
+      return tokenInstance.decreaseAllowance(piggyInstance.address, approveAmount, {from: owner})
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return tokenInstance.allowance(owner, piggyInstance.address, {from: owner})
+      })
+      .then(result => {
+        assert.strictEqual(result.toString(), '0', "Allowance did not return 0")
+        return expectedExceptionPromise(
+            () => piggyInstance.createPiggy(
+              collateralERC,
+              premiumERC,
+              dataResolverNow,
+              dataResolverAtExpiry,
+              collateral,
+              lotSize,
+              strikePrice,
+              expiry,
+              isEuro,
+              isPut,
+              isRequest,
+              {from: owner, gas: 8000000 }),
+            3000000)
+      })
+      //end test
+    });
+
+    //end describe block
+  });
+
+  //Test Create Request For Piggy (RFP)
+  describe("Create a RFP SmartPiggies token", function() {
+
+    it("Should create an RFP token", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = 500
+      isEuro = false
+      isPut = true
+      isRequest = true //create RFP
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        //console.log(JSON.stringify(result, null, 4));
+        return piggyInstance.getDetails(1, {from: owner});
+      })
+      .then(result => {
+
+        //check DetailAddresses
+        assert.strictEqual(result[0].writer, addr00, "Details should have correct writer address.");
+        assert.strictEqual(result[0].holder, owner, "Details should have correct holder address.");
+        assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.");
+        assert.strictEqual(result[0].premiumERC, premiumERC, "Details should have correct premiumERC address.");
+        assert.strictEqual(result[0].dataResolverNow, dataResolverNow, "Details should have correct dataResolverNow address.");
+        assert.strictEqual(result[0].dataResolverAtExpiry, dataResolverAtExpiry, "Details should have correct dataResolverAtExpiry address.");
+        //check DetailUints
+        assert.strictEqual(result[1].collateral, "0", "Details should have correct collateral amount.");
+        assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.");
+        assert.strictEqual(result[1].strikePrice, strikePrice.toString(), "Details should have correct strikePrice amount.");
+        assert.strictEqual(result[1].settlementPrice, "0", "Details should have returned settlementPrice amount of 0.");
+        assert.strictEqual(result[1].reqCollateral, collateral.toString(), "Details should have returned reqCollateral amount of 0.");
+        assert.strictEqual(result[1].collateralDecimals, "18", "Details should have returned collateralDecimals amount of 18.");
+        //check BoolFlags
+        assert.isTrue(result[2].isRequest, "Details should have returned false for isRequest.");
+        assert.isNotTrue(result[2].isEuro, "Details should have returned false for isEuro.");
+        assert.isTrue(result[2].isPut, "Details should have returned true for isPut.");
+        assert.isNotTrue(result[2].hasBeenCleared, "Details should have returned false for hasBeenCleared.");
+
+        return piggyInstance.getOwnedPiggies(owner, {from: owner})
+      })
+      .then(result => {
+        assert.strictEqual(result.toString(), '1', "getOwnedPiggies didn't return correct piggies")
+      })
       //end test block
     });
 
@@ -302,7 +574,7 @@ contract ('SmartPiggies', function(accounts) {
     //end describe block
   });
 
-  //Test American Put
+  //Test American Put with split payout
   describe("Create an American Put piggy with split payout", function() {
 
     it("Should create an American Put piggy", function() {
@@ -402,54 +674,6 @@ contract ('SmartPiggies', function(accounts) {
     //end describe block
   });
 
-/*
-  //Test Ownable
-  describe("Ownable Contract functionality", function() {
-    it("Should have correct Owner", function() {
-      return shopInstance.owner({from: owner})
-      .then(result => {
-        assert.strictEqual(result, owner, "Owner param did not return correctly");
-      });
-      //end test
-    });
 
-    it("Should return true for isOwner", function() {
-      return shopInstance.isOwner({from: owner})
-      .then(result => {
-        assert.isTrue(result, "isOwner param did not return correctly");
-      });
-      //end test
-    });
-
-    it("Should return renounce ownership", function() {
-      return shopInstance.renounceOwnership({from: owner})
-      .then(txObj => {
-        assert.strictEqual(txObj.logs[0].event, "OwnershipRenounced", "Logs did not return correctly");
-        assert.strictEqual(txObj.logs[0].args.previousOwner, owner, "Logs did not return correctly");
-        return shopInstance.owner({from: owner});
-      })
-      .then(result => {
-        assert.strictEqual(result, "0x0000000000000000000000000000000000000000", "Owner did not return correctly");
-      });
-      //end test
-    });
-
-    it("Should return transfer ownership", function() {
-      return shopInstance.transferOwnership(user01, {from: owner})
-      .then(txObj => {
-        assert.strictEqual(txObj.logs[0].event, "OwnershipTransferred", "Logs did not return correctly");
-        assert.strictEqual(txObj.logs[0].args.previousOwner, owner, "Logs did not return correctly");
-        assert.strictEqual(txObj.logs[0].args.newOwner, user01, "Logs did not return correctly");
-        return shopInstance.owner({from: owner});
-      })
-      .then(result => {
-        assert.strictEqual(result, user01, "Owner did not return correctly");
-      });
-      //end test
-    });
-
-    //end describe
-  });
-*/
 
 });

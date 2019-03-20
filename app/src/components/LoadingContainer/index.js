@@ -17,7 +17,7 @@ class LoadingContainer extends Component {
 
       return(
           <div className="App">
-          <img src={logo} alt="drizzle-logo" />
+          <img src={logo} alt="SmartPiggies-logo" />
             <div className="section">
               <h1>OOPS!</h1>
               <p>This browser has no connection to the Ethereum network.</p>
@@ -32,7 +32,7 @@ class LoadingContainer extends Component {
     {
       return(
           <div className="App">
-          <img src={logo} alt="drizzle-logo" />
+          <img src={logo} alt="SmartPiggies-logo" />
             <div className="section">
               <h1>ARRG!</h1>
               <p><strong>We can't find any Ethereum accounts!</strong></p>
@@ -54,7 +54,7 @@ class LoadingContainer extends Component {
 
     return(
         <div className="App">
-        <img src={logo} alt="drizzle-logo" />
+        <img src={logo} alt="SmartPiggies-logo" />
           <div className="section">
             <h1>Loading SmartPiggies</h1>
             <p>Loading dapp...</p>

@@ -35,7 +35,7 @@ let uintArray = [
   "Reserve Amount",
   "Time Step",
   "Price Step",
-  "Active"
+  "Active Auction"
 ]
 
 class AuctionItems extends Component {

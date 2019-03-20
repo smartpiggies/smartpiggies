@@ -168,7 +168,7 @@ class Approvals extends Component {
     return (
       <div className="App">
         <Paper>
-            <Typography variant="h5" style={{marginBottom: "15px"}}>Approve Stable Token Transfer</Typography>
+            <Typography variant="h5" style={{padding: "10px"}}>Approve Stable Token Transfer</Typography>
             <Divider />
             <List>
                 <ListItem>
@@ -226,7 +226,7 @@ class Approvals extends Component {
           <br></br>
           <Typography variant="h6" align="left"><a href='https://docs.chain.link/docs/acquire-link' target='new'>To get test LINK click here</a></Typography>
           <Paper>
-            <Typography variant="h5" style={{marginBottom: "15px"}}>Approve Oracle Fee Transfer</Typography>
+            <Typography variant="h5" style={{padding: "10px"}}>Approve Oracle Fee Transfer</Typography>
             <Divider />
             <List>
                 <ListItem>

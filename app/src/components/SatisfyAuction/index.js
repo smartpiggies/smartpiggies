@@ -22,7 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import React, { Component } from 'react'
 import { drizzleConnect } from 'drizzle-react'
 import PropTypes from 'prop-types'
-//import web3 from 'web3'
 
 
 import Button from '@material-ui/core/Button'
@@ -39,7 +38,8 @@ import TableRow from '@material-ui/core/TableRow';
 
 //import PiggyDetail from '../PiggyDetail'
 import BrowsePiggy from '../BrowsePiggy'
-//const BN = web3.utils.BN
+import AuctionPrice from '../AuctionPrice'
+
 
 class SatisfyAuction extends Component {
   constructor(props, context) {
@@ -99,6 +99,11 @@ class SatisfyAuction extends Component {
             onAuction: true,
             auctionDetails: result,
           })
+        } else {
+          this.setState({
+            onAuction: false,
+            auctionDetails: result,
+          })
         }
       }
     })
@@ -147,13 +152,16 @@ class SatisfyAuction extends Component {
         {this.state.showDetails &&
           <div>
           <Typography variant="h5" style={{textAlign: "left", padding: "10px" }}>Details for SmartPiggies ID: {this.state.piggyId}</Typography>
-
           <BrowsePiggy details={this.state.details} auctionDetails={this.state.auctionDetails} />
-
           </div>
-
-        }<br></br>
-        <Button type="Button" variant="contained" color="primary" style={{marginBottom: "15px"}}onClick={this.handleSatisfyButton}>Satisfy</Button>
+        }
+        <br></br>
+        {this.state.onAuction &&
+          <div>
+          <AuctionPrice blockNumber={this.props.blockNumber} auctionDetails={this.state.auctionDetails} />
+          <Button type="Button" variant="contained" color="primary" style={{marginBottom: "15px"}}onClick={this.handleSatisfyButton}>Satisfy</Button>
+          </div>
+        }
       </Paper>
       </div>
     )

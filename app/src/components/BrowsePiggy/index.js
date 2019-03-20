@@ -24,6 +24,8 @@ import { drizzleConnect } from 'drizzle-react'
 import PropTypes from 'prop-types'
 
 import Paper from '@material-ui/core/Paper'
+import Typography from '@material-ui/core/Typography'
+import Divider from '@material-ui/core/Divider'
 import AddressItems from "../ListItems/AddressItems"
 import UintItems from "../ListItems/UintItems"
 import BoolItems from "../ListItems/BoolItems"
@@ -36,7 +38,9 @@ class BrowsePiggy extends Component {
     super(props)
 
     this.contracts = context.drizzle.contracts
-
+    this.state = {
+      showAuction: false,
+    }
   }
 
   componentDidMount() {
@@ -46,8 +50,13 @@ class BrowsePiggy extends Component {
       boolValues = <BoolItems item={this.props.details[2]} />
     }
 
-    if (this.props.details.length !== undefined && this.props.details.length > 0) {
-      auctionValues = <AuctionItems item={this.props.auctionDetails} />
+    if (this.props.auctionDetails.length !== undefined && this.props.auctionDetails.length > 0) {
+      if (this.props.auctionDetails.auctionActive) {
+        auctionValues = <AuctionItems item={this.props.auctionDetails} />
+        this.setState({
+          showAuction: true,
+        })
+      }
     }
   }
 
@@ -62,7 +71,16 @@ class BrowsePiggy extends Component {
 
     if (this.props.auctionDetails !== prevProps.auctionDetails) {
       if (this.props.auctionDetails.length !== undefined && this.props.auctionDetails.length > 0) {
-        auctionValues = <AuctionItems item={this.props.auctionDetails} />
+        if (this.props.auctionDetails.auctionActive) {
+          auctionValues = <AuctionItems item={this.props.auctionDetails} />
+          this.setState({
+            showAuction: true,
+          })
+        } else {
+          this.setState({
+            showAuction: false,
+          })
+        }
       }
     }
   }
@@ -75,7 +93,13 @@ class BrowsePiggy extends Component {
         {addressValues}
         {uintValues}
         {boolValues}
-        {auctionValues}
+        {this.state.showAuction &&
+          <div>
+          <Typography variant="h6" style={{padding: "10px", marginTop: "15px"}}>On Auction</Typography>
+          <Divider />
+          {auctionValues}
+          </div>
+        }
         </Paper>
       </div>
     )

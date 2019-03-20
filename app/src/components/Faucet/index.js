@@ -57,7 +57,7 @@ class Faucet extends Component {
     return (
       <div className="App">
         <Paper>
-            <Typography variant="h5" style={{marginBottom: "15px"}}>Get some Stable Tokens (STBLE-F)</Typography>
+            <Typography variant="h5" style={{padding: "10px"}}>Get some Stable Tokens (STBLE-F)</Typography>
             <Divider />
             <p>There is a rate limit of 100 STABLE-F tokens per five minutes.</p>
             <br></br>

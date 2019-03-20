@@ -143,7 +143,7 @@ class Claim extends Component {
     return (
       <div className="App">
         <Paper>
-            <Typography variant="h5" style={{marginBottom: "15px"}}>Claim a Payout</Typography>
+            <Typography variant="h5" style={{padding: "10px"}}>Claim a Payout</Typography>
             <Divider />
             <List>
                 <ListItem>

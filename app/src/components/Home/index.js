@@ -47,6 +47,7 @@ import PiggyDetail from '../PiggyDetail'
 import SatisfyAuction from "../SatisfyAuction";
 import CreatePiggy from '../CreatePiggy';
 import StartAuction from '../StartAuction'
+import OnAuction from '../OnAuction'
 import Clearing from '../Clearing';
 import Settlement from '../Settlement';
 import Claim from '../Claim';
@@ -114,6 +115,8 @@ class Home extends Component {
       ownedPiggies: [],
       piggyDetailMap: [],
       piggyAuctionMap: [],
+      blockNumber: 0,
+      network: 0,
 
       //datakeys
       dataKeyGetOwnedPiggies: '',
@@ -147,20 +150,40 @@ class Home extends Component {
   componentDidMount() {
     // If Drizzle is initialized (and therefore web3, accounts and contracts), continue.
     if (this.props.drizzleStatus.initialized) {
-        // Declare this call to be cached and synchronized. We'll receive the store key for recall.
-        globalDataKeyGetOwnedPiggies = this.contracts.SmartPiggies.methods['getOwnedPiggies'].cacheCall(this.props.accounts[0])
-        //const dataKeyGetDetails = this.contracts.SmartPiggies.methods['getDetails'].cacheCall()
-        // Use the dataKey to display data from the store.
+      // Declare this call to be cached and synchronized. We'll receive the store key for recall.
+      globalDataKeyGetOwnedPiggies = this.contracts.SmartPiggies.methods['getOwnedPiggies'].cacheCall(this.props.accounts[0])
+      //const dataKeyGetDetails = this.contracts.SmartPiggies.methods['getDetails'].cacheCall()
+      // Use the dataKey to display data from the store.
+
+      this.setState({
+        dataKeyGetOwnedPiggies: globalDataKeyGetOwnedPiggies,
+        //dataKeyGetDetails: dataKeyGetDetails
+        network: this.drizzle.web3.givenProvider.networkVersion
+      })
+
+      //set block number on load
+      this.drizzle.web3.eth.getBlockNumber()
+      .then(result => {
         this.setState({
-          dataKeyGetOwnedPiggies: globalDataKeyGetOwnedPiggies,
-          //dataKeyGetDetails: dataKeyGetDetails
+          blockNumber: result
         })
+      })
     }
 
     this.setState({
       spContractAddress: this.contracts.SmartPiggies.address,
       activeAccount: this.props.accounts[0]
     })
+
+    //update current block number every 10 seconds
+    this.interval = setInterval(() => {
+      this.drizzle.web3.eth.getBlockNumber()
+      .then(result => {
+        this.setState({
+          blockNumber: result
+        })
+      })
+    }, 10000)
   }
 
   componentDidUpdate(prevProps) {
@@ -198,6 +221,10 @@ class Home extends Component {
         })
       }
     }
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.interval)
   }
 
   groomAddress(address) {
@@ -359,17 +386,15 @@ class Home extends Component {
           style={appBar}
           color="default"
         >
-          <table>
+          <table width="100%">
             <tbody>
               <tr>
-                <td>Contract:</td>
-                <td></td>
-                <td>{this.state.spContractAddress}</td>
+                <td>Contract: {this.state.spContractAddress}</td>
+                <td text-align="right">Block: {this.state.blockNumber}</td>
               </tr>
               <tr>
-                <td>User:</td>
-                <td></td>
-                <td>{groomedAddress}</td>
+                <td>User: {groomedAddress}</td>
+                <td text-align="right">Network: {this.state.network}</td>
               </tr>
             </tbody>
           </table>
@@ -485,9 +510,10 @@ class Home extends Component {
                         <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
                           <Typography variant="h5">Core Piggy Details</Typography>
                         </ExpansionPanelSummary>
-                        {/*<ExpansionPanelDetails>*/}
+                        <ExpansionPanelDetails>
+                          <Typography variant="h6">Selected Token ID: {this.state.selectedPiggy}</Typography>
+                        </ExpansionPanelDetails>
                           <PiggyDetail piggyId={this.state.selectedPiggy} piggies={this.state.piggyDetailMap} />
-                        {/*</ExpansionPanelDetails>*/}
                       </ExpansionPanel>
                     </div>
                     {/* Auction process */}
@@ -497,38 +523,24 @@ class Home extends Component {
                         <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
                           <Typography variant="h5">Piggy Auction Management</Typography>
                         </ExpansionPanelSummary>
-                        {this.state.piggyOnAuction &&
-                          <ExpansionPanelDetails>
-                            <List>
-                              <ListItem>
-                                On auction: {this.state.piggyOnAuction ? 'true' : 'false'}
-                              </ListItem>
-                              <ListItem>
-                                Start block: {this.state.startBlock}
-                              </ListItem>
-                              <ListItem>
-                                Expiry block: {this.state.expiryBlock}
-                              </ListItem>
-                              <ListItem>
-                                Start Price: {this.state.startPrice}
-                              </ListItem>
-                              <ListItem>
-                                Reserve Price: {this.state.reservePrice}
-                              </ListItem>
-                              <ListItem>
-                                Time Step: {this.state.timeStep}
-                              </ListItem>
-                              <ListItem>
-                                Price Step: {this.state.priceStep}
-                              </ListItem>
-                            </List>
-                          </ExpansionPanelDetails>
-                        }
-                        {!this.state.piggyOnAuction &&
-                          <ExpansionPanelDetails>
+                        <ExpansionPanelDetails>
+                          <Typography variant="h6">Current Block: {this.state.blockNumber}</Typography>
+                        </ExpansionPanelDetails>
+                          {this.state.piggyOnAuction &&
+                            <OnAuction
+                              tokenId={this.state.selectedPiggy}
+                              piggyOnAuction={this.state.piggyOnAuction}
+                              startBlock={this.state.startBlock}
+                              expiryBlock={this.state.expiryBlock}
+                              startPrice={this.state.startPrice}
+                              reservePrice={this.state.reservePrice}
+                              timeStep={this.state.timeStep}
+                              priceStep={this.state.priceStep}
+                            />
+                          }
+                          {!this.state.piggyOnAuction &&
                             <StartAuction tokenId={this.state.selectedPiggy} />
-                          </ExpansionPanelDetails>
-                        }
+                          }
                       </ExpansionPanel>
                     </div>
                     <div>
@@ -538,14 +550,10 @@ class Home extends Component {
                           <Typography variant="h5">Piggy Clearance and Settlement</Typography>
                         </ExpansionPanelSummary>
                         {this.state.piggyHasBeenCleared &&
-                          <ExpansionPanelDetails>
-                            <Settlement tokenId={this.state.selectedPiggy} />
-                          </ExpansionPanelDetails>
+                          <Settlement tokenId={this.state.selectedPiggy} />
                         }
                         {!this.state.piggyHasBeenCleared &&
-                          <ExpansionPanelDetails>
-                            <Clearing tokenId={this.state.selectedPiggy} />
-                          </ExpansionPanelDetails>
+                          <Clearing tokenId={this.state.selectedPiggy} />
                         }
                       </ExpansionPanel>
                     </div>

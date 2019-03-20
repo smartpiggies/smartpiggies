@@ -31,13 +31,11 @@ import TextField from '@material-ui/core/TextField'
 import Paper from '@material-ui/core/Paper'
 import Typography from '@material-ui/core/Typography'
 import Divider from '@material-ui/core/Divider'
-import List from '@material-ui/core/List'
-import ListItem from '@material-ui/core/ListItem'
-import ListItemText from '@material-ui/core/ListItemText'
 
-//import GetStats from '../../Layout/GetStats'
-//import AccountAddress from '../Displays/AccountAddress'
-//import TokenBalance from '../Displays/TokenBalance'
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import TableRow from '@material-ui/core/TableRow';
 
 //import PiggyDetail from '../PiggyDetail'
 import BrowsePiggy from '../BrowsePiggy'
@@ -58,6 +56,14 @@ class SatisfyAuction extends Component {
       piggyId: '0',
       showDetails: false,
       details: [],
+      auctionDetails: [],
+      onAuction: false,
+      startBlock: 0,
+      expiryBlock: 0,
+      startPrice: 0,
+      reservePrice: 0,
+      timeStep: 0,
+      priceStep: 0,
     }
   }
 
@@ -72,6 +78,7 @@ class SatisfyAuction extends Component {
   }
 
   handleBrowseButton() {
+
     this.contracts.SmartPiggies.methods.getDetails(
       this.state.piggyId)
     .call({from: this.state.accountAddress})
@@ -80,6 +87,20 @@ class SatisfyAuction extends Component {
         showDetails: true,
         details: result
       })
+    })
+
+    this.contracts.SmartPiggies.methods.getAuctionDetails(
+      this.state.piggyId)
+    .call({from: this.state.accountAddress})
+    .then(result => {
+      if (result.length === 8) {
+        if (result.auctionActive) {
+          this.setState({
+            onAuction: true,
+            auctionDetails: result,
+          })
+        }
+      }
     })
   }
 
@@ -96,32 +117,41 @@ class SatisfyAuction extends Component {
     return (
       <div className="App">
       <Paper>
-        <Typography variant="h5" style={{marginBottom: "15px"}}>Satisfy an Auction for a SmartPiggies Token</Typography>
+        <Typography variant="h5" style={{padding: "10px"}}>Satisfy an Auction for a SmartPiggies Token</Typography>
         <Divider />
-        <List>
-          <ListItem>
-            <ListItemText>Token ID to Browse:</ListItemText>
-            <TextField
-                  id="piggyId"
-                  label="piggyId"
-                  value={this.state.piggyId}
-                  onChange={this.handleTextMenuChange('piggyId')}
-                  margin="normal"
-                  variant="filled"
-                />
-          </ListItem>
-          <ListItem>
-            <Button type="Button" variant="contained" color="default" style={{marginBottom: "15px"}}onClick={this.handleBrowseButton}>Browse</Button>
-          </ListItem>
-          <ListItem>
-            <ListItemText>Token Info:</ListItemText>
-            {/*<PiggyDetail piggies={this.props.piggyDetailMap} />*/}
-          </ListItem>
-        </List>
+        <Table>
+          <TableBody>
+            <TableRow>
+              <TableCell align="left">
+                  <Typography variant="h6">Token ID to Browse: </Typography>
+              </TableCell>
+              <TableCell align="right">
+                <TextField
+                      id="piggyId"
+                      label="piggyId"
+                      value={this.state.piggyId}
+                      onChange={this.handleTextMenuChange('piggyId')}
+                      margin="normal"
+                      variant="filled"
+                    />
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell variant="footer">
+                  <Button type="Button" variant="contained" color="default" style={{marginBottom: "15px"}}onClick={this.handleBrowseButton}>Browse</Button>
+                </TableCell>
+              </TableRow>
+          </TableBody>
+        </Table>
+
         {this.state.showDetails &&
           <div>
-            <BrowsePiggy details={this.state.details} />
+          <Typography variant="h5" style={{textAlign: "left", padding: "10px" }}>Details for SmartPiggies ID: {this.state.piggyId}</Typography>
+
+          <BrowsePiggy details={this.state.details} auctionDetails={this.state.auctionDetails} />
+
           </div>
+
         }<br></br>
         <Button type="Button" variant="contained" color="primary" style={{marginBottom: "15px"}}onClick={this.handleSatisfyButton}>Satisfy</Button>
       </Paper>

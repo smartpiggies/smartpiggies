@@ -132,9 +132,9 @@ class StartAuction extends Component {
     return (
       <div className="App">
         <Paper>
-          <Typography variant="h5" style={{ marginBottom: "15px" }}>Auction a SmartPiggies Token</Typography>
+          <Typography variant="h5" style={{ padding: "10px" }}>Auction SmartPiggies Token ID: {this.props.tokenId}</Typography>
           <Divider />
-          <List>
+          <List style={{width: 700}}>
             <ListItem>
               <ListItemText>Units Denomination:</ListItemText>
               <TextField

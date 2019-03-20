@@ -186,7 +186,7 @@ class CreatePiggy extends Component {
     return (
       <div className="App">
       <Paper>
-        <Typography variant="h5" style={{marginBottom: "15px"}}>Create a SmartPiggies Token</Typography>
+        <Typography variant="h5" style={{ padding: "10px" }}>Create a SmartPiggies Token</Typography>
         <Divider />
         <List>
             <ListItem>

@@ -27,8 +27,9 @@ import Paper from '@material-ui/core/Paper'
 import AddressItems from "../ListItems/AddressItems"
 import UintItems from "../ListItems/UintItems"
 import BoolItems from "../ListItems/BoolItems"
+import AuctionItems from "../ListItems/AuctionItems"
 
-let addressValues, uintValues, boolValues
+let addressValues, uintValues, boolValues, auctionValues
 
 class BrowsePiggy extends Component {
   constructor(props, context) {
@@ -44,6 +45,10 @@ class BrowsePiggy extends Component {
       uintValues = <UintItems item={this.props.details[1]} />
       boolValues = <BoolItems item={this.props.details[2]} />
     }
+
+    if (this.props.details.length !== undefined && this.props.details.length > 0) {
+      auctionValues = <AuctionItems item={this.props.auctionDetails} />
+    }
   }
 
   componentDidUpdate(prevProps) {
@@ -52,6 +57,12 @@ class BrowsePiggy extends Component {
         addressValues = <AddressItems item={this.props.details[0]} />
         uintValues = <UintItems item={this.props.details[1]} />
         boolValues = <BoolItems item={this.props.details[2]} />
+      }
+    }
+
+    if (this.props.auctionDetails !== prevProps.auctionDetails) {
+      if (this.props.auctionDetails.length !== undefined && this.props.auctionDetails.length > 0) {
+        auctionValues = <AuctionItems item={this.props.auctionDetails} />
       }
     }
   }
@@ -64,6 +75,7 @@ class BrowsePiggy extends Component {
         {addressValues}
         {uintValues}
         {boolValues}
+        {auctionValues}
         </Paper>
       </div>
     )

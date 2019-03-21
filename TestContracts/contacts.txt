@@ -1,20 +1,42 @@
+When creating Resolvers with Chainlink note some specific details that need
+to be adhered to:
+The calls and parameters are network specific
+  - Be sure to set the LINK token address for the correct network
+  - Be sure to set the Oracle address for the correct network
+  - Be sure to set the jobId for the correct network
+
+If the above is not all set for the desired network, oracle calls from
+Chainlink will not resolve.
+
 Ropsten:
 SmartPiggies: 0x4De41C62843c6714F9965687a36D36cf2a67689F
 StableToken: 0x7cae3e2d2c3e3fb7273e6c5ffa2e9856a2f4a594
 StableTokenFaucet: 0x3cd9f616c65ee8a2b628041dbc178fe526117a1f
-RopstenLINK: 0x01BE23585060835E02B77ef475b0Cc51aA1e0709
+RopstenLINK: 0x20fE562d797A42Dcb3399062AE9546cd06f63280
 Chainlink IEX SPY NOW: 0x749b61357Cf4BbeC0fc876cD87eF52e80D29E7D8
-Chainlink CoinCap ETHUSD: 0x02a77167324c0ab1cc3b29646a965027f63a449f
 ResolverSelfReturn: 0xb03f9dc90997b2b2f8bfc97cd546ca05628b196f
+Chainlink CoinCap ETHUSD: 0x25e196efecc3b52e6e64ee331ce02704e6eebf95
+Chainlink OpenWeatherMap TEMP-NYC: 0xa4b09d1794dd1996b29a8b84f80e739df9810c67
 
+Ropsten Chainlink params:
+jobId: 493610cff14346f786f88ed791ab7704
+LINK address: 0x20fE562d797A42Dcb3399062AE9546cd06f63280
+Oracle address: 0xc99B3D447826532722E41bc36e644ba3479E4365
 
 Rinkeby:
 SmartPiggies: 0xb0d75df98529cd59613aa2978f83b6468efd8b06
 Stable: 0x288ee61F0bC2c4AccB18ab385cc20fFCeD5c4D4D
 StableTokenFaucet: 0xbc1d371885cf8ebe80c17fd021ab4d1375590b67
 RinkebyLINK: 0x01BE23585060835E02B77ef475b0Cc51aA1e0709
-ResolverCLIEXSPYRinkeby: 0x6819727F25AB306aE48878387bB0F4C1374Ea9Ff
+Chainlink IEX SPY NOW: 0x6819727F25AB306aE48878387bB0F4C1374Ea9Ff
 ResolverSelfReturn: 0xccd85a8e2918ddc29f5498c5a05412866c3cfc20
+Chainlink CoinCap ETHUSD: 0xa140ff02a68cb92c53da2145e6bed72db31e8380
+Chainlink OpenWeatherMap TEMP-NYC: 0xf409e8711afbc473abc7046e8750786687c8abdd
+
+Rinkeby Chainlink params:
+jobId: 6d1bfe27e7034b1d87b5270556b17277
+LINK address: 0x01BE23585060835E02B77ef475b0Cc51aA1e0709
+Oracle address: 0x7AFe1118Ea78C1eae84ca8feE5C65Bc76CcF879e
 
 
 TestnetLINK:

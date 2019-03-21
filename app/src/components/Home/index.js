@@ -95,7 +95,7 @@ const grid = {
   }
 }
 
-let globalDataKeyGetOwnedPiggies
+let globalDataKeyGetOwnedPiggies, activeNetwork
 
 class Home extends Component {
   constructor(props, context) {
@@ -164,6 +164,20 @@ class Home extends Component {
         network: this.drizzle.web3.givenProvider.networkVersion
       })
 
+      switch (this.state.network) {
+        case '1':
+          activeNetwork = 'Ethereum'
+          break
+        case '3':
+          activeNetwork = 'Ropsten'
+          break
+        case '4':
+          activeNetwork = 'Rinkeby'
+          break
+        default:
+          activeNetwork = 'unknown'
+      }
+
       //set block number on load
       this.drizzle.web3.eth.getBlockNumber()
       .then(result => {
@@ -189,7 +203,7 @@ class Home extends Component {
     }, 10000)
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps, prevState) {
     //Update if there is a change in owned piggies
     if (this.props.SmartPiggies.getOwnedPiggies !== prevProps.SmartPiggies.getOwnedPiggies) {
       //console.log(this.props.SmartPiggies.getOwnedPiggies)
@@ -225,8 +239,24 @@ class Home extends Component {
         })
       }
     }
-    
     // end update getDetails
+
+    //Update network
+    if (this.state.network !== prevState.network) {
+      switch (this.state.network) {
+        case '1':
+          activeNetwork = 'Ethereum'
+          break
+        case '3':
+          activeNetwork = 'Ropsten'
+          break
+        case '4':
+          activeNetwork = 'Rinkeby'
+          break
+        default:
+          activeNetwork = 'unknown'
+      }
+    }
   }
 
   componentWillUnmount() {
@@ -402,7 +432,7 @@ class Home extends Component {
               </tr>
               <tr>
                 <td>User: {groomedAddress}</td>
-                <td text-align="right">Network: {this.state.network}</td>
+                <td text-align="right">Network: {activeNetwork}</td>
               </tr>
             </tbody>
           </table>
@@ -504,7 +534,7 @@ class Home extends Component {
                 {/** Create Piggy "component" - should show if a "Create Piggy" button has been clicked on in the list above, or default screen*/}
                 {this.state.showCreatePiggy &&
                   <div>
-                    <CreatePiggy />
+                    <CreatePiggy networkId={this.state.network} />
                     <Divider />
                     <br></br>
                     <Button variant="contained" color="secondary" size="large" style={{marginRight: "10px"}} onClick={this.handleHome}>Cancel</Button>
@@ -567,7 +597,7 @@ class Home extends Component {
                     </div>
                   </div>}
 
-                <TXModal />
+                <TXModal networkId={this.state.network} />
               </Paper>
             </Grid>
           </Grid>

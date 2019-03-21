@@ -19,11 +19,16 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **/
+
+//All Chainlink imports need to be available independently
+//in order to compile
+//Compile with 0.4.24
+import "./Chainlinked.sol";
+
 pragma solidity >=0.4.24 <0.6.0;
 
-import "./RopstenConsumer.sol";
-
 contract ChainlinkCoinCapETHUSD is Chainlinked {
+//contract OpenWeatherNYCTemp is Chainlinked {
   address public owner; //only for testing
   bytes32 public lastId; //for testing
 
@@ -58,12 +63,12 @@ contract ChainlinkCoinCapETHUSD is Chainlinked {
     dataSource = _dataSource;
     underlying = _underlying;
     oracle = _oracleService;
-    jobId = bytes32("493610cff14346f786f88ed791ab7704");
+    jobId = bytes32("6d1bfe27e7034b1d87b5270556b17277"); //change for network
     endpoint = _endpoint;
     path = _path;
-    oracleTokenAddress = address(0x20fE562d797A42Dcb3399062AE9546cd06f63280);
-    setLinkToken(0x20fE562d797A42Dcb3399062AE9546cd06f63280);
-    setOracle(0xc99B3D447826532722E41bc36e644ba3479E4365);
+    oracleTokenAddress = address(0x01BE23585060835E02B77ef475b0Cc51aA1e0709); //change for network
+    setLinkToken(0x01BE23585060835E02B77ef475b0Cc51aA1e0709); //change for network
+    setOracle(0x7AFe1118Ea78C1eae84ca8feE5C65Bc76CcF879e); //change for network
   }
 
   function fetchData(address _funder, uint256 _oracleFee, uint256 _tokenId)

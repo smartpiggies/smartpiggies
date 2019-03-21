@@ -91,6 +91,8 @@ class PiggyDetail extends Component {
     //update if piggy has been cleared
     if (this.props.piggies !== prevProps.piggies) {
       console.log("fire update this.props")
+      console.log(prevProps.piggies)
+      console.log(this.props.piggies)
       if (this.props.SmartPiggies.getDetails[this.state.detailDataKey] !== undefined) {
         console.log("fire update this.props.getDetails")
         console.log(prevProps.SmartPiggies.getDetails[this.state.detailDataKey].value.flags.hasBeenCleared)

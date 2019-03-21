@@ -30,7 +30,7 @@ class TXModal extends Component {
     this.state = {
       open: false,
       txHash: '',
-      txStatus: ''
+      txStatus: '',
     }
   }
 
@@ -46,11 +46,39 @@ class TXModal extends Component {
           })
         }
         else {
-          this.setState({
-            open: true,
-            txHash: stackId,
-            txStatus: this.props.transactions[stackId].status
-          })
+          var endpoint
+          switch (this.props.networkId) {
+            case '1':
+              endpoint = 'https://etherscan.io/tx/' + stackId
+              this.setState({
+                open: true,
+                txHash: <a href={endpoint} target='new'>{stackId}</a>,
+                txStatus: this.props.transactions[stackId].status
+              })
+              break
+            case '3':
+              endpoint = 'https://ropsten.etherscan.io/tx/' + stackId
+              this.setState({
+                open: true,
+                txHash: <a href={endpoint} target='new'>{stackId}</a>,
+                txStatus: this.props.transactions[stackId].status
+              })
+              break
+            case '4':
+              endpoint = 'https://rinkeby.etherscan.io/tx/' + stackId
+              this.setState({
+                open: true,
+                txHash: <a href={endpoint} target='new'>{stackId}</a>,
+                txStatus: this.props.transactions[stackId].status
+              })
+              break
+            default:
+            this.setState({
+              open: true,
+              txHash: stackId,
+              txStatus: this.props.transactions[stackId].status
+            })
+          }
         }
       }
     }

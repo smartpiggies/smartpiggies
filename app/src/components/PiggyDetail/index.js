@@ -87,6 +87,24 @@ class PiggyDetail extends Component {
         }
       }
     }
+
+    //update if piggy has been cleared
+    if (this.props.piggies !== prevProps.piggies) {
+      console.log("fire update this.props")
+      if (this.props.SmartPiggies.getDetails[this.state.detailDataKey] !== undefined) {
+        console.log("fire update this.props.getDetails")
+        console.log(prevProps.SmartPiggies.getDetails[this.state.detailDataKey].value.flags.hasBeenCleared)
+        console.log(this.props.SmartPiggies.getDetails[this.state.detailDataKey].value.flags.hasBeenCleared)
+        if (this.props.SmartPiggies.getDetails[this.state.detailDataKey].value.flags.hasBeenCleared !==
+              prevProps.SmartPiggies.getDetails[this.state.detailDataKey].value.flags.hasBeenCleared) {
+                console.log("fire update cleared")
+          let detailArray = this.props.SmartPiggies.getDetails[this.state.detailDataKey].value
+          addressValues = <AddressItems item={detailArray[0]} />
+          uintValues = <UintItems item={detailArray[1]} />
+          boolValues = <BoolItems item={detailArray[2]} />
+        }
+      }
+    }
   }
 
   render() {

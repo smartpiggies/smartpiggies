@@ -152,12 +152,15 @@ class Home extends Component {
     if (this.props.drizzleStatus.initialized) {
       // Declare this call to be cached and synchronized. We'll receive the store key for recall.
       globalDataKeyGetOwnedPiggies = this.contracts.SmartPiggies.methods['getOwnedPiggies'].cacheCall(this.props.accounts[0])
-      //const dataKeyGetDetails = this.contracts.SmartPiggies.methods['getDetails'].cacheCall()
-      // Use the dataKey to display data from the store.
+
+      //updating from getDetails slams the lifecycle update and crashes the app
+      //there must be something changing state every time it polls the contract
+      //globalDataKeyGetDetails = this.contracts.SmartPiggies.methods['getDetails'].cacheCall()
+
 
       this.setState({
         dataKeyGetOwnedPiggies: globalDataKeyGetOwnedPiggies,
-        //dataKeyGetDetails: dataKeyGetDetails
+        //dataKeyGetDetails: globalDataKeyGetDetails,
         network: this.drizzle.web3.givenProvider.networkVersion
       })
 
@@ -187,6 +190,7 @@ class Home extends Component {
   }
 
   componentDidUpdate(prevProps) {
+    //Update if there is a change in owned piggies
     if (this.props.SmartPiggies.getOwnedPiggies !== prevProps.SmartPiggies.getOwnedPiggies) {
       //console.log(this.props.SmartPiggies.getOwnedPiggies)
       let piggyIds = []
@@ -221,6 +225,8 @@ class Home extends Component {
         })
       }
     }
+    
+    // end update getDetails
   }
 
   componentWillUnmount() {
@@ -368,6 +374,8 @@ class Home extends Component {
   }
 
   render() {
+    //console.log(this.state.piggyDetailMap)
+    //console.log(this.props.SmartPiggies.getDetails)
     //console.log(this.state.selectedPiggy)
     let groomedAddress = this.groomAddress(this.state.activeAccount)
     let piggies

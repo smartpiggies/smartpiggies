@@ -66,7 +66,7 @@ class Settlement extends Component {
     return (
       <div className="App">
       <Paper align="center">
-        <Typography variant="h5" style={{marginBottom: "15px"}}>Settle a SmartPiggies Token</Typography>
+        <Typography variant="h5" style={{padding: "10px"}}>Settle SmartPiggies Token ID: {this.props.tokenId}</Typography>
         <Divider />
         <br></br>
         <Typography variant="h6" style={{marginLeft: "10px", marginRight: "10px"}}>This token is ready to be cleared!</Typography>

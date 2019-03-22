@@ -90,16 +90,12 @@ class PiggyDetail extends Component {
 
     //update if piggy has been cleared
     if (this.props.piggies !== prevProps.piggies) {
-      console.log("fire update this.props")
-      console.log(prevProps.piggies)
-      console.log(this.props.piggies)
+
       if (this.props.SmartPiggies.getDetails[this.state.detailDataKey] !== undefined) {
-        console.log("fire update this.props.getDetails")
-        console.log(prevProps.SmartPiggies.getDetails[this.state.detailDataKey].value.flags.hasBeenCleared)
-        console.log(this.props.SmartPiggies.getDetails[this.state.detailDataKey].value.flags.hasBeenCleared)
+
         if (this.props.SmartPiggies.getDetails[this.state.detailDataKey].value.flags.hasBeenCleared !==
               prevProps.SmartPiggies.getDetails[this.state.detailDataKey].value.flags.hasBeenCleared) {
-                console.log("fire update cleared")
+          //never makes it here as there is not distiction between this and prev for hasBeenCleared
           let detailArray = this.props.SmartPiggies.getDetails[this.state.detailDataKey].value
           addressValues = <AddressItems item={detailArray[0]} />
           uintValues = <UintItems item={detailArray[1]} />
@@ -110,7 +106,7 @@ class PiggyDetail extends Component {
   }
 
   render() {
-    //console.log(this.state.piggyID)
+    
     return (
       <div>
       <Paper>

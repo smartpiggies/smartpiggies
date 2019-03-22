@@ -118,7 +118,7 @@ class SatisfyAuction extends Component {
   }
 
   render() {
-    //console.log(this.state.details)
+    
     return (
       <div className="App">
       <Paper>

@@ -238,7 +238,7 @@ class Approvals extends Component {
             <Divider />
             <List>
                 <ListItem>
-                    <ListItemText>Oracel Fee Address:</ListItemText>
+                    <ListItemText>Oracle Fee Address:</ListItemText>
                     <TextField
                         id="tokenAddress"
                         select

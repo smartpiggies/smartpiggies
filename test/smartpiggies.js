@@ -674,6 +674,269 @@ contract ('SmartPiggies', function(accounts) {
     //end describe block
   });
 
+  //Test transferFrom function
+  describe("Create an American Put piggy and transfer it", function() {
+
+    it("Should transfer an American Put piggy", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 27850
+      expiry = 500
+      isEuro = false
+      isPut = true
+      isRequest = false
+      tokenId = 0
+      oracleFee = web3.utils.toBN('1000000000000000000')
+      strikePriceBN = web3.utils.toBN(strikePrice)
+      settlementPriceBN = web3.utils.toBN('0')
+      ownerBalanceBefore = web3.utils.toBN('0')
+      userBalanceBefore = web3.utils.toBN('0')
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.transferFrom(owner, user01, tokenId, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "transfer function did not return true")
+        //mint link tokens for user01
+        return linkInstance.mint(user01, supply, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "mint function did not return true")
+        //approve LINK transfer on behalf of the new holder (user01)
+        return linkInstance.approve(resolverInstance.address, approveAmount, {from: user01})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "approve function did not return true")
+        //clear piggy (request the price from the oracle)
+        return piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "requestSettlementPrice function did not return true")
+        return piggyInstance.getDetails(tokenId, {from: user01})
+      })
+      .then(result => {
+        //console.log(JSON.stringify(result[2].hasBeenCleared, null, 4))
+        assert.isTrue(result[2].hasBeenCleared, "getDetails did not return hasBeenCleared flag correctly")
+        return piggyInstance.transferFrom(user01, user02, tokenId, {from: user01})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "transfer function did not return true")
+        return piggyInstance.transferFrom(user02, owner, tokenId, {from: user02})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "transfer function did not return true")
+      })
+
+      //end test block
+    });
+
+    it("Should transfer an RFP", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 27850
+      expiry = 500
+      isEuro = false
+      isPut = true
+      isRequest = false
+      isRequest = true //create RFP
+      tokenId = 0
+      oracleFee = web3.utils.toBN('1000000000000000000')
+      strikePriceBN = web3.utils.toBN(strikePrice)
+      settlementPriceBN = web3.utils.toBN('0')
+      ownerBalanceBefore = web3.utils.toBN('0')
+      userBalanceBefore = web3.utils.toBN('0')
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.getDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result[2].isRequest, "getDetails did not return true for isRequest")
+        assert.strictEqual(result[0].holder, owner, "getDetails did not return correct holder")
+        return piggyInstance.transferFrom(owner, user01, tokenId, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "transfer function did not return true")
+        return piggyInstance.getDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        assert.strictEqual(result[0].holder, user01, "getDetails did not return correct holder")
+      })
+
+      //end test block
+    });
+
+    it("Should transfer a piggy after settlement", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 27850
+      expiry = 500
+      isEuro = false
+      isPut = true
+      isRequest = false
+      tokenId = 0
+      oracleFee = web3.utils.toBN('1000000000000000000')
+      strikePriceBN = web3.utils.toBN(strikePrice)
+      settlementPriceBN = web3.utils.toBN('0')
+      ownerBalanceBefore = web3.utils.toBN('0')
+      userBalanceBefore = web3.utils.toBN('0')
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        //console.log(JSON.stringify(result.receipt.status, null, 4));
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.transferFrom(owner, user01, tokenId, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "transfer function did not return true")
+        return piggyInstance.getDetails(tokenId, {from: user01})
+      })
+      .then(result => {
+        assert.strictEqual(result[0].holder, user01, "getDetails did not return correct owner")
+        return piggyInstance.transferFrom(user01, user02, tokenId, {from: user01})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "transfer function did not return true")
+        return piggyInstance.getDetails(tokenId, {from: user01})
+      })
+      .then(result => {
+        assert.strictEqual(result[0].holder, user02, "getDetails did not return correct owner")
+        return piggyInstance.transferFrom(user02, owner, tokenId, {from: user02})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "transfer function did not return true")
+        return piggyInstance.getDetails(tokenId, {from: user01})
+      })
+      .then(result => {
+        assert.strictEqual(result[0].holder, owner, "getDetails did not return correct owner")
+      })
+      //end test block
+    });
+
+    it("Should fail to transfer when not owner", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 27850
+      expiry = 500
+      isEuro = false
+      isPut = true
+      isRequest = false
+      tokenId = 0
+      oracleFee = web3.utils.toBN('1000000000000000000')
+      strikePriceBN = web3.utils.toBN(strikePrice)
+      settlementPriceBN = web3.utils.toBN('0')
+      ownerBalanceBefore = web3.utils.toBN('0')
+      userBalanceBefore = web3.utils.toBN('0')
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        //console.log(JSON.stringify(result.receipt.status, null, 4));
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return expectedExceptionPromise(
+            () => piggyInstance.transferFrom(
+              owner,
+              user01,
+              tokenId,
+              {from: user01, gas: 8000000 }), //transaction from user01 rather than owner
+            3000000);
+      })
+      //end test
+    });
+
+    //end describe block
+  });
+
 
 
 });

@@ -89,12 +89,14 @@ class Approvals extends Component {
         this.state.resolvers.push({value: '0x749b61357Cf4BbeC0fc876cD87eF52e80D29E7D8',label: 'IEX SPY'})
         this.state.resolvers.push({value: '0xb03f9dc90997b2b2f8bfc97cd546ca05628b196f',label: 'Resolve 27000'})
         this.state.resolvers.push({value: '0x25e196efecc3b52e6e64ee331ce02704e6eebf95',label: 'CoinCap ETHUSD'})
+        this.state.resolvers.push({value: '0x5ee7fe3726edce3ed3aea86f3a22ff6d28c54ece',label: 'CoinCap BTCUSD'})
         this.state.resolvers.push({value: '0xa4b09d1794dd1996b29a8b84f80e739df9810c67',label: 'OpenWeather NYC TEMP'})
       }
       if (this.props.store.getState().web3.networkId === 4) {
         this.state.resolvers.push({value: '0x6819727F25AB306aE48878387bB0F4C1374Ea9Ff',label: 'IEX SPY'})
         this.state.resolvers.push({value: '0xccd85a8e2918ddc29f5498c5a05412866c3cfc20',label: 'Resolve 27000'})
         this.state.resolvers.push({value: '0xa140ff02a68cb92c53da2145e6bed72db31e8380',label: 'CoinCap ETHUSD'})
+        this.state.resolvers.push({value: '0x0847eeed35abba30ad07f938e809a48afeb20e97',label: 'CoinCap BTCUSD'})
         this.state.resolvers.push({value: '0xf409e8711afbc473abc7046e8750786687c8abdd',label: 'OpenWeather NYC TEMP'})
       }
     }
@@ -106,12 +108,14 @@ class Approvals extends Component {
         this.state.resolvers.push({value: '0x749b61357Cf4BbeC0fc876cD87eF52e80D29E7D8',label: 'IEX SPY'})
         this.state.resolvers.push({value: '0xb03f9dc90997b2b2f8bfc97cd546ca05628b196f',label: 'Resolve 27000'})
         this.state.resolvers.push({value: '0x25e196efecc3b52e6e64ee331ce02704e6eebf95',label: 'CoinCap ETHUSD'})
+        this.state.resolvers.push({value: '0x5ee7fe3726edce3ed3aea86f3a22ff6d28c54ece',label: 'CoinCap BTCUSD'})
         this.state.resolvers.push({value: '0xa4b09d1794dd1996b29a8b84f80e739df9810c67',label: 'OpenWeather NYC TEMP'})
       }
       if (this.props.store.getState().web3.networkId === 4) {
         this.state.resolvers.push({value: '0x6819727F25AB306aE48878387bB0F4C1374Ea9Ff',label: 'IEX SPY'})
         this.state.resolvers.push({value: '0xccd85a8e2918ddc29f5498c5a05412866c3cfc20',label: 'Resolve 27000'})
         this.state.resolvers.push({value: '0xa140ff02a68cb92c53da2145e6bed72db31e8380',label: 'CoinCap ETHUSD'})
+        this.state.resolvers.push({value: '0x0847eeed35abba30ad07f938e809a48afeb20e97',label: 'CoinCap BTCUSD'})
         this.state.resolvers.push({value: '0xf409e8711afbc473abc7046e8750786687c8abdd',label: 'OpenWeather NYC TEMP'})
       }
     }

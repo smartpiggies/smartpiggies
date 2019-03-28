@@ -16,6 +16,7 @@ RopstenLINK: 0x20fE562d797A42Dcb3399062AE9546cd06f63280
 Chainlink IEX SPY NOW: 0x749b61357Cf4BbeC0fc876cD87eF52e80D29E7D8
 ResolverSelfReturn: 0xb03f9dc90997b2b2f8bfc97cd546ca05628b196f
 Chainlink CoinCap ETHUSD: 0x25e196efecc3b52e6e64ee331ce02704e6eebf95
+Chainlink CoinCap BTCUSD: 0x5ee7fe3726edce3ed3aea86f3a22ff6d28c54ece
 Chainlink OpenWeatherMap TEMP-NYC: 0xa4b09d1794dd1996b29a8b84f80e739df9810c67
 
 Ropsten Chainlink params:
@@ -31,6 +32,7 @@ RinkebyLINK: 0x01BE23585060835E02B77ef475b0Cc51aA1e0709
 Chainlink IEX SPY NOW: 0x6819727F25AB306aE48878387bB0F4C1374Ea9Ff
 ResolverSelfReturn: 0xccd85a8e2918ddc29f5498c5a05412866c3cfc20
 Chainlink CoinCap ETHUSD: 0xa140ff02a68cb92c53da2145e6bed72db31e8380
+Chainlink CoinCap BTCUSD:: 0x0847eeed35abba30ad07f938e809a48afeb20e97
 Chainlink OpenWeatherMap TEMP-NYC: 0xf409e8711afbc473abc7046e8750786687c8abdd
 
 Rinkeby Chainlink params:

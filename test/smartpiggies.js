@@ -1155,6 +1155,120 @@ contract ('SmartPiggies', function(accounts) {
       //end test block
     });
 
+    it("Should auction an RFP token", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = 5000
+      isEuro = false
+      isPut = true
+      isRequest = true // create RFP
+      zeroParam = 0
+
+      startPrice = web3.utils.toBN(1000)
+      reservePrice = web3.utils.toBN(10000)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      balanceBefore = web3.utils.toBN(0)
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return tokenInstance.balanceOf(owner, {from: owner})
+      })
+      .then(balance => {
+        balanceBefore = web3.utils.toBN(balance)
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.startAuction(
+          tokenId,
+          startPrice,
+          reservePrice,
+          auctionLength,
+          timeStep,
+          priceStep,
+          {from: owner}
+        )
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "startAuction did not return true")
+        return tokenInstance.balanceOf(owner, {from: owner})
+      })
+      .then(balance => {
+        assert.strictEqual(balance.toString(), balanceBefore.sub(reservePrice).toString(), "premium balance did not return correctly")
+        return tokenInstance.mint(user01, reservePrice, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "mint did not return true")
+        return tokenInstance.approve(piggyInstance.address, reservePrice, {from: user01})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "approve did not return true")
+        return tokenInstance.balanceOf(user01, {from: user01})
+      })
+      .then(balance => {
+        balanceBefore = web3.utils.toBN(balance)
+        return piggyInstance.getAuctionDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        expiryBlock = result.expiryBlock
+        startBlock = web3.utils.toBN(result.startBlock)
+        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "endAuction did not return true")
+
+        web3.eth.getBlockNumberPromise()
+        .then(blockNumber => {
+          if (blockNumber < expiryBlock) {
+            currentBlock = web3.utils.toBN(blockNumber)
+            delta = currentBlock.sub(startBlock).mul(priceStep).div(timeStep)
+            auctionPrice = startPrice.sub(delta)
+          } else {
+              auctionPrice = reservePrice
+          }
+        })
+      })
+      .then(() => {
+        return piggyInstance.getDetails(tokenId, {from: user01})
+      })
+      .then(result => {
+        //assert.strictEqual(result[0].holder, user01, "getDetails did not return correct holder")
+        return tokenInstance.balanceOf(user01, {from: user01})
+      })
+      .then(balanceNow => {
+        console.log("before: ", balanceBefore.toString())
+        console.log("after: ", balanceNow.toString())
+        console.log("auction price: ", auctionPrice.toString())
+        //assert.strictEqual(balanceNow.toString(), balanceBefore.sub(auctionPrice).toString(), "User balance did not return correctly")
+      })
+      //end test block
+    });
+
     //end describe block
   });
 

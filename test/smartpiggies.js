@@ -82,7 +82,7 @@ contract ('SmartPiggies', function(accounts) {
       return linkInstance.approve(resolverInstance.address, approveAmount, {from: owner});
     });
   });
-/*
+
   //test default values
   it("Should have correct default values", function() {
     return resolverInstance.getOwner({from: owner})
@@ -936,7 +936,7 @@ contract ('SmartPiggies', function(accounts) {
 
     //end describe block
   });
-*/
+
   //Test Create SmartPiggies
   describe("Auctioning piggies", function() {
 
@@ -1220,11 +1220,11 @@ contract ('SmartPiggies', function(accounts) {
       })
       .then(balance => {
         assert.strictEqual(balance.toString(), balanceBefore.sub(reservePrice).toString(), "premium balance did not return correctly")
-        return tokenInstance.mint(user01, reservePrice, {from: owner})
+        return tokenInstance.mint(user01, collateral, {from: owner})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "mint did not return true")
-        return tokenInstance.approve(piggyInstance.address, reservePrice, {from: user01})
+        return tokenInstance.approve(piggyInstance.address, collateral, {from: user01})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "approve did not return true")
@@ -1247,7 +1247,7 @@ contract ('SmartPiggies', function(accounts) {
           if (blockNumber < expiryBlock) {
             currentBlock = web3.utils.toBN(blockNumber)
             delta = currentBlock.sub(startBlock).mul(priceStep).div(timeStep)
-            auctionPrice = startPrice.sub(delta)
+            auctionPrice = startPrice.add(delta)
           } else {
               auctionPrice = reservePrice
           }
@@ -1257,14 +1257,11 @@ contract ('SmartPiggies', function(accounts) {
         return piggyInstance.getDetails(tokenId, {from: user01})
       })
       .then(result => {
-        //assert.strictEqual(result[0].holder, user01, "getDetails did not return correct holder")
+        assert.strictEqual(result[0].writer, user01, "getDetails did not return correct writer")
         return tokenInstance.balanceOf(user01, {from: user01})
       })
       .then(balanceNow => {
-        console.log("before: ", balanceBefore.toString())
-        console.log("after: ", balanceNow.toString())
-        console.log("auction price: ", auctionPrice.toString())
-        //assert.strictEqual(balanceNow.toString(), balanceBefore.sub(auctionPrice).toString(), "User balance did not return correctly")
+        assert.strictEqual(balanceNow.toString(), balanceBefore.sub(collateral).add(auctionPrice).toString(), "User balance did not return correctly")
       })
       //end test block
     });

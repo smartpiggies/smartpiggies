@@ -21,6 +21,9 @@ if (typeof web3.eth.getAccountsPromise === "undefined") {
 contract ('SmartPiggies', function(accounts) {
   //console.log(JSON.stringify(result, null, 4))
 
+  //conditional testing
+  condition = true
+
   var tokenInstance;
   var linkInstance;
   var piggyInstance;
@@ -83,58 +86,61 @@ contract ('SmartPiggies', function(accounts) {
     });
   });
 
-  //test default values
-  it("Should have correct default values", function() {
-    return resolverInstance.getOwner({from: owner})
-    .then(result => {
-      assert.strictEqual(result.toString(), owner, "Contract did not return correct owner.");
-      return resolverInstance.dataSource({from: owner});
-    })
-    .then(result => {
-      assert.strictEqual(result.toString(), dataSource, "Contract did not return correct datasource.");
-      return resolverInstance.underlying({from: owner});
-    })
-    .then(result => {
-      assert.strictEqual(result.toString(), underlying, "Contract should have correct underlying.");
-      return resolverInstance.oracleService({from: owner});
-    })
-    .then(result => {
-      assert.strictEqual(result.toString(), oracleService, "Contract should have correct oracle service.");
-      return resolverInstance.endpoint({from: owner});
-    })
-    .then(result => {
-      assert.strictEqual(result.toString(), endpoint, "Contract should have correct endpoint.");
-      return resolverInstance.path({from: owner});
-    })
-    .then(result => {
-      assert.strictEqual(result.toString(), path, "Contract should have correct path.");
-      return resolverInstance.oracleTokenAddress({from: owner});
-    })
-    .then(result => {
-      assert.strictEqual(result.toString(), oracleTokenAddress, "Contract should have correct oracle token address.");
-      return resolverInstance.price({from: owner});
-    })
-    .then(result => {
-      //oracle returns a default static price for testing locally
-      assert.strictEqual(result.toNumber(), oraclePrice, "Contract should have correct oracle price.");
-      return tokenInstance.balanceOf(owner, {from: owner});
-    })
-    .then(balance => {
-      assert.strictEqual(balance.toString(), supply.toString(), "Contract should have correct balance for owner.");
-      return tokenInstance.allowance(owner, piggyInstance.address, {from: owner});
-    })
-    .then(allowance => {
-      assert.strictEqual(allowance.toString(), approveAmount.toString(), "Contract should have correct allowance for owner.");
-      return linkInstance.balanceOf(owner, {from: owner});
-    })
-    .then(balance => {
-      assert.strictEqual(balance.toString(), supply.toString(), "Contract should have correct balance for owner.");
-      return linkInstance.allowance(owner, resolverInstance.address, {from: owner});
-    })
-    .then(allowance => {
-      assert.strictEqual(allowance.toString(), approveAmount.toString(), "Contract should have correct allowance for owner.");
+  (condition ? describe : describe.skip)("Testing default parameters", function() {
+    //test default values
+    it("Should have correct default values", function() {
+      return resolverInstance.getOwner({from: owner})
+      .then(result => {
+        assert.strictEqual(result.toString(), owner, "Contract did not return correct owner.");
+        return resolverInstance.dataSource({from: owner});
+      })
+      .then(result => {
+        assert.strictEqual(result.toString(), dataSource, "Contract did not return correct datasource.");
+        return resolverInstance.underlying({from: owner});
+      })
+      .then(result => {
+        assert.strictEqual(result.toString(), underlying, "Contract should have correct underlying.");
+        return resolverInstance.oracleService({from: owner});
+      })
+      .then(result => {
+        assert.strictEqual(result.toString(), oracleService, "Contract should have correct oracle service.");
+        return resolverInstance.endpoint({from: owner});
+      })
+      .then(result => {
+        assert.strictEqual(result.toString(), endpoint, "Contract should have correct endpoint.");
+        return resolverInstance.path({from: owner});
+      })
+      .then(result => {
+        assert.strictEqual(result.toString(), path, "Contract should have correct path.");
+        return resolverInstance.oracleTokenAddress({from: owner});
+      })
+      .then(result => {
+        assert.strictEqual(result.toString(), oracleTokenAddress, "Contract should have correct oracle token address.");
+        return resolverInstance.price({from: owner});
+      })
+      .then(result => {
+        //oracle returns a default static price for testing locally
+        assert.strictEqual(result.toNumber(), oraclePrice, "Contract should have correct oracle price.");
+        return tokenInstance.balanceOf(owner, {from: owner});
+      })
+      .then(balance => {
+        assert.strictEqual(balance.toString(), supply.toString(), "Contract should have correct balance for owner.");
+        return tokenInstance.allowance(owner, piggyInstance.address, {from: owner});
+      })
+      .then(allowance => {
+        assert.strictEqual(allowance.toString(), approveAmount.toString(), "Contract should have correct allowance for owner.");
+        return linkInstance.balanceOf(owner, {from: owner});
+      })
+      .then(balance => {
+        assert.strictEqual(balance.toString(), supply.toString(), "Contract should have correct balance for owner.");
+        return linkInstance.allowance(owner, resolverInstance.address, {from: owner});
+      })
+      .then(allowance => {
+        assert.strictEqual(allowance.toString(), approveAmount.toString(), "Contract should have correct allowance for owner.");
+      });
+      //end test
     });
-    //end test
+  //end describe Default block
   });
 
   //Test Create SmartPiggies
@@ -934,7 +940,7 @@ contract ('SmartPiggies', function(accounts) {
       //end test
     });
 
-    //end describe Transfer block
+  //end describe Transfer block
   });
 
   //Test Auctioning SmartPiggies
@@ -956,7 +962,7 @@ contract ('SmartPiggies', function(accounts) {
 
       startPrice = web3.utils.toBN(10000)
       reservePrice = web3.utils.toBN(100)
-      auctionLength = 100
+      auctionLength = web3.utils.toBN(100)
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
       startBlock = web3.utils.toBN(0)
@@ -984,6 +990,12 @@ contract ('SmartPiggies', function(accounts) {
       .then(result => {
         //use last tokenId created
         tokenId = result
+
+        web3.eth.getBlockNumberPromise()
+        .then(block => {
+          startBlock = web3.utils.toBN(block).add(web3.utils.toBN(1)) // will be mined in next block
+        })
+
         return piggyInstance.startAuction(
           tokenId,
           startPrice,
@@ -995,7 +1007,6 @@ contract ('SmartPiggies', function(accounts) {
         )
       })
       .then(result => {
-        //console.log(JSON.stringify(result, null, 4))
         assert.isTrue(result.receipt.status, "startAuction did not return true")
         return tokenInstance.mint(user01, startPrice, {from: owner})
       })
@@ -1013,9 +1024,9 @@ contract ('SmartPiggies', function(accounts) {
       })
       .then(result => {
         expiryBlock = result.expiryBlock
-        startBlock = web3.utils.toBN(result.startBlock)
+
         assert.strictEqual(result.startBlock.toString(), startBlock.toString(), "getAuctionDetails did not return the correct start block")
-        assert.strictEqual(result.expiryBlock.toString(), expiryBlock.toString(), "getAuctionDetails did not return the correct expiry block")
+        assert.strictEqual(result.expiryBlock.toString(), startBlock.add(auctionLength).toString(), "getAuctionDetails did not return the correct expiry block")
         assert.strictEqual(result.startPrice.toString(), startPrice.toString(), "getAuctionDetails did not return the correct start price")
         assert.strictEqual(result.timeStep.toString(), timeStep.toString(), "getAuctionDetails did not return the correct time step")
         assert.strictEqual(result.priceStep.toString(), priceStep.toString(), "getAuctionDetails did not return the correct price step")
@@ -1179,7 +1190,7 @@ contract ('SmartPiggies', function(accounts) {
 
       startPrice = web3.utils.toBN(1000)
       reservePrice = web3.utils.toBN(10000)
-      auctionLength = 100
+      auctionLength = web3.utils.toBN(100)
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
       startBlock = web3.utils.toBN(0)
@@ -1212,6 +1223,12 @@ contract ('SmartPiggies', function(accounts) {
       .then(result => {
         //use last tokenId created
         tokenId = result
+
+        web3.eth.getBlockNumberPromise()
+        .then(block => {
+          startBlock = web3.utils.toBN(block).add(web3.utils.toBN(1)) // will be mined in next block
+        })
+
         return piggyInstance.startAuction(
           tokenId,
           startPrice,
@@ -1244,10 +1261,9 @@ contract ('SmartPiggies', function(accounts) {
       })
       .then(result => {
         expiryBlock = result.expiryBlock
-        startBlock = web3.utils.toBN(result.startBlock)
 
         assert.strictEqual(result.startBlock.toString(), startBlock.toString(), "getAuctionDetails did not return the correct start block")
-        assert.strictEqual(result.expiryBlock.toString(), expiryBlock.toString(), "getAuctionDetails did not return the correct expiry block")
+        assert.strictEqual(result.expiryBlock.toString(), startBlock.add(auctionLength).toString(), "getAuctionDetails did not return the correct expiry block")
         assert.strictEqual(result.startPrice.toString(), startPrice.toString(), "getAuctionDetails did not return the correct start price")
         assert.strictEqual(result.timeStep.toString(), timeStep.toString(), "getAuctionDetails did not return the correct time step")
         assert.strictEqual(result.priceStep.toString(), priceStep.toString(), "getAuctionDetails did not return the correct price step")
@@ -1736,404 +1752,941 @@ contract ('SmartPiggies', function(accounts) {
       //end test
     })
 
-    //end describe Auction block
+  //end describe Auction block
   });
 
-describe("Testing End Auction functionality", function() {
+  describe("Testing End Auction functionality", function() {
 
-  it("Should end an auction", function() {
-    collateralERC = tokenInstance.address
-    premiumERC = tokenInstance.address
-    dataResolverNow = resolverInstance.address
-    dataResolverAtExpiry = resolverInstance.address
-    collateral = web3.utils.toBN(100 * decimals)
-    lotSize = 10
-    strikePrice = 28000
-    expiry = 5000
-    isEuro = false
-    isPut = true
-    isRequest = false
+    it("Should end an auction", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = 5000
+      isEuro = false
+      isPut = true
+      isRequest = false
 
-    startPrice = web3.utils.toBN(10000)
-    reservePrice = web3.utils.toBN(100)
-    auctionLength = 100
-    timeStep = web3.utils.toBN(1)
-    priceStep = web3.utils.toBN(100)
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
 
-    return piggyInstance.createPiggy(
-      collateralERC,
-      premiumERC,
-      dataResolverNow,
-      dataResolverAtExpiry,
-      collateral,
-      lotSize,
-      strikePrice,
-      expiry,
-      isEuro,
-      isPut,
-      isRequest,
-      {from: owner}
-    )
-    .then(result => {
-      assert.isTrue(result.receipt.status, "create did not return true")
-      return piggyInstance.tokenId({from: owner});
-    })
-    .then(result => {
-      //use last tokenId created
-      tokenId = result
-      return piggyInstance.startAuction(
-        tokenId,
-        startPrice,
-        reservePrice,
-        auctionLength,
-        timeStep,
-        priceStep,
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
         {from: owner}
       )
-    })
-    .then(result => {
-      assert.isTrue(result.receipt.status, "startAuction did not return true")
-      return tokenInstance.balanceOf(owner, {from: owner})
-    })
-    .then(balance => {
-      balanceBefore = balance
-      return piggyInstance.endAuction(tokenId, {from: owner})
-    })
-    .then(result => {
-      assert.isTrue(result.receipt.status, "endAuction did not return true")
-      return piggyInstance.getAuctionDetails(tokenId, {from: owner})
-    })
-    .then(result => {
-      assert.strictEqual(result.startBlock.toString(), "0", "getAuctionDetails did not return the correct start block")
-      assert.strictEqual(result.expiryBlock.toString(), "0", "getAuctionDetails did not return the correct expiry block")
-      assert.strictEqual(result.startPrice.toString(), "0", "getAuctionDetails did not return the correct start price")
-      assert.strictEqual(result.timeStep.toString(), "0", "getAuctionDetails did not return the correct time step")
-      assert.strictEqual(result.priceStep.toString(), "0", "getAuctionDetails did not return the correct price step")
-      assert.isNotTrue(result.auctionActive, "getAuctionDetails did not return false for auction active")
-      assert.isNotTrue(result.satisfyInProgress, "getAuctionDetails did not return false for satisfyInProgress")
-    })
-    //end test block
-  });
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.startAuction(
+          tokenId,
+          startPrice,
+          reservePrice,
+          auctionLength,
+          timeStep,
+          priceStep,
+          {from: owner}
+        )
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "startAuction did not return true")
+        return tokenInstance.balanceOf(owner, {from: owner})
+      })
+      .then(balance => {
+        balanceBefore = balance
+        return piggyInstance.endAuction(tokenId, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "endAuction did not return true")
+        return piggyInstance.getAuctionDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        assert.strictEqual(result.startBlock.toString(), "0", "getAuctionDetails did not return the correct start block")
+        assert.strictEqual(result.expiryBlock.toString(), "0", "getAuctionDetails did not return the correct expiry block")
+        assert.strictEqual(result.startPrice.toString(), "0", "getAuctionDetails did not return the correct start price")
+        assert.strictEqual(result.timeStep.toString(), "0", "getAuctionDetails did not return the correct time step")
+        assert.strictEqual(result.priceStep.toString(), "0", "getAuctionDetails did not return the correct price step")
+        assert.isNotTrue(result.auctionActive, "getAuctionDetails did not return false for auction active")
+        assert.isNotTrue(result.satisfyInProgress, "getAuctionDetails did not return false for satisfyInProgress")
+      })
+      //end test block
+    });
 
-  it("Should end an auction for an RFP token", function() {
-    collateralERC = tokenInstance.address
-    premiumERC = tokenInstance.address
-    dataResolverNow = resolverInstance.address
-    dataResolverAtExpiry = resolverInstance.address
-    collateral = web3.utils.toBN(100 * decimals)
-    lotSize = 10
-    strikePrice = 28000
-    expiry = 5000
-    isEuro = false
-    isPut = true
-    isRequest = true // create RFP
+    it("Should end an auction for an RFP token", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = 5000
+      isEuro = false
+      isPut = true
+      isRequest = true // create RFP
 
-    startPrice = web3.utils.toBN(1000)
-    reservePrice = web3.utils.toBN(10000)
-    auctionLength = 100
-    timeStep = web3.utils.toBN(1)
-    priceStep = web3.utils.toBN(100)
-    startBlock = web3.utils.toBN(0)
-    auctionPrice = web3.utils.toBN(0)
+      startPrice = web3.utils.toBN(1000)
+      reservePrice = web3.utils.toBN(10000)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
 
-    balanceBefore = web3.utils.toBN(0)
+      balanceBefore = web3.utils.toBN(0)
 
-    return piggyInstance.createPiggy(
-      collateralERC,
-      premiumERC,
-      dataResolverNow,
-      dataResolverAtExpiry,
-      collateral,
-      lotSize,
-      strikePrice,
-      expiry,
-      isEuro,
-      isPut,
-      isRequest,
-      {from: owner}
-    )
-    .then(result => {
-      assert.isTrue(result.receipt.status, "create did not return true")
-      return piggyInstance.tokenId({from: owner});
-    })
-    .then(result => {
-      //use last tokenId created
-      tokenId = result
-      return piggyInstance.startAuction(
-        tokenId,
-        startPrice,
-        reservePrice,
-        auctionLength,
-        timeStep,
-        priceStep,
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
         {from: owner}
       )
-    })
-    .then(result => {
-      assert.isTrue(result.receipt.status, "startAuction did not return true")
-      return tokenInstance.balanceOf(owner, {from: owner})
-    })
-    .then(balance => {
-      balanceBefore = web3.utils.toBN(balance)
-      return piggyInstance.endAuction(tokenId, {from: owner})
-    })
-    .then(result => {
-      assert.isTrue(result.receipt.status, "endAuction did not return true")
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.startAuction(
+          tokenId,
+          startPrice,
+          reservePrice,
+          auctionLength,
+          timeStep,
+          priceStep,
+          {from: owner}
+        )
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "startAuction did not return true")
+        return tokenInstance.balanceOf(owner, {from: owner})
+      })
+      .then(balance => {
+        balanceBefore = web3.utils.toBN(balance)
+        return piggyInstance.endAuction(tokenId, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "endAuction did not return true")
 
-      return piggyInstance.getAuctionDetails(tokenId, {from: owner})
-    })
-    .then(result => {
-      assert.strictEqual(result.startBlock.toString(), "0", "getAuctionDetails did not return the correct start block")
-      assert.strictEqual(result.expiryBlock.toString(), "0", "getAuctionDetails did not return the correct expiry block")
-      assert.strictEqual(result.startPrice.toString(), "0", "getAuctionDetails did not return the correct start price")
-      assert.strictEqual(result.timeStep.toString(), "0", "getAuctionDetails did not return the correct time step")
-      assert.strictEqual(result.priceStep.toString(), "0", "getAuctionDetails did not return the correct price step")
-      assert.isNotTrue(result.auctionActive, "getAuctionDetails did not return false for auction active")
-      assert.isNotTrue(result.satisfyInProgress, "getAuctionDetails did not return false for satisfyInProgress")
+        return piggyInstance.getAuctionDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        assert.strictEqual(result.startBlock.toString(), "0", "getAuctionDetails did not return the correct start block")
+        assert.strictEqual(result.expiryBlock.toString(), "0", "getAuctionDetails did not return the correct expiry block")
+        assert.strictEqual(result.startPrice.toString(), "0", "getAuctionDetails did not return the correct start price")
+        assert.strictEqual(result.timeStep.toString(), "0", "getAuctionDetails did not return the correct time step")
+        assert.strictEqual(result.priceStep.toString(), "0", "getAuctionDetails did not return the correct price step")
+        assert.isNotTrue(result.auctionActive, "getAuctionDetails did not return false for auction active")
+        assert.isNotTrue(result.satisfyInProgress, "getAuctionDetails did not return false for satisfyInProgress")
 
-      return tokenInstance.balanceOf(owner, {from: owner})
-    })
-    .then(balance => {
-      assert.strictEqual(balance.toString(), balanceBefore.add(reservePrice).toString(), "Balance after endAuction did not return correctly")
-    })
-    //end test block
-  });
+        return tokenInstance.balanceOf(owner, {from: owner})
+      })
+      .then(balance => {
+        assert.strictEqual(balance.toString(), balanceBefore.add(reservePrice).toString(), "Balance after endAuction did not return correctly")
+      })
+      //end test block
+    });
 
-  it("Should fail to end auction when not the owner", function() {
-    collateralERC = tokenInstance.address
-    premiumERC = tokenInstance.address
-    dataResolverNow = resolverInstance.address
-    dataResolverAtExpiry = resolverInstance.address
-    collateral = web3.utils.toBN(100 * decimals)
-    lotSize = 10
-    strikePrice = 28000
-    expiry = 5000
-    isEuro = false
-    isPut = true
-    isRequest = false
+    it("Should fail to end auction when not the owner", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = 5000
+      isEuro = false
+      isPut = true
+      isRequest = false
 
-    startPrice = web3.utils.toBN(10000)
-    reservePrice = web3.utils.toBN(100)
-    auctionLength = 100
-    timeStep = web3.utils.toBN(1)
-    priceStep = web3.utils.toBN(100)
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
 
-    return piggyInstance.createPiggy(
-      collateralERC,
-      premiumERC,
-      dataResolverNow,
-      dataResolverAtExpiry,
-      collateral,
-      lotSize,
-      strikePrice,
-      expiry,
-      isEuro,
-      isPut,
-      isRequest,
-      {from: owner}
-    )
-    .then(result => {
-      assert.isTrue(result.receipt.status, "create did not return true")
-      return piggyInstance.tokenId({from: owner});
-    })
-    .then(result => {
-      //use last tokenId created
-      tokenId = result
-      return piggyInstance.startAuction(
-        tokenId,
-        startPrice,
-        reservePrice,
-        auctionLength,
-        timeStep,
-        priceStep,
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
         {from: owner}
       )
-    })
-    .then(result => {
-      assert.isTrue(result.receipt.status, "startAuction did not return true")
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.startAuction(
+          tokenId,
+          startPrice,
+          reservePrice,
+          auctionLength,
+          timeStep,
+          priceStep,
+          {from: owner}
+        )
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "startAuction did not return true")
 
-      return expectedExceptionPromise(
-          () => piggyInstance.endAuction(
-            tokenId,
-            {from: user01, gas: 8000000 }), //transaction from user01 rather than owner
-          3000000);
-    })
-    //end test
-  });
+        return expectedExceptionPromise(
+            () => piggyInstance.endAuction(
+              tokenId,
+              {from: user01, gas: 8000000 }), //transaction from user01 rather than owner
+            3000000);
+      })
+      //end test
+    });
 
-  it("Should fail to end auction when not active", function() {
-    collateralERC = tokenInstance.address
-    premiumERC = tokenInstance.address
-    dataResolverNow = resolverInstance.address
-    dataResolverAtExpiry = resolverInstance.address
-    collateral = web3.utils.toBN(100 * decimals)
-    lotSize = 10
-    strikePrice = 28000
-    expiry = 5000
-    isEuro = false
-    isPut = true
-    isRequest = false
+    it("Should fail to end auction when not active", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = 5000
+      isEuro = false
+      isPut = true
+      isRequest = false
 
-    startPrice = web3.utils.toBN(10000)
-    reservePrice = web3.utils.toBN(100)
-    auctionLength = 100
-    timeStep = web3.utils.toBN(1)
-    priceStep = web3.utils.toBN(100)
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
 
-    return piggyInstance.createPiggy(
-      collateralERC,
-      premiumERC,
-      dataResolverNow,
-      dataResolverAtExpiry,
-      collateral,
-      lotSize,
-      strikePrice,
-      expiry,
-      isEuro,
-      isPut,
-      isRequest,
-      {from: owner}
-    )
-    .then(result => {
-      assert.isTrue(result.receipt.status, "create did not return true")
-      return piggyInstance.tokenId({from: owner});
-    })
-    .then(result => {
-      //use last tokenId created
-      tokenId = result
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
 
-      return expectedExceptionPromise(
-          () => piggyInstance.endAuction(
-            tokenId,
-            {from: owner, gas: 8000000 }), //transaction from user01 rather than owner
-          3000000);
-    })
-    //end test
-  });
+        return expectedExceptionPromise(
+            () => piggyInstance.endAuction(
+              tokenId,
+              {from: owner, gas: 8000000 }), //transaction from user01 rather than owner
+            3000000);
+      })
+      //end test
+    });
 
   //end describe End Auction block
-});
-
-describe("Testing Satisfy Auction functionality", function() {
-
-  it("Should satisfy an auction", function() {
-    collateralERC = tokenInstance.address
-    premiumERC = tokenInstance.address
-    dataResolverNow = resolverInstance.address
-    dataResolverAtExpiry = resolverInstance.address
-    collateral = web3.utils.toBN(100 * decimals)
-    lotSize = 10
-    strikePrice = 28000
-    expiry = 5000
-    isEuro = false
-    isPut = true
-    isRequest = false
-
-    startPrice = web3.utils.toBN(10000)
-    reservePrice = web3.utils.toBN(100)
-    auctionLength = 100
-    timeStep = web3.utils.toBN(1)
-    priceStep = web3.utils.toBN(100)
-
-    startBlock = web3.utils.toBN(0)
-    auctionPrice = web3.utils.toBN(0)
-
-    ownerBalanceBefore = web3.utils.toBN(0)
-    userBalanceBefore = web3.utils.toBN(0)
-
-    return piggyInstance.createPiggy(
-      collateralERC,
-      premiumERC,
-      dataResolverNow,
-      dataResolverAtExpiry,
-      collateral,
-      lotSize,
-      strikePrice,
-      expiry,
-      isEuro,
-      isPut,
-      isRequest,
-      {from: owner}
-    )
-    .then(result => {
-      assert.isTrue(result.receipt.status, "create did not return true")
-      return piggyInstance.tokenId({from: owner});
-    })
-    .then(result => {
-      //use last tokenId created
-      tokenId = result
-      return piggyInstance.startAuction(
-        tokenId,
-        startPrice,
-        reservePrice,
-        auctionLength,
-        timeStep,
-        priceStep,
-        {from: owner}
-      )
-    })
-    .then(result => {
-      assert.isTrue(result.receipt.status, "startAuction did not return true")
-      return tokenInstance.mint(user01, collateral, {from: owner})
-    })
-    .then(result => {
-      assert.isTrue(result.receipt.status, "mint did not return true")
-      return tokenInstance.approve(piggyInstance.address, collateral, {from: user01})
-    })
-    .then(() => {
-      //get balances
-      return sequentialPromise([
-        () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})),
-        () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner}))
-      ])
-      .then(result => {
-        ownerBalanceBefore = web3.utils.toBN(result[0])
-        userBalanceBefore = web3.utils.toBN(result[1])
-      })
-    })
-    .then(() => {
-      return piggyInstance.getAuctionDetails(tokenId, {from: owner})
-    })
-    .then(result => {
-      expiryBlock = result.expiryBlock
-      startBlock = web3.utils.toBN(result.startBlock)
-      return piggyInstance.satisfyAuction(tokenId, {from: user01})
-    })
-    .then(result => {
-      assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
-
-      web3.eth.getBlockNumberPromise()
-      .then(blockNumber => {
-        if (blockNumber < expiryBlock) {
-          currentBlock = web3.utils.toBN(blockNumber)
-          delta = currentBlock.sub(startBlock).mul(priceStep).div(timeStep)
-          auctionPrice = startPrice.sub(delta)
-        } else {
-            auctionPrice = reservePrice
-        }
-      })
-    })
-    .then(() => {
-      return piggyInstance.getDetails(tokenId, {from: user01})
-    })
-    .then(result => {
-      assert.strictEqual(result[0].holder, user01, "getDetails did not return correct holder")
-
-      //get balances
-      return sequentialPromise([
-        () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})),
-        () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner}))
-      ])
-    })
-    .then(result => {
-      assert.strictEqual(result[0].toString(), ownerBalanceBefore.add(auctionPrice).toString(), "Owner balance did not return correctly")
-      assert.strictEqual(result[1].toString(), userBalanceBefore.sub(auctionPrice).toString(), "User balance did not return correctly")
-    })
-    //end test block
   });
 
+  describe("Testing Satisfy Auction functionality", function() {
+
+    it("Should satisfy an auction", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = 5000
+      isEuro = false
+      isPut = true
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      ownerBalanceBefore = web3.utils.toBN(0)
+      userBalanceBefore = web3.utils.toBN(0)
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.startAuction(
+          tokenId,
+          startPrice,
+          reservePrice,
+          auctionLength,
+          timeStep,
+          priceStep,
+          {from: owner}
+        )
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "startAuction did not return true")
+        return tokenInstance.mint(user01, collateral, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "mint did not return true")
+        return tokenInstance.approve(piggyInstance.address, collateral, {from: user01})
+      })
+      .then(() => {
+        //get balances
+        return sequentialPromise([
+          () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})),
+          () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner}))
+        ])
+        .then(result => {
+          ownerBalanceBefore = web3.utils.toBN(result[0])
+          userBalanceBefore = web3.utils.toBN(result[1])
+        })
+      })
+      .then(() => {
+        return piggyInstance.getAuctionDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        expiryBlock = result.expiryBlock
+        startBlock = web3.utils.toBN(result.startBlock)
+        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
+
+        web3.eth.getBlockNumberPromise()
+        .then(blockNumber => {
+          if (blockNumber < expiryBlock) {
+            currentBlock = web3.utils.toBN(blockNumber)
+            delta = currentBlock.sub(startBlock).mul(priceStep).div(timeStep)
+            auctionPrice = startPrice.sub(delta)
+          } else {
+              auctionPrice = reservePrice
+          }
+        })
+      })
+      .then(() => {
+        return piggyInstance.getDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        assert.strictEqual(result[0].holder, user01, "getDetails did not return correct holder")
+        return piggyInstance.getAuctionDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        //check that auction reset was triggered
+        assert.strictEqual(result.startBlock.toString(), "0", "getAuctionDetails did not return the correct start block")
+        assert.strictEqual(result.expiryBlock.toString(), "0", "getAuctionDetails did not return the correct expiry block")
+        assert.strictEqual(result.startPrice.toString(), "0", "getAuctionDetails did not return the correct start price")
+        assert.strictEqual(result.timeStep.toString(), "0", "getAuctionDetails did not return the correct time step")
+        assert.strictEqual(result.priceStep.toString(), "0", "getAuctionDetails did not return the correct price step")
+        assert.isNotTrue(result.auctionActive, "getAuctionDetails did not return false for auction active")
+        assert.isNotTrue(result.satisfyInProgress, "getAuctionDetails did not return false for satisfyInProgress")
+
+        //get balances
+        return sequentialPromise([
+          () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})),
+          () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner}))
+        ])
+      })
+      .then(result => {
+        assert.strictEqual(result[0].toString(), ownerBalanceBefore.add(auctionPrice).toString(), "Owner balance did not return correctly")
+        assert.strictEqual(result[1].toString(), userBalanceBefore.sub(auctionPrice).toString(), "User balance did not return correctly")
+      })
+      //end test block
+    });
+
+    it("Should satisfy an RFP auction", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = 5000
+      isEuro = false
+      isPut = true
+      isRequest = true // create RFP
+
+      startPrice = web3.utils.toBN(1000)
+      reservePrice = web3.utils.toBN(10000)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      ownerBalanceBefore = web3.utils.toBN(0)
+      userBalanceBefore = web3.utils.toBN(0)
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.startAuction(
+          tokenId,
+          startPrice,
+          reservePrice,
+          auctionLength,
+          timeStep,
+          priceStep,
+          {from: owner}
+        )
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "startAuction did not return true")
+        return tokenInstance.mint(user01, collateral, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "mint did not return true")
+        return tokenInstance.approve(piggyInstance.address, collateral, {from: user01})
+      })
+      .then(() => {
+        //get balances
+        return sequentialPromise([
+          () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})),
+          () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner}))
+        ])
+        .then(result => {
+          ownerBalanceBefore = web3.utils.toBN(result[0])
+          userBalanceBefore = web3.utils.toBN(result[1])
+        })
+      })
+      .then(() => {
+        return piggyInstance.getAuctionDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        expiryBlock = result.expiryBlock
+        startBlock = web3.utils.toBN(result.startBlock)
+        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
+
+        web3.eth.getBlockNumberPromise()
+        .then(blockNumber => {
+          if (blockNumber < expiryBlock) {
+            currentBlock = web3.utils.toBN(blockNumber)
+            delta = currentBlock.sub(startBlock).mul(priceStep).div(timeStep)
+            auctionPrice = startPrice.add(delta)
+          } else {
+              auctionPrice = reservePrice
+          }
+        })
+      })
+      .then(() => {
+        return piggyInstance.getDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        assert.strictEqual(result[0].writer, user01, "getDetails did not return correct holder")
+        return piggyInstance.getAuctionDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        //check that auction reset was triggered
+        assert.strictEqual(result.startBlock.toString(), "0", "getAuctionDetails did not return the correct start block")
+        assert.strictEqual(result.expiryBlock.toString(), "0", "getAuctionDetails did not return the correct expiry block")
+        assert.strictEqual(result.startPrice.toString(), "0", "getAuctionDetails did not return the correct start price")
+        assert.strictEqual(result.timeStep.toString(), "0", "getAuctionDetails did not return the correct time step")
+        assert.strictEqual(result.priceStep.toString(), "0", "getAuctionDetails did not return the correct price step")
+        assert.isNotTrue(result.auctionActive, "getAuctionDetails did not return false for auction active")
+        assert.isNotTrue(result.satisfyInProgress, "getAuctionDetails did not return false for satisfyInProgress")
+
+        //get balances
+        return sequentialPromise([
+          () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})),
+          () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner}))
+        ])
+      })
+      .then(result => {
+        //console.log("price: ", auctionPrice.toString())
+        //console.log("Owner bal before: ", ownerBalanceBefore.toString())
+        //console.log("Owner bal now:    ", result[0].toString())
+        //console.log("Owner bal diff:   ", ownerBalanceBefore.add(reservePrice).sub(auctionPrice).toString())
+
+        //console.log("User bal before: ", userBalanceBefore.toString())
+        //console.log("User bal:        ", result[1].toString())
+        //console.log("User bal diff:   ", userBalanceBefore.sub(collateral).add(auctionPrice).toString())
+
+        assert.strictEqual(result[0].toString(), ownerBalanceBefore.add(reservePrice).sub(auctionPrice).toString(), "Owner balance did not return correctly")
+        assert.strictEqual(result[1].toString(), userBalanceBefore.sub(collateral).add(auctionPrice).toString(), "User balance did not return correctly")
+      })
+      //end test block
+    });
+
+    it("Should reset auction params if auction is expired for satisfy", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = 5000
+      isEuro = false
+      isPut = true
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = web3.utils.toBN(1)
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+
+         web3.eth.getBlockNumberPromise()
+         .then(block => {
+           startBlock = web3.utils.toBN(block).add(web3.utils.toBN(1)) // will be mined in next block
+         })
+
+        return piggyInstance.startAuction(
+          tokenId,
+          startPrice,
+          reservePrice,
+          auctionLength,
+          timeStep,
+          priceStep,
+          {from: owner}
+        )
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "startAuction did not return true")
+        return tokenInstance.mint(user01, collateral, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "mint did not return true")
+        return tokenInstance.approve(piggyInstance.address, collateral, {from: user01})
+      })
+      .then(() => {
+        return piggyInstance.getAuctionDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        expiryBlock = web3.utils.toBN(result.expiryBlock)
+
+        assert.strictEqual(result.startBlock.toString(), startBlock.toString(), "getAuctionDetails did not return the correct start block")
+        assert.strictEqual(result.expiryBlock.toString(), startBlock.add(auctionLength).toString(), "getAuctionDetails did not return the correct expiry block")
+        assert.strictEqual(result.startPrice.toString(), startPrice.toString(), "getAuctionDetails did not return the correct start price")
+        assert.strictEqual(result.timeStep.toString(), timeStep.toString(), "getAuctionDetails did not return the correct time step")
+        assert.strictEqual(result.priceStep.toString(), priceStep.toString(), "getAuctionDetails did not return the correct price step")
+        assert.isTrue(result.auctionActive, "getAuctionDetails did not return true for auction active")
+        assert.isNotTrue(result.satisfyInProgress, "getAuctionDetails did not return false for satisfyInProgress")
+
+        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+      })
+      .then(result => {
+
+        //console.log("expiry: ", expiryBlock.toString())
+        //web3.eth.getBlockNumberPromise()
+        //.then(block => {
+        //  console.log("current: ", block)
+        //})
+        //console.log("tx status: ", result.receipt.status)
+
+        //Why does this return true when the solidity clause returns false???
+        //test against emitted events
+        //assert.isNotTrue(result.receipt.status, "satisfyAuction did not return false")
+        assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
+
+        return piggyInstance.getDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        //holder should fall back to owner, auction did not go through
+        assert.strictEqual(result[0].holder, owner, "getDetails did not return correct holder")
+        return piggyInstance.getAuctionDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        //check that auction reset was triggered
+        assert.strictEqual(result.startBlock.toString(), "0", "getAuctionDetails did not return the correct start block")
+        assert.strictEqual(result.expiryBlock.toString(), "0", "getAuctionDetails did not return the correct expiry block")
+        assert.strictEqual(result.startPrice.toString(), "0", "getAuctionDetails did not return the correct start price")
+        assert.strictEqual(result.timeStep.toString(), "0", "getAuctionDetails did not return the correct time step")
+        assert.strictEqual(result.priceStep.toString(), "0", "getAuctionDetails did not return the correct price step")
+        assert.isNotTrue(result.auctionActive, "getAuctionDetails did not return false for auction active")
+        assert.isNotTrue(result.satisfyInProgress, "getAuctionDetails did not return false for satisfyInProgress")
+      })
+      //end test block
+    });
+
+    it("Should fail to satisfy an auction if satisfied by holder", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = 5000
+      isEuro = false
+      isPut = true
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      ownerBalanceBefore = web3.utils.toBN(0)
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.startAuction(
+          tokenId,
+          startPrice,
+          reservePrice,
+          auctionLength,
+          timeStep,
+          priceStep,
+          {from: owner}
+        )
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "startAuction did not return true")
+        return tokenInstance.mint(owner, collateral, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "mint did not return true")
+        return tokenInstance.approve(piggyInstance.address, collateral, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "approve did not return true")
+        return tokenInstance.allowance(owner, piggyInstance.address, {from: owner})
+      })
+      .then(allowance => {
+        assert.isTrue(allowance.gte(reservePrice), "allowance did not return greater than or equal to reservePrice")
+      })
+      .then(() => {
+        return piggyInstance.getDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        assert.strictEqual(result[0].holder, owner, "getDetails did not return correct holder")
+        return expectedExceptionPromise(
+            () => piggyInstance.satisfyAuction(
+              tokenId,
+              {from: owner, gas: 8000000 }), //transaction should fail from owner
+            3000000);
+      })
+      //end test block
+    });
+
+    it("Should fail to satisfy an auction that has already been satisfied", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = 5000
+      isEuro = false
+      isPut = true
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      ownerBalanceBefore = web3.utils.toBN(0)
+      userBalanceBefore = web3.utils.toBN(0)
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.startAuction(
+          tokenId,
+          startPrice,
+          reservePrice,
+          auctionLength,
+          timeStep,
+          priceStep,
+          {from: owner}
+        )
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "startAuction did not return true")
+        return tokenInstance.mint(user01, collateral, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "mint did not return true")
+        return tokenInstance.approve(piggyInstance.address, collateral, {from: user01})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "approve did not return true")
+        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
+        return piggyInstance.getDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        assert.strictEqual(result[0].holder, user01, "getDetails did not return correct holder")
+        return piggyInstance.getAuctionDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        assert.isNotTrue(result.auctionActive, "getAuctionDetails did not return false for auction active")
+        return tokenInstance.mint(user02, collateral, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "mint did not return true")
+        return tokenInstance.approve(piggyInstance.address, collateral, {from: user02})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "approve did not return true")
+
+        return expectedExceptionPromise(
+            () => piggyInstance.satisfyAuction(
+              tokenId,
+              {from: user02, gas: 8000000 }), //transaction should fail from owner
+            3000000);
+      })
+      //end test block
+    });
+
   //end describe Satisfy Auction block
-});
+  });
+
+  describe("Testing the Clearing process for piggies", function() {
+
+    it("Should clear an American Put piggy", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = 5000
+      isEuro = false
+      isPut = true
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      oracleFee = web3.utils.toBN('1000000000000000000')
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.startAuction(
+          tokenId,
+          startPrice,
+          reservePrice,
+          auctionLength,
+          timeStep,
+          priceStep,
+          {from: owner}
+        )
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "startAuction did not return true")
+        return tokenInstance.mint(user01, collateral, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "mint did not return true")
+        return tokenInstance.approve(piggyInstance.address, collateral, {from: user01})
+      })
+      .then(() => {
+        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
+        return linkInstance.mint(user01, collateral, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "mint did not return true")
+        return linkInstance.approve(resolverInstance.address, collateral, {from: user01})
+      })
+      .then(result => {
+        return piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "requestSettlementPrice did not return true")
+        return piggyInstance.getDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        //settlementPriceBN = web3.utils.toBN(result[1].settlementPrice)
+        assert.strictEqual(result[1].settlementPrice, oraclePrice.toString(), "settlementPrice did not return correctly")
+
+      })
+      //end test block
+    });
+
+  //end describe Clearing block
+  })
 
 
 });

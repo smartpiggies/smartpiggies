@@ -3587,7 +3587,9 @@ contract ('SmartPiggies', function(accounts) {
 
       })
       .then(result => {
-        assert.deepEqual(result, emptyArray, "getOwnedPiggies did not return correctly")
+        //Note returning result without .toString() will return an empty array
+        //assert.deepEqual(result, emptyArray, "getOwnedPiggies did not return correctly")
+        assert.strictEqual(result.toString(), '', "getOwnedPiggies did not return correctly")
         return sequentialPromise([
           () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
           () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner}))
@@ -5256,9 +5258,309 @@ contract ('SmartPiggies', function(accounts) {
   //end describe Claim block
   });
 
-  describe.skip("Testing Token Indexing functionality", function() {
+  describe("Testing Token Indexing functionality", function() {
+
+    it("Should add tokenId to ownedPiggiesIndex when there is a new owner", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = 5000
+      isEuro = false
+      isPut = true
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      emptyArray = []
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.getOwnedPiggies(owner, {from: owner})
+      })
+      .then(result => {
+        assert.strictEqual(result.toString(), "1", "getOwnedPiggies did not return correctly")
+
+        return piggyInstance.startAuction(
+          tokenId,
+          startPrice,
+          reservePrice,
+          auctionLength,
+          timeStep,
+          priceStep,
+          {from: owner}
+        )
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "startAuction did not return true")
+        return sequentialPromise([
+          () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
+          () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01}))
+        ])
+      })
+      .then(result => {
+        assert.isTrue(result[2].receipt.status, "satisfyAuction did not return true")
+        return sequentialPromise([
+          () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: owner})),
+          () => Promise.resolve(piggyInstance.getOwnedPiggies(owner, {from: owner})),
+          () => Promise.resolve(piggyInstance.getOwnedPiggies(user01, {from: owner}))
+        ])
+      })
+      .then(result => {
+        assert.strictEqual(result[0][0].holder, user01, "getDetails didn't return correct holder of token")
+        assert.strictEqual(result[1].toString(), '', "getOwnedPiggies did not return correct piggy count for owner")
+        assert.strictEqual(result[2].toString(), "1", "getOwnedPiggies did not return correct piggy count for user01")
+      })
+      //end test block
+    });
+
+    it("Should add tokenId to ownedPiggiesIndex after multiple transfers of a piggy", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = 5000
+      isEuro = false
+      isPut = true
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      emptyArray = []
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.getOwnedPiggies(owner, {from: owner})
+      })
+      .then(result => {
+        assert.strictEqual(result.toString(), "1", "getOwnedPiggies did not return correctly")
+        return sequentialPromise([
+          () => Promise.resolve(piggyInstance.transferFrom(owner, user01, tokenId, {from: owner})),
+          () => Promise.resolve(piggyInstance.transferFrom(user01, user02, tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.transferFrom(user02, owner, tokenId, {from: user02})),
+          () => Promise.resolve(piggyInstance.getOwnedPiggies(owner, {from: owner})),
+          () => Promise.resolve(piggyInstance.getOwnedPiggies(user01, {from: owner})),
+          () => Promise.resolve(piggyInstance.getOwnedPiggies(user02, {from: owner})),
+        ])
+      })
+      .then(result => {
+        assert.strictEqual(result[3].toString(), '1', "getOwnedPiggies did not return correctly for owner")
+        assert.strictEqual(result[4].toString(), '', "getOwnedPiggies did not return correctly for user01")
+        assert.strictEqual(result[5].toString(), '', "getOwnedPiggies did not return correctly for user02")
+
+        return piggyInstance.startAuction(
+          tokenId,
+          startPrice,
+          reservePrice,
+          auctionLength,
+          timeStep,
+          priceStep,
+          {from: owner}
+        )
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "startAuction did not return true")
+        return sequentialPromise([
+          () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
+          () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01}))
+        ])
+      })
+      .then(result => {
+        assert.isTrue(result[2].receipt.status, "satisfyAuction did not return true")
+        return sequentialPromise([
+          () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: owner})),
+          () => Promise.resolve(piggyInstance.getOwnedPiggies(owner, {from: owner})),
+          () => Promise.resolve(piggyInstance.getOwnedPiggies(user01, {from: owner}))
+        ])
+      })
+      .then(result => {
+        assert.strictEqual(result[0][0].holder, user01, "getDetails didn't return correct holder of token")
+        assert.strictEqual(result[1].toString(), '', "getOwnedPiggies did not return correct piggy count for owner")
+        assert.strictEqual(result[2].toString(), "1", "getOwnedPiggies did not return correct piggy count for user01")
+      })
+      //end test block
+    });
+
+    xit("Should add tokenId to ownedPiggiesIndex for multiple piggies", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = 5000
+      isEuro = false
+      isPut = true
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      emptyArray = []
+
+      return sequentialPromise([
+        () => Promise.resolve(tokenInstance.approve(piggyInstance.address, supply, {from: owner})),
+        () => Promise.resolve(piggyInstance.createPiggy(
+          collateralERC,premiumERC,dataResolverNow,dataResolverAtExpiry,
+          collateral,lotSize,strikePrice,expiry,isEuro,isPut,isRequest,
+          {from: owner})),
+        () => Promise.resolve(piggyInstance.createPiggy(
+          collateralERC,premiumERC,dataResolverNow,dataResolverAtExpiry,
+          collateral,lotSize,strikePrice,expiry,isEuro,isPut,isRequest,
+          {from: owner})),
+        () => Promise.resolve(piggyInstance.createPiggy(
+          collateralERC,premiumERC,dataResolverNow,dataResolverAtExpiry,
+          collateral,lotSize,strikePrice,expiry,isEuro,isPut,isRequest,
+          {from: owner})),
+        () => Promise.resolve(piggyInstance.getOwnedPiggies(owner, {from: owner})),
+      ])
+      .then(result => {
+        console.log(result[4].toString())
+        assert.strictEqual(result[4].toString(), "1,2,3", "getOwnedPiggies did not return correctly for owner")
+
+        return sequentialPromise([
+          () => Promise.resolve(piggyInstance.transferFrom(owner, user01, "1", {from: owner})),
+          () => Promise.resolve(piggyInstance.transferFrom(owner, user02, "2", {from: owner})),
+          () => Promise.resolve(piggyInstance.getOwnedPiggies(owner, {from: owner})),
+          () => Promise.resolve(piggyInstance.getOwnedPiggies(user01, {from: owner})),
+          () => Promise.resolve(piggyInstance.getOwnedPiggies(user02, {from: owner})),
+        ])
+      })
+      .then(result => {
+        console.log("owner index:  ", result[2].toString())
+        console.log("user01 index: ", result[3].toString())
+        console.log("user02 index: ", result[4].toString())
+        //assert.strictEqual(result[2].toString(), "3", "getOwnedPiggies did not return correctly for owner")
+        //assert.strictEqual(result[3].toString(), "1", "getOwnedPiggies did not return correctly for user01")
+        //assert.strictEqual(result[4].toString(), "2", "getOwnedPiggies did not return correctly for user02")
+      })
+      //end test block
+    });
 
   //end describe Indexing block
+  })
+
+  describe("Testing Reclaim And Burn functionality", function() {
+
+    xit("Should create a piggy then reclaim collaterial and burn", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = 5000
+      isEuro = false
+      isPut = true
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.getOwnedPiggies(owner, {from: owner})
+      })
+      .then(result => {
+        assert.strictEqual(result.toString(), "1", "getOwnedPiggies did not return correctly")
+
+        return sequentialPromise([
+          () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})),
+          () => Promise.resolve(piggyInstance.reclaimAndBurn(tokenId, {from: owner})),
+          () => Promise.resolve(piggyInstance.getOwnedPiggies(owner, {from: owner})),
+          () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})),
+        ])
+      })
+      .then(result => {
+        balanceBefore = web3.utils.toBN(result[0])
+        assert.strictEqual(result[3].toString(), balanceBefore.add(collateral).toString(), "owner balance did not update correctly")
+        assert.strictEqual(result[2].toString(), '', "getOwnedPiggies did not return empty")
+      })
+      //end test block
+    });
+
+  //end describe Reclaim block
   })
 
   describe.skip("Testing Zero Address on all functions", function() {

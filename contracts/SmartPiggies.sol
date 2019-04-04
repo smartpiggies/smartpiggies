@@ -375,6 +375,8 @@ function _getERC20Decimals(address _ERC20)
       // return the collateral to sender
       PaymentToken(piggies[_tokenId].addresses.collateralERC).transfer(msg.sender, piggies[_tokenId].uintDetails.collateral);
     }
+    //remove id from index mapping
+    _removeTokenFromOwnedPiggies(piggies[_tokenId].addresses.holder, _tokenId);
     // burn the token (zero out storage fields)
     _resetPiggy(_tokenId);
     return true;

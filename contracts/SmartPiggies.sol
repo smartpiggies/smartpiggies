@@ -306,8 +306,8 @@ function _getERC20Decimals(address _ERC20)
   {
     require(_from == piggies[_tokenId].addresses.holder, "from address is not the owner");
     require(_to != address(0), "to address is zero");
-    _addTokenToOwnedPiggies(_to, _tokenId);
     _removeTokenFromOwnedPiggies(_from, _tokenId);
+    _addTokenToOwnedPiggies(_to, _tokenId);
     piggies[_tokenId].addresses.holder = _to;
   }
 

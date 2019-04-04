@@ -578,6 +578,10 @@ function _getERC20Decimals(address _ERC20)
     require(!piggies[_tokenId].flags.hasBeenCleared, "token has already been cleared");  // this is potentially problematic in the case of "garbage data"
     require(_tokenId != 0, "_tokenId cannot be zero");
     require(_oracleFee != 0, "oracle fee cannot be zero");
+    //if Euro require past expiry
+    if (piggies[_tokenId].flags.isEuro) {
+      require(piggies[_tokenId].uintDetails.expiry < block.number);
+    }
     //fetch data from dataResolver contract
     address _dataResolver;
     if (piggies[_tokenId].flags.isEuro || (piggies[_tokenId].uintDetails.expiry < block.number))

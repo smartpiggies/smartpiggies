@@ -580,7 +580,7 @@ function _getERC20Decimals(address _ERC20)
     require(_oracleFee != 0, "oracle fee cannot be zero");
     //if Euro require past expiry
     if (piggies[_tokenId].flags.isEuro) {
-      require(piggies[_tokenId].uintDetails.expiry < block.number);
+      require(piggies[_tokenId].uintDetails.expiry <= block.number);
     }
     //fetch data from dataResolver contract
     address _dataResolver;

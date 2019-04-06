@@ -96,86 +96,86 @@ contract SmartPiggies is ERC165 {
   */
 
   event CreatePiggy(
-      address indexed _from,
-      uint256 indexed _tokenId,
-      bool indexed _RFP
+      address indexed from,
+      uint256 indexed tokenId,
+      bool indexed RFP
   );
 
   event TransferPiggy(
-      address indexed _from,
-      address indexed _to,
-      uint256 indexed _tokenId
+      address indexed from,
+      address indexed to,
+      uint256 indexed tokenId
   );
 
   event UpdateRFP(
-      address indexed _from,
-      uint256 indexed _tokenId,
-      address _collateralERC,
-      address _premiumERC,
-      address _dataResolverNow,
-      address _dataResolverAtExpiry,
-      uint256 _collateral,
-      uint256 _lotSize,
-      uint256 _strikePrice,
-      uint256 _expiry,
-      bool _isEuro,
-      bool _isPut
+      address indexed from,
+      uint256 indexed tokenId,
+      address collateralERC,
+      address premiumERC,
+      address dataResolverNow,
+      address dataResolverAtExpiry,
+      uint256 reqCollateral,
+      uint256 lotSize,
+      uint256 strikePrice,
+      uint256 expiry,
+      bool isEuro,
+      bool isPut
   );
 
   event ReclaimAndBurn(
-      address indexed _from,
-      uint256 indexed _tokenId,
-      bool indexed _RFP
+      address indexed from,
+      uint256 indexed tokenId,
+      bool indexed RFP
   );
 
   event StartAuction(
-      address indexed _from,
-      uint256 indexed _tokenId,
-      uint256 _startPrice,
-      uint256 _reservePrice,
-      uint256 _auctionLength,
-      uint256 _timeStep,
-      uint256 _priceStep
+      address indexed from,
+      uint256 indexed tokenId,
+      uint256 startPrice,
+      uint256 reservePrice,
+      uint256 auctionLength,
+      uint256 timeStep,
+      uint256 priceStep
   );
 
   event EndAuction(
-      address indexed _from,
-      uint256 indexed _tokenId,
-      bool indexed _RFP
+      address indexed from,
+      uint256 indexed tokenId,
+      bool indexed RFP
   );
 
   event SatisfyAuction(
-      address indexed _from,
-      uint256 indexed _tokenId,
-      uint256 _paidPremium,
-      uint256 _change,
-      uint256 _auctionPremium
+      address indexed from,
+      uint256 indexed tokenId,
+      uint256 paidPremium,
+      uint256 change,
+      uint256 auctionPremium
   );
 
   event RequestSettlementPrice(
-      address indexed _feePayer,
-      uint256 indexed _tokenId,
-      uint256 _oracleFee,
-      address _dataResolver
+      address indexed feePayer,
+      uint256 indexed tokenId,
+      uint256 oracleFee,
+      address dataResolver
   );
 
   event OracleReturned(
-      address indexed _resolver,
-      uint256 indexed _tokenId,
-      uint256 indexed _price
+      address indexed resolver,
+      uint256 indexed tokenId,
+      uint256 indexed price
   );
 
   event SettlePiggy(
-     address indexed _from,
-     uint256 indexed _tokenId,
-     uint256 indexed _holderPayout,
-     uint256 _writerPayout
+     address indexed from,
+     uint256 indexed tokenId,
+     uint256 indexed holderPayout,
+     uint256 writerPayout
   );
 
   event ClaimPayout(
-      address indexed _from,
-      uint256 indexed _amount,
-      address indexed _paymentToken
+      address indexed from,
+      uint256 indexed amount,
+      address indexed paymentToken
   );
 
   /**
@@ -410,7 +410,7 @@ function _getERC20Decimals(address _ERC20)
     address _premiumERC,
     address _dataResolverNow,
     address _dataResolverAtExpiry,
-    uint256 _collateral,
+    uint256 _reqCollateral,
     uint256 _lotSize,
     uint256 _strikePrice,
     uint256 _expiry,
@@ -422,6 +422,7 @@ function _getERC20Decimals(address _ERC20)
   {
     require(piggies[_tokenId].addresses.holder == msg.sender, "you must own the RFP to update it");
     require(piggies[_tokenId].flags.isRequest, "you can only update an RFP");
+    uint256 expiryBlock;
     if (_collateralERC != address(0)) {
       piggies[_tokenId].addresses.collateralERC = _collateralERC;
     }
@@ -434,8 +435,8 @@ function _getERC20Decimals(address _ERC20)
     if (_dataResolverAtExpiry != address(0)) {
       piggies[_tokenId].addresses.dataResolverAtExpiry = _dataResolverAtExpiry;
     }
-    if (_collateral != 0) {
-      piggies[_tokenId].uintDetails.collateral = _collateral;
+    if (_reqCollateral != 0) {
+      piggies[_tokenId].uintDetails.reqCollateral = _reqCollateral;
     }
     if (_lotSize != 0) {
       piggies[_tokenId].uintDetails.lotSize = _lotSize;
@@ -445,7 +446,7 @@ function _getERC20Decimals(address _ERC20)
     }
     if (_expiry != 0) {
       // should this redo the expiry calculation? to be consistent w/ how the creation function works ?
-      uint256 expiryBlock = _expiry.add(block.number);
+      expiryBlock = _expiry.add(block.number);
       piggies[_tokenId].uintDetails.expiry = expiryBlock;
     }
     piggies[_tokenId].flags.isEuro = _isEuro;
@@ -458,10 +459,10 @@ function _getERC20Decimals(address _ERC20)
       _premiumERC,
       _dataResolverNow,
       _dataResolverAtExpiry,
-      _collateral,
+      _reqCollateral,
       _lotSize,
       _strikePrice,
-      _expiry.add(block.number),
+      expiryBlock,
       _isEuro,
       _isPut
     );

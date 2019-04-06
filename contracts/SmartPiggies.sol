@@ -306,8 +306,8 @@ function _getERC20Decimals(address _ERC20)
   {
     require(_from == piggies[_tokenId].addresses.holder, "from address is not the owner");
     require(_to != address(0), "to address is zero");
-    _addTokenToOwnedPiggies(_to, _tokenId);
     _removeTokenFromOwnedPiggies(_from, _tokenId);
+    _addTokenToOwnedPiggies(_to, _tokenId);
     piggies[_tokenId].addresses.holder = _to;
   }
 
@@ -375,6 +375,8 @@ function _getERC20Decimals(address _ERC20)
       // return the collateral to sender
       PaymentToken(piggies[_tokenId].addresses.collateralERC).transfer(msg.sender, piggies[_tokenId].uintDetails.collateral);
     }
+    //remove id from index mapping
+    _removeTokenFromOwnedPiggies(piggies[_tokenId].addresses.holder, _tokenId);
     // burn the token (zero out storage fields)
     _resetPiggy(_tokenId);
     return true;
@@ -578,6 +580,10 @@ function _getERC20Decimals(address _ERC20)
     require(!piggies[_tokenId].flags.hasBeenCleared, "token has already been cleared");  // this is potentially problematic in the case of "garbage data"
     require(_tokenId != 0, "_tokenId cannot be zero");
     require(_oracleFee != 0, "oracle fee cannot be zero");
+    //if Euro require past expiry
+    if (piggies[_tokenId].flags.isEuro) {
+      require(piggies[_tokenId].uintDetails.expiry <= block.number);
+    }
     //fetch data from dataResolver contract
     address _dataResolver;
     if (piggies[_tokenId].flags.isEuro || (piggies[_tokenId].uintDetails.expiry < block.number))

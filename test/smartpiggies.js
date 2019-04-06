@@ -144,7 +144,7 @@ contract ('SmartPiggies', function(accounts) {
   });
 
   //Test Create SmartPiggies
-  describe("Test Create functionality for a SmartPiggies token", function() {
+  describe("Testing Create functionality for a SmartPiggies token", function() {
 
     it("Should create a token", function() {
       collateralERC = tokenInstance.address
@@ -3018,8 +3018,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.isTrue(result.receipt.status, "mint did not return true")
         return linkInstance.approve(resolverInstance.address, collateral, {from: user01})
       })
-      .then(result => {
-
+      .then(() => {
         return expectedExceptionPromise(
             () => piggyInstance.requestSettlementPrice(
               0,
@@ -3104,19 +3103,18 @@ contract ('SmartPiggies', function(accounts) {
         assert.isTrue(result.receipt.status, "mint did not return true")
         return linkInstance.approve(resolverInstance.address, collateral, {from: user01})
       })
-      .then(result => {
-
+      .then(() => {
         return expectedExceptionPromise(
             () => piggyInstance.requestSettlementPrice(
               tokenId,
               0,
-              {from: user01, gas: 8000000 }), //transaction should fail from owner
+              {from: user01, gas: 8000000 }), //transaction should fail
             3000000);
       })
       //end test block
     });
 
-    xit("Should fail to clear if European is called before expriy", function() {
+    it("Should fail to clear if European is called before expriy", function() {
       collateralERC = tokenInstance.address
       premiumERC = tokenInstance.address
       dataResolverNow = resolverInstance.address
@@ -3190,13 +3188,12 @@ contract ('SmartPiggies', function(accounts) {
         assert.isTrue(result.receipt.status, "mint did not return true")
         return linkInstance.approve(resolverInstance.address, collateral, {from: user01})
       })
-      .then(result => {
-
+      .then(() => {
         return expectedExceptionPromise(
             () => piggyInstance.requestSettlementPrice(
               tokenId,
               oracleFee,
-              {from: user01, gas: 8000000 }), //transaction should fail from owner
+              {from: user01, gas: 8000000 }), //transaction should fail
             3000000);
       })
       //end test block
@@ -3276,13 +3273,12 @@ contract ('SmartPiggies', function(accounts) {
         assert.isTrue(result.receipt.status, "mint did not return true")
         return linkInstance.approve(resolverInstance.address, collateral, {from: user01})
       })
-      .then(result => {
-
+      .then(() => {
         return expectedExceptionPromise(
             () => piggyInstance.requestSettlementPrice(
               tokenId,
               oracleFee,
-              {from: owner, gas: 8000000 }), //transaction should fail from owner
+              {from: owner, gas: 8000000 }), //transaction should fail
             3000000);
       })
       //end test block
@@ -3362,23 +3358,14 @@ contract ('SmartPiggies', function(accounts) {
         assert.isTrue(result.receipt.status, "mint did not return true")
         return linkInstance.approve(resolverInstance.address, collateral, {from: user02})
       })
-      .then(result => {
-        return piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user02})
-        /*
+      .then(() => {
         return expectedExceptionPromise(
             () => piggyInstance.requestSettlementPrice(
               tokenId,
               oracleFee,
-              {from: owner, gas: 8000000 }), //transaction should fail from owner
+              {from: owner, gas: 8000000 }), //transaction should fail
             3000000);
-            */
-      })
-      .then(result => {
-        assert.isTrue(result.receipt.status, "requestSettlementPrice did not return true")
-        return piggyInstance.getDetails(tokenId, {from: owner})
-      })
-      .then(result => {
-        assert.strictEqual(result[1].settlementPrice, oraclePrice.toString(), "settlementPrice did not return correctly")
+
       })
       //end test block
     });
@@ -5435,7 +5422,7 @@ contract ('SmartPiggies', function(accounts) {
       //end test block
     });
 
-    xit("Should add tokenId to ownedPiggiesIndex for multiple piggies", function() {
+    it("Should add tokenId to ownedPiggiesIndex for multiple piggies", function() {
       collateralERC = tokenInstance.address
       premiumERC = tokenInstance.address
       dataResolverNow = resolverInstance.address
@@ -5473,7 +5460,6 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(piggyInstance.getOwnedPiggies(owner, {from: owner})),
       ])
       .then(result => {
-        console.log(result[4].toString())
         assert.strictEqual(result[4].toString(), "1,2,3", "getOwnedPiggies did not return correctly for owner")
 
         return sequentialPromise([
@@ -5485,12 +5471,9 @@ contract ('SmartPiggies', function(accounts) {
         ])
       })
       .then(result => {
-        console.log("owner index:  ", result[2].toString())
-        console.log("user01 index: ", result[3].toString())
-        console.log("user02 index: ", result[4].toString())
-        //assert.strictEqual(result[2].toString(), "3", "getOwnedPiggies did not return correctly for owner")
-        //assert.strictEqual(result[3].toString(), "1", "getOwnedPiggies did not return correctly for user01")
-        //assert.strictEqual(result[4].toString(), "2", "getOwnedPiggies did not return correctly for user02")
+        assert.strictEqual(result[2].toString(), "3", "getOwnedPiggies did not return correctly for owner")
+        assert.strictEqual(result[3].toString(), "1", "getOwnedPiggies did not return correctly for user01")
+        assert.strictEqual(result[4].toString(), "2", "getOwnedPiggies did not return correctly for user02")
       })
       //end test block
     });
@@ -5500,7 +5483,7 @@ contract ('SmartPiggies', function(accounts) {
 
   describe("Testing Reclaim And Burn functionality", function() {
 
-    xit("Should create a piggy then reclaim collaterial and burn", function() {
+    it("Should create a piggy then reclaim collaterial and burn", function() {
       collateralERC = tokenInstance.address
       premiumERC = tokenInstance.address
       dataResolverNow = resolverInstance.address

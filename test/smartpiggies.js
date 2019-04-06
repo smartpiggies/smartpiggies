@@ -175,31 +175,34 @@ contract ('SmartPiggies', function(accounts) {
         {from: owner}
       )
       .then(result => {
-        //console.log(JSON.stringify(result, null, 4));
+        assert.strictEqual(result.logs[0].event, "CreatePiggy", "Event log from create didn't return correct event name")
+        assert.strictEqual(result.logs[0].args._from, owner, "Event log from create didn't return correct sender")
+        assert.strictEqual(result.logs[0].args._tokenId.toString(), "1", "Event log from create didn't return correct tokenId")
+        assert.isNotTrue(result.logs[0].args._RFP, "Event log from create didn't return false for RFP")
+
         return piggyInstance.getDetails(1, {from: owner});
       })
       .then(result => {
-        //console.log(JSON.stringify(result, null, 4));
 
         //check DetailAddresses
-        assert.strictEqual(result[0].writer, owner, "Details should have correct writer address.");
-        assert.strictEqual(result[0].holder, owner, "Details should have correct holder address.");
-        assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.");
-        assert.strictEqual(result[0].premiumERC, premiumERC, "Details should have correct premiumERC address.");
-        assert.strictEqual(result[0].dataResolverNow, dataResolverNow, "Details should have correct dataResolverNow address.");
-        assert.strictEqual(result[0].dataResolverAtExpiry, dataResolverAtExpiry, "Details should have correct dataResolverAtExpiry address.");
+        assert.strictEqual(result[0].writer, owner, "Details should have correct writer address.")
+        assert.strictEqual(result[0].holder, owner, "Details should have correct holder address.")
+        assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.")
+        assert.strictEqual(result[0].premiumERC, premiumERC, "Details should have correct premiumERC address.")
+        assert.strictEqual(result[0].dataResolverNow, dataResolverNow, "Details should have correct dataResolverNow address.")
+        assert.strictEqual(result[0].dataResolverAtExpiry, dataResolverAtExpiry, "Details should have correct dataResolverAtExpiry address.")
         //check DetailUints
-        assert.strictEqual(result[1].collateral, collateral.toString(), "Details should have correct collateral amount.");
-        assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.");
-        assert.strictEqual(result[1].strikePrice, strikePrice.toString(), "Details should have correct strikePrice amount.");
-        assert.strictEqual(result[1].settlementPrice, "0", "Details should have returned settlementPrice amount of 0.");
-        assert.strictEqual(result[1].reqCollateral, "0", "Details should have returned reqCollateral amount of 0.");
-        assert.strictEqual(result[1].collateralDecimals, "18", "Details should have returned collateralDecimals amount of 18.");
+        assert.strictEqual(result[1].collateral, collateral.toString(), "Details should have correct collateral amount.")
+        assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
+        assert.strictEqual(result[1].strikePrice, strikePrice.toString(), "Details should have correct strikePrice amount.")
+        assert.strictEqual(result[1].settlementPrice, "0", "Details should have returned settlementPrice amount of 0.")
+        assert.strictEqual(result[1].reqCollateral, "0", "Details should have returned reqCollateral amount of 0.")
+        assert.strictEqual(result[1].collateralDecimals, "18", "Details should have returned collateralDecimals amount of 18.")
         //check BoolFlags
-        assert.isNotTrue(result[2].isRequest, "Details should have returned false for isRequest.");
-        assert.isNotTrue(result[2].isEuro, "Details should have returned false for isEuro.");
-        assert.isTrue(result[2].isPut, "Details should have returned true for isPut.");
-        assert.isNotTrue(result[2].hasBeenCleared, "Details should have returned false for hasBeenCleared.");
+        assert.isNotTrue(result[2].isRequest, "Details should have returned false for isRequest.")
+        assert.isNotTrue(result[2].isEuro, "Details should have returned false for isEuro.")
+        assert.isTrue(result[2].isPut, "Details should have returned true for isPut.")
+        assert.isNotTrue(result[2].hasBeenCleared, "Details should have returned false for hasBeenCleared.")
 
         return piggyInstance.getOwnedPiggies(owner, {from: owner})
       })
@@ -213,7 +216,7 @@ contract ('SmartPiggies', function(accounts) {
   });
 
   //Test Create SmartPiggies fail cases
-  describe("Test Failure cases for Creating SmartPiggies tokens", function() {
+  describe("Testinf Failure cases for Creating SmartPiggies tokens", function() {
     before(function() {
       collateralERC = tokenInstance.address
       premiumERC = tokenInstance.address
@@ -411,7 +414,7 @@ contract ('SmartPiggies', function(accounts) {
   });
 
   //Test Create Request For Piggy (RFP)
-  describe("Test RFP functionality", function() {
+  describe("Testing RFP functionality", function() {
 
     it("Should create an RFP token", function() {
       collateralERC = tokenInstance.address
@@ -441,7 +444,11 @@ contract ('SmartPiggies', function(accounts) {
         {from: owner}
       )
       .then(result => {
-        //console.log(JSON.stringify(result, null, 4));
+        assert.strictEqual(result.logs[0].event, "CreatePiggy", "Event log from create didn't return correct event name")
+        assert.strictEqual(result.logs[0].args._from, owner, "Event log from create didn't return correct sender")
+        assert.strictEqual(result.logs[0].args._tokenId.toString(), "1", "Event log from create didn't return correct tokenId")
+        assert.isTrue(result.logs[0].args._RFP, "Event log from create didn't return true for RFP")
+
         return piggyInstance.getDetails(1, {from: owner});
       })
       .then(result => {
@@ -681,7 +688,7 @@ contract ('SmartPiggies', function(accounts) {
   });
 
   //Test transferFrom function
-  describe("Test transfer functionality, Create an American Put piggy and transfer it", function() {
+  describe.only("Test transfer functionality, Create an American Put piggy and transfer it", function() {
 
     it("Should transfer an American Put piggy", function() {
       collateralERC = tokenInstance.address
@@ -727,6 +734,11 @@ contract ('SmartPiggies', function(accounts) {
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "transfer function did not return true")
+        assert.strictEqual(result.logs[0].event, "TransferPiggy", "Event log from create didn't return correct event name")
+        assert.strictEqual(result.logs[0].args._from, owner, "Event log from create didn't return correct sender")
+        assert.strictEqual(result.logs[0].args._to, user01, "Event log from create didn't return correct recipient")
+        assert.strictEqual(result.logs[0].args._tokenId.toString(), "1", "Event log from create didn't return correct tokenId")
+
         //mint link tokens for user01
         return linkInstance.mint(user01, supply, {from: owner})
       })

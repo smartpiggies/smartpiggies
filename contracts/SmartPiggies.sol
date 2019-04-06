@@ -95,6 +95,89 @@ contract SmartPiggies is ERC165 {
   add events
   */
 
+  event CreatePiggy(
+      address indexed _from,
+      uint256 indexed _tokenId,
+      bool indexed _RFP
+  );
+
+  event TransferPiggy(
+      address indexed _from,
+      address indexed _to,
+      uint256 indexed _tokenId
+  );
+
+  event UpdateRFP(
+      address indexed _from,
+      uint256 indexed _tokenId,
+      address _collateralERC,
+      address _premiumERC,
+      address _dataResolverNow,
+      address _dataResolverAtExpiry,
+      uint256 _collateral,
+      uint256 _lotSize,
+      uint256 _strikePrice,
+      uint256 _expiry,
+      bool _isEuro,
+      bool _isPut
+  );
+
+  event ReclaimAndBurn(
+      address indexed _from,
+      uint256 indexed _tokenId,
+      bool indexed _RFP
+  );
+
+  event StartAuction(
+      address indexed _from,
+      uint256 indexed _tokenId,
+      uint256 _startPrice,
+      uint256 _reservePrice,
+      uint256 _auctionLength,
+      uint256 _timeStep,
+      uint256 _priceStep
+  );
+
+  event EndAuction(
+      address indexed _from,
+      uint256 indexed _tokenId,
+      bool indexed _RFP
+  );
+
+  event SatisfyAuction(
+      address indexed _from,
+      uint256 indexed _tokenId,
+      uint256 _paidPremium,
+      uint256 _change,
+      uint256 _auctionPremium
+  );
+
+  event RequestSettlementPrice(
+      address indexed _feePayer,
+      uint256 indexed _tokenId,
+      uint256 _oracleFee,
+      address _dataResolver
+  );
+
+  event OracleReturned(
+      address indexed _resolver,
+      uint256 indexed _tokenId,
+      uint256 indexed _price
+  );
+
+  event SettlePiggy(
+     address indexed _from,
+     uint256 indexed _tokenId,
+     uint256 indexed _holderPayout,
+     uint256 _writerPayout
+  );
+
+  event ClaimPayout(
+      address indexed _from,
+      uint256 indexed _amount,
+      address indexed _paymentToken
+  );
+
   /**
     constructor should throw if various things aren't properly set
     also should throw if the contract is not delegated an amount of collateral designated
@@ -106,7 +189,6 @@ contract SmartPiggies is ERC165 {
     //declarations here
     owner = msg.sender; //so we can delete if from the testnet
   }
-
 
   // abstract ERC-20 TransferFrom attepmts
   function attemptPaymentTransfer(address _ERC20, address _from, address _to, uint256 _amount)
@@ -231,6 +313,13 @@ contract SmartPiggies is ERC165 {
      p.uintDetails.collateral = _collateral;
    }
    _addTokenToOwnedPiggies(msg.sender, tokenId);
+
+   emit CreatePiggy(
+     msg.sender,
+     tokenId,
+     _isRequest
+   );
+
    return true;
  }
 
@@ -309,6 +398,7 @@ function _getERC20Decimals(address _ERC20)
     _removeTokenFromOwnedPiggies(_from, _tokenId);
     _addTokenToOwnedPiggies(_to, _tokenId);
     piggies[_tokenId].addresses.holder = _to;
+    emit TransferPiggy(_from, _to, _tokenId);
   }
 
   // possibly add function to update reqCollateral if token is an RFP and hasn't been successfully fulfilled
@@ -360,6 +450,22 @@ function _getERC20Decimals(address _ERC20)
     }
     piggies[_tokenId].flags.isEuro = _isEuro;
     piggies[_tokenId].flags.isPut = _isPut;
+
+    emit UpdateRFP(
+      msg.sender,
+      _tokenId,
+      _collateralERC,
+      _premiumERC,
+      _dataResolverNow,
+      _dataResolverAtExpiry,
+      _collateral,
+      _lotSize,
+      _strikePrice,
+      _expiry.add(block.number),
+      _isEuro,
+      _isPut
+    );
+
     return true;
   }
 
@@ -375,6 +481,7 @@ function _getERC20Decimals(address _ERC20)
       // return the collateral to sender
       PaymentToken(piggies[_tokenId].addresses.collateralERC).transfer(msg.sender, piggies[_tokenId].uintDetails.collateral);
     }
+    emit ReclaimAndBurn(msg.sender, _tokenId, piggies[_tokenId].flags.isRequest);
     //remove id from index mapping
     _removeTokenFromOwnedPiggies(piggies[_tokenId].addresses.holder, _tokenId);
     // burn the token (zero out storage fields)
@@ -433,6 +540,16 @@ function _getERC20Decimals(address _ERC20)
     auctions[_tokenId].priceStep = _priceStep;
     auctions[_tokenId].auctionActive = true;
 
+    emit StartAuction(
+      msg.sender,
+      _tokenId,
+      _startPrice,
+      _reservePrice,
+      _auctionLength,
+      _timeStep,
+      _priceStep
+    );
+
     return true;
   }
 
@@ -450,7 +567,7 @@ function _getERC20Decimals(address _ERC20)
       PaymentToken(piggies[_tokenId].addresses.premiumERC).transfer(msg.sender, _premiumToReturn);
     }
     _clearAuctionDetails(_tokenId);
-    // emit an "auction cancelled" type event
+    emit EndAuction(msg.sender, _tokenId, piggies[_tokenId].flags.isRequest);
     return true;
   }
 
@@ -523,6 +640,15 @@ function _getERC20Decimals(address _ERC20)
       piggies[_tokenId].flags.isRequest = false;
       // msg.sender becomes writer
       piggies[_tokenId].addresses.writer = msg.sender;
+
+      emit SatisfyAuction(
+        msg.sender,
+        _tokenId,
+        _adjPremium,
+        _change,
+        _auctionPremium
+      );
+
     } else {
       // calculate the adjusted premium based on reservePrice
       uint256 _adjPremium = _auctionPremium;
@@ -542,12 +668,20 @@ function _getERC20Decimals(address _ERC20)
       }
       // msg.sender becomes holder
       _internalTransfer(piggies[_tokenId].addresses.holder, msg.sender, _tokenId);
+
+      emit SatisfyAuction(
+        msg.sender,
+        _tokenId,
+        _adjPremium,
+        0,
+        _auctionPremium
+      );
+
     }
     // auction is ended
     _clearAuctionDetails(_tokenId);
     // mutex released
     auctions[_tokenId].satisfyInProgress = false;
-    // emit event here ? or within the if / else branches above ?
     return true;
   }
 
@@ -606,6 +740,13 @@ function _getERC20Decimals(address _ERC20)
     );
     require(success, "fetch success did not return true");
 
+    emit RequestSettlementPrice(
+      _feePayer,
+      _tokenId,
+      _oracleFee,
+      _dataResolver
+    );
+
     return true;
   }
 
@@ -625,6 +766,13 @@ function _getERC20Decimals(address _ERC20)
     require(msg.sender == _dataResolver, "resolve address was not correct"); // MUST restrict a call to only the resolver address
     piggies[_tokenId].uintDetails.settlementPrice = _price;
     piggies[_tokenId].flags.hasBeenCleared = true;
+
+    emit OracleReturned(
+      msg.sender,
+      _tokenId,
+      _price
+    );
+
   }
 
   // this appears to basically be redundant w/ requestSettlementPrice
@@ -706,6 +854,14 @@ function _getERC20Decimals(address _ERC20)
      }
      ERC20balances[_holder][_collateralERC] = ERC20balances[_holder][_collateralERC].add(payout);
      ERC20balances[_writer][_collateralERC] = piggies[_tokenId].uintDetails.collateral.sub(payout);
+
+     emit SettlePiggy(
+       msg.sender,
+       _tokenId,
+       ERC20balances[_holder][_collateralERC].add(payout),
+       piggies[_tokenId].uintDetails.collateral.sub(payout)
+     );
+
      _removeTokenFromOwnedPiggies(_holder, _tokenId);
      //clean up piggyId
      _resetPiggy(_tokenId);
@@ -729,6 +885,13 @@ function _getERC20Decimals(address _ERC20)
       )
     );
     require(success, "ERC20 token transfer failed");
+
+    emit ClaimPayout(
+      msg.sender,
+      _amount,
+      _paymentToken
+    );
+
     return true;
   }
 

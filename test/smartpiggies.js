@@ -4453,7 +4453,7 @@ contract ('SmartPiggies', function(accounts) {
             delta = strikePrice.sub(oraclePrice)
             payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
           }
-          if (payout.gte(collateral)) {
+          if (payout.gt(collateral)) {
             payout = collateral
           }
 

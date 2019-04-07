@@ -94,7 +94,7 @@ contract ('SmartPiggies', function(accounts) {
         dataResolverNow = resolverInstance.address
         dataResolverAtExpiry = resolverInstance.address
         collateral = web3.utils.toBN(100 * decimals)
-        lotSize = 10
+        lotSize = web3.utils.toBN(10)
         strikePrice = web3.utils.toBN((strike + (i*5)))
         expiry = 500
         isEuro = false
@@ -200,7 +200,7 @@ contract ('SmartPiggies', function(accounts) {
               delta = strikePrice.sub(oraclePrice)
               payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
             }
-            if (payout.gte(collateral)) {
+            if (payout.gt(collateral)) {
               payout = collateral
             }
 

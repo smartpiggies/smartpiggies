@@ -223,7 +223,7 @@ contract ('SmartPiggies', function(accounts) {
   });
 
   //Test Create SmartPiggies fail cases
-  describe("Testinf Failure cases for Creating SmartPiggies tokens", function() {
+  describe("Testing Failure cases for Creating SmartPiggies tokens", function() {
     before(function() {
       collateralERC = tokenInstance.address
       premiumERC = tokenInstance.address
@@ -3562,7 +3562,7 @@ contract ('SmartPiggies', function(accounts) {
         return piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})
       })
       .then(result => {
-        assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
+        assert.isTrue(result.receipt.status, "requestSettlementPrice did not return true")
         //Oracle Event
         assert.strictEqual(result.logs[0].event, "OracleReturned", "Event log from oracle didn't return correct event name")
         assert.strictEqual(result.logs[0].args.resolver, dataResolverNow, "Event log from oracle didn't return correct sender")
@@ -4446,8 +4446,6 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.from, owner, "Event log from settlement didn't return correct sender")
         assert.strictEqual(result.logs[0].args.tokenId.toString(), tokenId.toString(), "Event log from settlement didn't return correct tokenId")
 
-        eventHolderPayout = web3.utils.toBN(result.logs[0].args.holderPayout)
-        eventHolderPayout = web3.utils.toBN(result.logs[0].args.writerPayout)
         // Put payout:
           // if strike > settlement price | payout = strike - settlement price * lot size
           payout = web3.utils.toBN(0)

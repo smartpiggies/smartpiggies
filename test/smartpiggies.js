@@ -4274,7 +4274,7 @@ contract ('SmartPiggies', function(accounts) {
   //end describe Clearing block
   })
 
-  describe.only("Testing Settle functionality for American style piggies", function() {
+  describe("Testing Settle functionality for American style piggies", function() {
 
     it("Should settle an American Put piggy with payout to writer", function() {
       collateralERC = tokenInstance.address
@@ -4445,8 +4445,6 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].event, "SettlePiggy", "Event log from settlement didn't return correct event name")
         assert.strictEqual(result.logs[0].args.from, owner, "Event log from settlement didn't return correct sender")
         assert.strictEqual(result.logs[0].args.tokenId.toString(), tokenId.toString(), "Event log from settlement didn't return correct tokenId")
-        //assert.strictEqual(result.logs[0].args.holderPayout.toString(), oraclePrice.toString(), "Event log from settlement didn't return correct holder payout")
-        //assert.strictEqual(result.logs[0].args.writerPayout.toString(), oraclePrice.toString(), "Event log from settlement didn't return correct writer payout")
 
         eventHolderPayout = web3.utils.toBN(result.logs[0].args.holderPayout)
         eventHolderPayout = web3.utils.toBN(result.logs[0].args.writerPayout)
@@ -4678,25 +4676,20 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].event, "SettlePiggy", "Event log from settlement didn't return correct event name")
         assert.strictEqual(result.logs[0].args.from, owner, "Event log from settlement didn't return correct sender")
         assert.strictEqual(result.logs[0].args.tokenId.toString(), tokenId.toString(), "Event log from settlement didn't return correct tokenId")
-        //assert.strictEqual(result.logs[0].args.holderPayout.toString(), oraclePrice.toString(), "Event log from settlement didn't return correct holder payout")
-        //assert.strictEqual(result.logs[0].args.writerPayout.toString(), oraclePrice.toString(), "Event log from settlement didn't return correct writer payout")
 
-        eventHolderPayout = web3.utils.toBN(result.logs[0].args.holderPayout)
-        eventHolderPayout = web3.utils.toBN(result.logs[0].args.writerPayout)
         // Put payout:
-          // if strike > settlement price | payout = strike - settlement price * lot size
-          payout = web3.utils.toBN(0)
-          if (strikePrice.gt(oraclePrice)) {
-            delta = strikePrice.sub(oraclePrice)
-            payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
-          }
-          if (payout.gt(collateral)) {
-            payout = collateral
-          }
-          console.log("payout: ", payout.toString())
-          console.log("holder: ", result.logs[0].args.holderPayout.toString())
-        //assert.strictEqual(result.logs[0].args.holderPayout.toString(), collateral.sub(payout).toString(), "Event log from settlement didn't return correct holder payout")
-        //assert.strictEqual(result.logs[0].args.writerPayout.toString(), payout.toString(), "Event log from settlement didn't return correct writer payout")
+        // if strike > settlement price | payout = strike - settlement price * lot size
+        payout = web3.utils.toBN(0)
+        if (strikePrice.gt(oraclePrice)) {
+          delta = strikePrice.sub(oraclePrice)
+          payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
+        }
+        if (payout.gt(collateral)) {
+          payout = collateral
+        }
+
+        assert.strictEqual(result.logs[0].args.holderPayout.toString(), payout.toString(), "Event log from settlement didn't return correct holder payout")
+        assert.strictEqual(result.logs[0].args.writerPayout.toString(), collateral.sub(payout).toString(), "Event log from settlement didn't return correct writer payout")
       })
       //end test block
     });
@@ -4791,6 +4784,100 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[8].toString(), payout.toString(), "User balance did not update correctly")
         assert.strictEqual(result[8].toString(), "5000000000000000000", "Owner balance did not return 5*10^18")
 
+      })
+      //end test block
+    });
+
+    it("Should emit correct Settle Event when holder with split payout", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = web3.utils.toBN(5)
+      strikePrice = web3.utils.toBN(27100)
+      expiry = 5000
+      isEuro = false
+      isPut = true
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      oracleFee = web3.utils.toBN('1000000000000000000')
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.startAuction(
+          tokenId,
+          startPrice,
+          reservePrice,
+          auctionLength,
+          timeStep,
+          priceStep,
+          {from: owner}
+        )
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "startAuction did not return true")
+
+        return sequentialPromise([
+          () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
+          () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
+          () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
+          () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
+        ])
+      })
+      .then(() => {
+        return piggyInstance.settlePiggy(tokenId, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "settlePiggy did not return true")
+        //Settle Event
+        assert.strictEqual(result.logs[0].event, "SettlePiggy", "Event log from settlement didn't return correct event name")
+        assert.strictEqual(result.logs[0].args.from, owner, "Event log from settlement didn't return correct sender")
+        assert.strictEqual(result.logs[0].args.tokenId.toString(), tokenId.toString(), "Event log from settlement didn't return correct tokenId")
+
+        // Put payout:
+        // if strike > settlement price | payout = strike - settlement price * lot size
+        payout = web3.utils.toBN(0)
+        if (strikePrice.gt(oraclePrice)) {
+          delta = strikePrice.sub(oraclePrice)
+          payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
+        }
+        if (payout.gt(collateral)) {
+          payout = collateral
+        }
+
+        assert.strictEqual(result.logs[0].args.holderPayout.toString(), payout.toString(), "Event log from settlement didn't return correct holder payout")
+        assert.strictEqual(result.logs[0].args.writerPayout.toString(), collateral.sub(payout).toString(), "Event log from settlement didn't return correct writer payout")
       })
       //end test block
     });
@@ -6239,6 +6326,91 @@ contract ('SmartPiggies', function(accounts) {
       .then(result => {
         assert.strictEqual(result[0].toString(), "0", "Contract balance for owner should have returned zero")
         assert.strictEqual(result[1].toString(), "0", "Contract balance for user should have returned zero")
+      })
+      //end test block
+    });
+
+    it("Should emit Event for the claim of payouts for writer", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = web3.utils.toBN(5)
+      strikePrice = web3.utils.toBN(26500)
+      expiry = 5000
+      isEuro = false
+      isPut = false
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      oracleFee = web3.utils.toBN('1000000000000000000')
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.startAuction(
+          tokenId,
+          startPrice,
+          reservePrice,
+          auctionLength,
+          timeStep,
+          priceStep,
+          {from: owner}
+        )
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "startAuction did not return true")
+
+        return sequentialPromise([
+          () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
+          () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
+          () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
+          () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
+          () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
+        ])
+      })
+      .then(result => {
+        assert.isTrue(result[6].receipt.status, "settlePiggy did not return true")
+        ownerBalanceInContract = result[7]
+        return piggyInstance.claimPayout(tokenInstance.address, ownerBalanceInContract, {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "claimPayout did not return true")
+        //Settle Event
+        assert.strictEqual(result.logs[0].event, "ClaimPayout", "Event log from claimPayout didn't return correct event name")
+        assert.strictEqual(result.logs[0].args.from, owner, "Event log from claimPayout didn't return correct sender")
+        assert.strictEqual(result.logs[0].args.amount.toString(), ownerBalanceInContract.toString(), "Event log from claimPayout didn't return correct amount")
+        assert.strictEqual(result.logs[0].args.paymentToken, tokenInstance.address, "Event log from claimPayout didn't return correct payment token address")
       })
       //end test block
     });

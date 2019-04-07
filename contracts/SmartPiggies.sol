@@ -859,7 +859,7 @@ function _getERC20Decimals(address _ERC20)
      emit SettlePiggy(
        msg.sender,
        _tokenId,
-       ERC20balances[_holder][_collateralERC].add(payout),
+       payout,
        piggies[_tokenId].uintDetails.collateral.sub(payout)
      );
 

@@ -9,7 +9,7 @@ If the above is not all set for the desired network, oracle calls from
 Chainlink will not resolve.
 
 Ropsten:
-SmartPiggies: 0x4De41C62843c6714F9965687a36D36cf2a67689F
+SmartPiggies: 0x07a50a35e42166cd4fdae405386bc25312571dd4
 StableToken: 0x7cae3e2d2c3e3fb7273e6c5ffa2e9856a2f4a594
 StableTokenFaucet: 0x3cd9f616c65ee8a2b628041dbc178fe526117a1f
 RopstenLINK: 0x20fE562d797A42Dcb3399062AE9546cd06f63280
@@ -25,7 +25,7 @@ LINK address: 0x20fE562d797A42Dcb3399062AE9546cd06f63280
 Oracle address: 0xc99B3D447826532722E41bc36e644ba3479E4365
 
 Rinkeby:
-SmartPiggies: 0xb0d75df98529cd59613aa2978f83b6468efd8b06
+SmartPiggies: 0x779beeffecd1d26003d1ace227e2cee6b41ec54f
 Stable: 0x288ee61F0bC2c4AccB18ab385cc20fFCeD5c4D4D
 StableTokenFaucet: 0xbc1d371885cf8ebe80c17fd021ab4d1375590b67
 RinkebyLINK: 0x01BE23585060835E02B77ef475b0Cc51aA1e0709
@@ -94,13 +94,22 @@ SmartPiggies:
   "3": {
     "events": {},
     "links": {},
-    "address": "0x4De41C62843c6714F9965687a36D36cf2a67689F",
-    "transactionHash": "0xdbe2cd0ea54b23f1b33076961f9c5ccd063f04338d2d03a2f99ab3c381a0bf7e"
+    "address": "0x07a50a35e42166cd4fdae405386bc25312571dd4",
+    "transactionHash": "0x87ba4eaa74f646edc01abb1e546cf436e60ec65c94a88645ba8b783672b8caf6"
   },
   "4": {
     "events": {},
     "links": {},
-    "address": "0xb0d75df98529cd59613aa2978f83b6468efd8b06",
-    "transactionHash": "0x505e7ebdc6c944a4abf68ec0661ff065a79cbc83327d29cb788c4c0b66e53959"
+    "address": "0x779beeffecd1d26003d1ace227e2cee6b41ec54f",
+    "transactionHash": "0x9a35322dc1a426cc5f2f86eb15e241cd894c424f06bacec6f1e36fedf2599e80"
   }
 },
+
+
+//old addresses
+
+Rinkeby
+SmartPiggies: 0xb0d75df98529cd59613aa2978f83b6468efd8b06
+
+Ropsten
+SmartPiggies: 0x4De41C62843c6714F9965687a36D36cf2a67689F

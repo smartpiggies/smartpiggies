@@ -174,6 +174,9 @@ class Home extends Component {
         case '4':
           activeNetwork = 'Rinkeby'
           break
+        case '5':
+          activeNetwork = 'Goerli'
+          break
         default:
           activeNetwork = 'unknown'
       }
@@ -252,6 +255,9 @@ class Home extends Component {
           break
         case '4':
           activeNetwork = 'Rinkeby'
+          break
+        case '5':
+          activeNetwork = 'Goerli'
           break
         default:
           activeNetwork = 'unknown'

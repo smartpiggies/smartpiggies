@@ -98,7 +98,9 @@ contract SmartPiggies is ERC165 {
   event CreatePiggy(
       address indexed from,
       uint256 indexed tokenId,
-      bool indexed RFP
+      uint256 indexed strike,
+      uint256 expiryBlock,
+      bool RFP
   );
 
   event TransferPiggy(
@@ -317,6 +319,8 @@ contract SmartPiggies is ERC165 {
    emit CreatePiggy(
      msg.sender,
      tokenId,
+     _strikePrice,
+     _expiry.add(block.number),
      _isRequest
    );
 

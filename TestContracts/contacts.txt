@@ -42,7 +42,7 @@ Oracle address: 0x7AFe1118Ea78C1eae84ca8feE5C65Bc76CcF879e
 
 
 Goerli:
-SmartPiggies: 0x288ee61f0bc2c4accb18ab385cc20ffced5c4d4d
+SmartPiggies: 0xd847904c84532950bdbe7ed8dd2e8c9ce0a3716d
 Stable: 0xb32cee0afd1fcbbc9143f633a7cbb83d32268516
 StableTokenFaucet: 0x83b5789821e118c49a85bf5e1bbde022d356e8fd
 GoerliLINK: 0x3427a2dda3dad2f80dcd532fc51a48792348276c
@@ -131,8 +131,8 @@ SmartPiggies:
   "5": {
     "events": {},
     "links": {},
-    "address": "0x288ee61f0bc2c4accb18ab385cc20ffced5c4d4d",
-    "transactionHash": "0xdf6cd13ef8bb641edb18ec4354d33021aba2293091cb043e03a01f5fb98748f3"
+    "address": "0xd847904c84532950bdbe7ed8dd2e8c9ce0a3716d",
+    "transactionHash": "0xd4b094183857f26299a0f308ed274c475414fbbf82c4b87dd67a69c912ca4c58"
   }
 },
 
@@ -144,3 +144,6 @@ SmartPiggies: 0xb0d75df98529cd59613aa2978f83b6468efd8b06
 
 Ropsten
 SmartPiggies: 0x4De41C62843c6714F9965687a36D36cf2a67689F
+
+Goerli
+SmartPiggies: 0x288ee61f0bc2c4accb18ab385cc20ffced5c4d4d

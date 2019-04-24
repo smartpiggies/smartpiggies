@@ -96,7 +96,7 @@ contract ('SmartPiggies', function(accounts) {
         collateral = web3.utils.toBN(100 * decimals)
         lotSize = web3.utils.toBN(10)
         strikePrice = web3.utils.toBN((strike + (i*5)))
-        expiry = 500
+        expiry = web3.utils.toBN(500)
         isEuro = false
         isPut = true
         isRequest = false
@@ -126,7 +126,13 @@ contract ('SmartPiggies', function(accounts) {
           assert.strictEqual(result.logs[0].event, "CreatePiggy", "Event log from create didn't return correct event name")
           assert.strictEqual(result.logs[0].args.from, owner, "Event log from create didn't return correct sender")
           assert.strictEqual(result.logs[0].args.tokenId.toString(), "1", "Event log from create didn't return correct tokenId")
+          assert.strictEqual(result.logs[0].args.strike.toString(), strikePrice.toString(), "Event log from create didn't return correct strike")
           assert.isNotTrue(result.logs[0].args.RFP, "Event log from create didn't return false for RFP")
+          web3.eth.getBlockNumberPromise()
+          .then(block => {
+            currentBlock = web3.utils.toBN(block)
+            assert.strictEqual(result.logs[0].args.expiryBlock.toString(), expiry.add(currentBlock).toString(), "Event log from create didn't return correct expiry block")
+          })
           return piggyInstance.tokenId({from: owner});
         })
         .then(result => {

@@ -47,6 +47,7 @@ Stable: 0xb32cee0afd1fcbbc9143f633a7cbb83d32268516
 StableTokenFaucet: 0x83b5789821e118c49a85bf5e1bbde022d356e8fd
 GoerliLINK: 0x3427a2dda3dad2f80dcd532fc51a48792348276c
 ResolverSelfReturn: 0x7af0036610ebfd178b6bcfc5789ec1493d88f927
+ResolverSelfReturnETHUSD: 0x16C986F144D57f1e7a313F50d82cd72668803b2E
 
 TestnetLINK:
 "networks": {

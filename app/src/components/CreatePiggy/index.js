@@ -120,6 +120,7 @@ class CreatePiggy extends Component {
       }
       if (this.props.store.getState().web3.networkId === 5) {
         this.state.resolvers.push({value: '0x7af0036610ebfd178b6bcfc5789ec1493d88f927',label: 'Resolve 29000'})
+        this.state.resolvers.push({value: '0x16C986F144D57f1e7a313F50d82cd72668803b2E',label: 'Resolve 15000'})
       }
     }
   }
@@ -142,6 +143,7 @@ class CreatePiggy extends Component {
       }
       if (this.props.store.getState().web3.networkId === 5) {
         this.state.resolvers.push({value: '0x7af0036610ebfd178b6bcfc5789ec1493d88f927',label: 'Resolve 29000'})
+        this.state.resolvers.push({value: '0x16C986F144D57f1e7a313F50d82cd72668803b2E',label: 'Resolve 15000'})
       }
     }
   }

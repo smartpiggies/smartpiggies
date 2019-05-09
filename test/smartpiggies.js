@@ -2,7 +2,6 @@
 //Promise.promisifyAll(web3.eth, { suffix: "Promise"});
 //var expectedExceptionPromise = require("./utils/expectedException.js");
 
-Promise = require("bluebird");
 var StableToken = artifacts.require("./StableToken.sol");
 var TestnetLINK = artifacts.require("./TestnetLINK.sol");
 var SmartPiggies = artifacts.require("./SmartPiggies.sol");
@@ -13,10 +12,6 @@ const sequentialPromise = require("../utils/sequentialPromise.js");
 web3.eth.makeSureHasAtLeast = require("../utils/makeSureHasAtLeast.js");
 web3.eth.makeSureAreUnlocked = require("../utils/makeSureAreUnlocked.js");
 web3.eth.getTransactionReceiptMined = require("../utils/getTransactionReceiptMined.js");
-
-if (typeof web3.eth.getAccountsPromise === "undefined") {
-    Promise.promisifyAll(web3.eth, { suffix: "Promise" });
-}
 
 contract ('SmartPiggies', function(accounts) {
   //console.log(JSON.stringify(result, null, 4))

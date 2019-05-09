@@ -70,7 +70,7 @@ class Settlement extends Component {
         <Divider />
         <br></br>
         <Typography variant="h6" style={{marginLeft: "10px", marginRight: "10px"}}>This token is ready to be cleared!</Typography>
-        <Typography variant="h6" style={{marginLeft: "10px", marginRight: "10px"}}>Click the Settle button to caluculate the payout.</Typography>
+        <Typography variant="h6" style={{marginLeft: "10px", marginRight: "10px"}}>Click the Settle button to calculate the payout.</Typography>
         <br></br>
         <Button type="Button" variant="contained" color="primary" style={{marginBottom: "15px"}} onClick={this.handleButton}>Settle</Button>
       </Paper>

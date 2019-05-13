@@ -47,8 +47,9 @@ contract SmartPiggies is ERC165 {
     address holder;
     address collateralERC;
     address premiumERC;
-    address dataResolverNow;
-    address dataResolverAtExpiry;
+    //address dataResolverNow;
+    //address dataResolverAtExpiry;
+    address dataResolver;
   }
 
   struct DetailUints {
@@ -98,8 +99,12 @@ contract SmartPiggies is ERC165 {
   event CreatePiggy(
       address indexed from,
       uint256 indexed tokenId,
+      uint256 collateral,
+      uint256 lotSize,
       uint256 indexed strike,
       uint256 expiryBlock,
+      bool isEuro,
+      bool isPut,
       bool RFP
   );
 
@@ -114,8 +119,9 @@ contract SmartPiggies is ERC165 {
       uint256 indexed tokenId,
       address collateralERC,
       address premiumERC,
-      address dataResolverNow,
-      address dataResolverAtExpiry,
+      address dataResolver,
+      // address dataResolverNow,
+      // address dataResolverAtExpiry,
       uint256 reqCollateral,
       uint256 lotSize,
       uint256 strikePrice,
@@ -250,8 +256,9 @@ contract SmartPiggies is ERC165 {
    function createPiggy(
    address _collateralERC,
    address _premiumERC,
-   address _dataResolverNow,
-   address _dataResolverAtExpiry,
+   //address _dataResolverNow,
+   //address _dataResolverAtExpiry,
+   address _dataResolver,
    uint256 _collateral,
    uint256 _lotSize,
    uint256 _strikePrice,
@@ -266,8 +273,9 @@ contract SmartPiggies is ERC165 {
    require(
      _collateralERC != address(0) &&
      _premiumERC != address(0) &&
-     _dataResolverNow != address(0) &&
-     _dataResolverAtExpiry != address(0),
+     _dataResolver != address(0),
+     //_dataResolverNow != address(0) &&
+     //_dataResolverAtExpiry != address(0),
      "addresses cannot be zero"
    );
    require(
@@ -297,8 +305,9 @@ contract SmartPiggies is ERC165 {
    p.addresses.holder = msg.sender;
    p.addresses.collateralERC = _collateralERC;
    p.addresses.premiumERC = _premiumERC;
-   p.addresses.dataResolverNow = _dataResolverNow;
-   p.addresses.dataResolverAtExpiry = _dataResolverAtExpiry;
+   p.addresses.dataResolver = _dataResolver;
+   //p.addresses.dataResolverNow = _dataResolverNow;
+   //p.addresses.dataResolverAtExpiry = _dataResolverAtExpiry;
    p.uintDetails.collateralDecimals = _getERC20Decimals(_collateralERC);
    p.uintDetails.lotSize = _lotSize;
    p.uintDetails.strikePrice = _strikePrice;
@@ -319,8 +328,12 @@ contract SmartPiggies is ERC165 {
    emit CreatePiggy(
      msg.sender,
      tokenId,
+     _collateral,
+     _lotSize,
      _strikePrice,
      _expiry.add(block.number),
+     _isEuro,
+     _isPut,
      _isRequest
    );
 
@@ -412,8 +425,9 @@ function _getERC20Decimals(address _ERC20)
     uint256 _tokenId,
     address _collateralERC,
     address _premiumERC,
-    address _dataResolverNow,
-    address _dataResolverAtExpiry,
+    //address _dataResolverNow,
+    //address _dataResolverAtExpiry,
+    address _dataResolver,
     uint256 _reqCollateral,
     uint256 _lotSize,
     uint256 _strikePrice,
@@ -433,12 +447,15 @@ function _getERC20Decimals(address _ERC20)
     if (_premiumERC != address(0)) {
       piggies[_tokenId].addresses.premiumERC = _premiumERC;
     }
-    if (_dataResolverNow != address(0)) {
-      piggies[_tokenId].addresses.dataResolverNow = _dataResolverNow;
+    if (_dataResolver != address(0)) {
+      piggies[_tokenId].addresses.dataResolver = _dataResolver;
     }
-    if (_dataResolverAtExpiry != address(0)) {
-      piggies[_tokenId].addresses.dataResolverAtExpiry = _dataResolverAtExpiry;
-    }
+    // if (_dataResolverNow != address(0)) {
+    //   piggies[_tokenId].addresses.dataResolverNow = _dataResolverNow;
+    // }
+    // if (_dataResolverAtExpiry != address(0)) {
+    //   piggies[_tokenId].addresses.dataResolverAtExpiry = _dataResolverAtExpiry;
+    // }
     if (_reqCollateral != 0) {
       piggies[_tokenId].uintDetails.reqCollateral = _reqCollateral;
     }
@@ -461,8 +478,9 @@ function _getERC20Decimals(address _ERC20)
       _tokenId,
       _collateralERC,
       _premiumERC,
-      _dataResolverNow,
-      _dataResolverAtExpiry,
+      // _dataResolverNow,
+      // _dataResolverAtExpiry,
+      _dataResolver,
       _reqCollateral,
       _lotSize,
       _strikePrice,
@@ -690,6 +708,13 @@ function _getERC20Decimals(address _ERC20)
     return true;
   }
 
+  function requestSettlementPrice_new(uint256 _tokenId, uint256 _oracleFee, bool _atExpiry)
+    public
+    returns (bool)
+  {
+    // this should trigger a resolver w/ a forward we
+  }
+
   /** @notice Call the oracle to fetch the settlement price
       @dev Throws if `_tokenId` is not a valid ERC-59 token.
        Throws if `_oracle` is not a valid contract address.
@@ -712,6 +737,12 @@ function _getERC20Decimals(address _ERC20)
   function requestSettlementPrice(uint256 _tokenId, uint256 _oracleFee) // this should be renamed perhaps, s.t. it is obvious that this is the "clearing phase"
     public
     returns (bool)
+
+    // change this to send to the same (single) resolver
+    // should also look up the expiry using the tokenId and send that too
+    // this should be fired at piggy creation as well, with the expiry used
+    // make sure the resolver knows what to do with the bool
+
   {
     require(msg.sender != address(0), "sender cannot be the zero address");
     //what check should be done to check that piggy is active?

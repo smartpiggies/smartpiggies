@@ -25,7 +25,7 @@ LINK address: 0x20fE562d797A42Dcb3399062AE9546cd06f63280
 Oracle address: 0xc99B3D447826532722E41bc36e644ba3479E4365
 
 Rinkeby:
-SmartPiggies: 0x11a4158d3b251b2bb69229835d2decc9055ab709
+SmartPiggies: 0xbd2321224b031375f7a56027b5578db5701f7271
 Stable: 0x288ee61F0bC2c4AccB18ab385cc20fFCeD5c4D4D
 StableTokenFaucet: 0xbc1d371885cf8ebe80c17fd021ab4d1375590b67
 RinkebyLINK: 0x01BE23585060835E02B77ef475b0Cc51aA1e0709
@@ -100,8 +100,8 @@ SmartPiggies:
   "4": {
     "events": {},
     "links": {},
-    "address": "0x11a4158d3b251b2bb69229835d2decc9055ab709",
-    "transactionHash": "0x43f3ebabd366e5fac3911b3c4a5df83497b711e9e4500df2faeca983d819bad4"
+    "address": "0xbd2321224b031375f7a56027b5578db5701f7271",
+    "transactionHash": "0x284cb6a9770a121afa07c6d59d6db8d053faa46d02d2e402ac51654ab3fe80f8"
   }
 },
 
@@ -111,6 +111,7 @@ SmartPiggies:
 Rinkeby
 SmartPiggies: 0xb0d75df98529cd59613aa2978f83b6468efd8b06 [killed]
 SmartPiggies: 0x779beeffecd1d26003d1ace227e2cee6b41ec54f
+SmartPiggies: 0x11a4158d3b251b2bb69229835d2decc9055ab709
 
 Ropsten
 SmartPiggies: 0x4De41C62843c6714F9965687a36D36cf2a67689F [killed]

@@ -99,6 +99,10 @@ class Approvals extends Component {
         this.state.resolvers.push({value: '0x0847eeed35abba30ad07f938e809a48afeb20e97',label: 'CoinCap BTCUSD'})
         this.state.resolvers.push({value: '0xf409e8711afbc473abc7046e8750786687c8abdd',label: 'OpenWeather NYC TEMP'})
       }
+      if (this.props.store.getState().web3.networkId === 5) {
+        this.state.resolvers.push({value: '0x7af0036610ebfd178b6bcfc5789ec1493d88f927',label: 'Resolve 29000'})
+        this.state.resolvers.push({value: '0x16C986F144D57f1e7a313F50d82cd72668803b2E',label: 'Resolve 15000'})
+      }
     }
   }
 
@@ -117,6 +121,10 @@ class Approvals extends Component {
         this.state.resolvers.push({value: '0xa140ff02a68cb92c53da2145e6bed72db31e8380',label: 'CoinCap ETHUSD'})
         this.state.resolvers.push({value: '0x0847eeed35abba30ad07f938e809a48afeb20e97',label: 'CoinCap BTCUSD'})
         this.state.resolvers.push({value: '0xf409e8711afbc473abc7046e8750786687c8abdd',label: 'OpenWeather NYC TEMP'})
+      }
+      if (this.props.store.getState().web3.networkId === 5) {
+        this.state.resolvers.push({value: '0x7af0036610ebfd178b6bcfc5789ec1493d88f927',label: 'Resolve 29000'})
+        this.state.resolvers.push({value: '0x16C986F144D57f1e7a313F50d82cd72668803b2E',label: 'Resolve 15000'})
       }
     }
   }

@@ -42,6 +42,11 @@ Oracle address: 0x7AFe1118Ea78C1eae84ca8feE5C65Bc76CcF879e
 
 Goerli:
 SmartPiggies: 0x286c1af6d507181413859d41c830ca443aa88653
+Stable: 0xb32cee0afd1fcbbc9143f633a7cbb83d32268516
+StableTokenFaucet: 0x83b5789821e118c49a85bf5e1bbde022d356e8fd
+GoerliLINK: 0x3427a2dda3dad2f80dcd532fc51a48792348276c
+ResolverSelfReturn: 0x7af0036610ebfd178b6bcfc5789ec1493d88f927
+ResolverSelfReturnETHUSD: 0x16C986F144D57f1e7a313F50d82cd72668803b2E
 
 TestnetLINK:
 "networks": {
@@ -56,6 +61,12 @@ TestnetLINK:
     "links": {},
     "address": "0x01BE23585060835E02B77ef475b0Cc51aA1e0709",
     "transactionHash": "0x590e005420ecdbb33d689be5a258198d2e502690dfd24d1344b0291e60a1d23a"
+  },
+  "5": {
+    "events": {},
+    "links": {},
+    "address": "0x3427a2dda3dad2f80dcd532fc51a48792348276c",
+    "transactionHash": "0xb746cc9bb764ebc530dff75c442c6e12739038aee9b8393fcaea872f8f6bb330"
   }
 },
 
@@ -72,6 +83,12 @@ StableTokenFaucet:
     "links": {},
     "address": "0xbc1d371885cf8ebe80c17fd021ab4d1375590b67",
     "transactionHash": "0xe4b8db524bf2d883426c28cb18433beeba079ea28dbf165430cd9f69bbdb3398"
+  },
+  "5": {
+    "events": {},
+    "links": {},
+    "address": "0x83b5789821e118c49a85bf5e1bbde022d356e8fd",
+    "transactionHash": "0x433224ec818c76187a100460f8f386c99010d76495b9a0568d852d9b3db1b97f"
   }
 },
 
@@ -88,6 +105,12 @@ StableToken:
     "links": {},
     "address": "0x288ee61F0bC2c4AccB18ab385cc20fFCeD5c4D4D",
     "transactionHash": "0x6c02375b2a21b32be1e4d718c4d74362ab20844d13d9f7858b37a7d40c862a72"
+  },
+  "5": {
+    "events": {},
+    "links": {},
+    "address": "0xb32cee0afd1fcbbc9143f633a7cbb83d32268516",
+    "transactionHash": "0xbd6971cfa375ce95e12e309fe98ef89eed9dc26c075f0ea108adf90c087b8bad"
   }
 },
 
@@ -128,4 +151,5 @@ SmartPiggies: 0x07a50a35e42166cd4fdae405386bc25312571dd4 [killed]
 SmartPiggies: 0xd685d647476e063e18053d86c1148ffacf8b1648
 
 Goerli
-SmartPiggies:
+SmartPiggies: 0x288ee61f0bc2c4accb18ab385cc20ffced5c4d4d
+SmartPiggies: 0xd847904c84532950bdbe7ed8dd2e8c9ce0a3716d

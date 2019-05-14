@@ -30,7 +30,7 @@ contract StableTokenFaucet is ERC20, ERC20Detailed, ERC20Mintable, ERC20Burnable
   constructor()
     ERC20Burnable()
     ERC20Mintable()
-    ERC20Detailed("StableTokenFaucet","STFCET",18)
+    ERC20Detailed("StableTokenFaucet","STBLE-F",18)
     ERC20()
     public
   {

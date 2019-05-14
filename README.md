@@ -9,8 +9,13 @@ An open source standard for a free peer-to-peer global derivatives market.
 
 This repository is a front-end dApp that will connect to the testnet contracts defining a SmartPiggies implementation.
 
+## Warning
+These contracts are on testnet and are changed frequently as we continue to develop the implementation of the design.
+If you are playing with the demo and we target a new contract, all your piggies will not show up. Previously made
+piggies will be associated with the old contract, but we usually delete these contracts once we deploy a new contract.
+
 ## Getting Started
-SmartPiggies takes advantage of stable tokens and oracles, which are currently available technologies on the ethereum test networks, e.g. Ropsten and Rinkeby. Because these technologoes already exist, the demo dApp is expected to be available shortly (if you would like to view it on our dev server email: real smart piggies @ gmail dot com). In the mean time, to build this repo follow the instructions below.
+SmartPiggies takes advantage of stable tokens and oracles, which are currently available technologies on the ethereum test networks, e.g. Ropsten, Rinkeby and Goerli (if you would like to view it on our dev server email: real smart piggies @ gmail dot com). In the mean time, to build this repo follow the instructions below.
 
 ### Prerequisites
 In order to interact with the deployed SmartPiggies contracts there are a couple steps that need to be taken.

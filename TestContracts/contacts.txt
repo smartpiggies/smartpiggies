@@ -9,7 +9,7 @@ If the above is not all set for the desired network, oracle calls from
 Chainlink will not resolve.
 
 Ropsten:
-SmartPiggies: 0xd685d647476e063e18053d86c1148ffacf8b1648
+SmartPiggies: 0x9ae9b2d53b4b9a5d468f5cbd404ffbd8539bb4e5
 StableToken: 0x7cae3e2d2c3e3fb7273e6c5ffa2e9856a2f4a594
 StableTokenFaucet: 0x3cd9f616c65ee8a2b628041dbc178fe526117a1f
 RopstenLINK: 0x20fE562d797A42Dcb3399062AE9546cd06f63280
@@ -25,7 +25,7 @@ LINK address: 0x20fE562d797A42Dcb3399062AE9546cd06f63280
 Oracle address: 0xc99B3D447826532722E41bc36e644ba3479E4365
 
 Rinkeby:
-SmartPiggies: 0xbd2321224b031375f7a56027b5578db5701f7271
+SmartPiggies: 0x1f59e6404a44be3220a0c44914d846fd89518eff
 Stable: 0x288ee61F0bC2c4AccB18ab385cc20fFCeD5c4D4D
 StableTokenFaucet: 0xbc1d371885cf8ebe80c17fd021ab4d1375590b67
 RinkebyLINK: 0x01BE23585060835E02B77ef475b0Cc51aA1e0709
@@ -40,6 +40,8 @@ jobId: 6d1bfe27e7034b1d87b5270556b17277
 LINK address: 0x01BE23585060835E02B77ef475b0Cc51aA1e0709
 Oracle address: 0x7AFe1118Ea78C1eae84ca8feE5C65Bc76CcF879e
 
+Goerli:
+SmartPiggies: 0x286c1af6d507181413859d41c830ca443aa88653
 
 TestnetLINK:
 "networks": {
@@ -94,14 +96,20 @@ SmartPiggies:
   "3": {
     "events": {},
     "links": {},
-    "address": "0xd685d647476e063e18053d86c1148ffacf8b1648",
-    "transactionHash": "0xde90878efaaa0ea4edb476d5723ca74ebdbf1eafa1a0d773d3aa91f899804434"
+    "address": "0x9ae9b2d53b4b9a5d468f5cbd404ffbd8539bb4e5",
+    "transactionHash": "0xff1b9fa478dc92de8adb62d16f6484ed42e3923c5bd434b53116f6dc42e5b318"
   },
   "4": {
     "events": {},
     "links": {},
-    "address": "0xbd2321224b031375f7a56027b5578db5701f7271",
-    "transactionHash": "0x284cb6a9770a121afa07c6d59d6db8d053faa46d02d2e402ac51654ab3fe80f8"
+    "address": "0x1f59e6404a44be3220a0c44914d846fd89518eff",
+    "transactionHash": "0x34a9e31ec13eaaab06b213a454f343a52ba546d2b13d1ed919c2d22848662423"
+  },
+  "5": {
+    "events": {},
+    "links": {},
+    "address": "0x286c1af6d507181413859d41c830ca443aa88653",
+    "transactionHash": "0x3b63658a46156fbd3bea1e7fce9a92e26b29366cf04fb493bb85fe6e51ec5dfe"
   }
 },
 
@@ -110,9 +118,14 @@ SmartPiggies:
 
 Rinkeby
 SmartPiggies: 0xb0d75df98529cd59613aa2978f83b6468efd8b06 [killed]
-SmartPiggies: 0x779beeffecd1d26003d1ace227e2cee6b41ec54f
-SmartPiggies: 0x11a4158d3b251b2bb69229835d2decc9055ab709
+SmartPiggies: 0x779beeffecd1d26003d1ace227e2cee6b41ec54f [killed]
+SmartPiggies: 0x11a4158d3b251b2bb69229835d2decc9055ab709 [killed]
+SmartPiggies: 0xbd2321224b031375f7a56027b5578db5701f7271
 
 Ropsten
 SmartPiggies: 0x4De41C62843c6714F9965687a36D36cf2a67689F [killed]
-SmartPiggies: 0x07a50a35e42166cd4fdae405386bc25312571dd4
+SmartPiggies: 0x07a50a35e42166cd4fdae405386bc25312571dd4 [killed]
+SmartPiggies: 0xd685d647476e063e18053d86c1148ffacf8b1648
+
+Goerli
+SmartPiggies:

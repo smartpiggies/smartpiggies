@@ -137,6 +137,7 @@ contract SmartPiggies is ERC165 {
   event StartAuction(
       address indexed from,
       uint256 indexed tokenId,
+      uint256 indexed startBlock,
       uint256 startPrice,
       uint256 reservePrice,
       uint256 auctionLength,
@@ -556,6 +557,7 @@ function _getERC20Decimals(address _ERC20)
     emit StartAuction(
       msg.sender,
       _tokenId,
+      block.number,
       _startPrice,
       _reservePrice,
       _auctionLength,

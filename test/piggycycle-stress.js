@@ -126,7 +126,11 @@ contract ('SmartPiggies', function(accounts) {
           assert.strictEqual(result.logs[0].event, "CreatePiggy", "Event log from create didn't return correct event name")
           assert.strictEqual(result.logs[0].args.from, owner, "Event log from create didn't return correct sender")
           assert.strictEqual(result.logs[0].args.tokenId.toString(), "1", "Event log from create didn't return correct tokenId")
+          assert.strictEqual(result.logs[0].args.collateral.toString(), collateral.toString(), "Event log from create didn't return correct collateral")
+          assert.strictEqual(result.logs[0].args.lotSize.toString(), lotSize.toString(), "Event log from create didn't return correct lot size")
           assert.strictEqual(result.logs[0].args.strike.toString(), strikePrice.toString(), "Event log from create didn't return correct strike")
+          assert.isNotTrue(result.logs[0].args.isEuro, "Event log from create didn't return false for is European")
+          assert.isTrue(result.logs[0].args.isPut, "Event log from create didn't return true for is put")
           assert.isNotTrue(result.logs[0].args.RFP, "Event log from create didn't return false for RFP")
           web3.eth.getBlockNumberPromise()
           .then(block => {

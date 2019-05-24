@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **/
 pragma solidity >=0.4.24 <0.6.0;
-pragma experimental ABIEncoderV2;
+//pragma experimental ABIEncoderV2;
 
 // massive thanks to ERC-721 spec for this D:
 
@@ -352,6 +352,7 @@ function _getERC20Decimals(address _ERC20)
    return uint8(_ERCdecimals);
 }
 
+/**
   // helper function to view info from about the piggy outside of the contract
   function getDetails(uint256 _tokenId)
     public
@@ -360,7 +361,8 @@ function _getERC20Decimals(address _ERC20)
   {
     return piggies[_tokenId];
   }
-
+*/
+/**
   // this is a helper function to allow view of auction details
   function getAuctionDetails(uint256 _tokenId)
     public
@@ -369,7 +371,7 @@ function _getERC20Decimals(address _ERC20)
   {
     return auctions[_tokenId];
   }
-
+*/
   /** @notice Count the number of ERC-59 tokens owned by a particular address
       @dev ERC-59 tokens assigned to the zero address are considered invalid, and this
        function throws for queries about the zero address.

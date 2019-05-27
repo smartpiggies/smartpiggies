@@ -352,26 +352,50 @@ function _getERC20Decimals(address _ERC20)
    return uint8(_ERCdecimals);
 }
 
-/**
   // helper function to view info from about the piggy outside of the contract
   function getDetails(uint256 _tokenId)
     public
     view
-    returns (Piggy memory)
+    returns (address[6] memory, uint[7] memory)
   {
-    return piggies[_tokenId];
+    address[6] memory arryAddr;
+    uint[7] memory arryUint;
+    arryAddr[0] = piggies[_tokenId].addresses.writer;
+    arryAddr[1] = piggies[_tokenId].addresses.holder;
+    arryAddr[2] = piggies[_tokenId].addresses.collateralERC;
+    arryAddr[3] = piggies[_tokenId].addresses.premiumERC;
+    arryAddr[4] = piggies[_tokenId].addresses.dataResolverNow;
+    arryAddr[5] = piggies[_tokenId].addresses.dataResolverAtExpiry;
+    arryUint[0] = piggies[_tokenId].uintDetails.collateral;
+    //uint256 lotSize;
+    //uint256 strikePrice;
+    //uint256 expiry;
+    //uint256 settlementPrice;
+    //uint256 reqCollateral;
+    //uint8 collateralDecimals
+    return (arryAddr, arryUint);
   }
-*/
-/**
+
+
   // this is a helper function to allow view of auction details
   function getAuctionDetails(uint256 _tokenId)
     public
     view
-    returns (DetailAuction memory)
+    returns (uint[6] memory, bool[2] memory)
   {
-    return auctions[_tokenId];
+    uint[6] memory arryUint;
+    bool[2] memory arryBool;
+    arryUint[0] = auctions[_tokenId].startBlock;
+    arryUint[1] =  auctions[_tokenId].expiryBlock;
+    arryUint[2] =  auctions[_tokenId].startPrice;
+    arryUint[3] =  auctions[_tokenId].reservePrice;
+    arryUint[4] =  auctions[_tokenId].timeStep;
+    arryUint[5] =  auctions[_tokenId].priceStep;
+    arryBool[0] = auctions[_tokenId].auctionActive;
+    arryBool[1] = auctions[_tokenId].satisfyInProgress;
+    return (arryUint, arryBool);
   }
-*/
+
   /** @notice Count the number of ERC-59 tokens owned by a particular address
       @dev ERC-59 tokens assigned to the zero address are considered invalid, and this
        function throws for queries about the zero address.

@@ -356,10 +356,11 @@ function _getERC20Decimals(address _ERC20)
   function getDetails(uint256 _tokenId)
     public
     view
-    returns (address[6] memory, uint[7] memory)
+    returns (address[6] memory, uint[7] memory, bool[4] memory)
   {
     address[6] memory arryAddr;
     uint[7] memory arryUint;
+    bool[4] memory arryBool;
     arryAddr[0] = piggies[_tokenId].addresses.writer;
     arryAddr[1] = piggies[_tokenId].addresses.holder;
     arryAddr[2] = piggies[_tokenId].addresses.collateralERC;
@@ -373,7 +374,11 @@ function _getERC20Decimals(address _ERC20)
     arryUint[4] = piggies[_tokenId].uintDetails.settlementPrice;
     arryUint[5] = piggies[_tokenId].uintDetails.reqCollateral;
     arryUint[6] = piggies[_tokenId].uintDetails.collateralDecimals;
-    return (arryAddr, arryUint);
+    arryBool[0] = piggies[_tokenId].flags.isRequest;
+    arryBool[1] = piggies[_tokenId].flags.isEuro;
+    arryBool[2] = piggies[_tokenId].flags.isPut;
+    arryBool[3] = piggies[_tokenId].flags.hasBeenCleared;
+    return (arryAddr, arryUint, arryBool);
   }
 
 

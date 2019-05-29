@@ -367,12 +367,12 @@ function _getERC20Decimals(address _ERC20)
     arryAddr[4] = piggies[_tokenId].addresses.dataResolverNow;
     arryAddr[5] = piggies[_tokenId].addresses.dataResolverAtExpiry;
     arryUint[0] = piggies[_tokenId].uintDetails.collateral;
-    //uint256 lotSize;
-    //uint256 strikePrice;
-    //uint256 expiry;
-    //uint256 settlementPrice;
-    //uint256 reqCollateral;
-    //uint8 collateralDecimals
+    arryUint[1] = piggies[_tokenId].uintDetails.lotSize;
+    arryUint[2] = piggies[_tokenId].uintDetails.strikePrice;
+    arryUint[3] = piggies[_tokenId].uintDetails.expiry;
+    arryUint[4] = piggies[_tokenId].uintDetails.settlementPrice;
+    arryUint[5] = piggies[_tokenId].uintDetails.reqCollateral;
+    arryUint[6] = piggies[_tokenId].uintDetails.collateralDecimals;
     return (arryAddr, arryUint);
   }
 

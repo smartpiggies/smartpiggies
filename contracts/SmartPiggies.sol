@@ -96,92 +96,92 @@ contract SmartPiggies is ERC165 {
   */
 
   event CreatePiggy(
-      address indexed from,
-      uint256 indexed tokenId,
-      uint256 collateral,
-      uint256 lotSize,
-      uint256 indexed strike,
-      uint256 expiryBlock,
-      bool isEuro,
-      bool isPut,
-      bool RFP
+    address indexed from,
+    uint256 indexed tokenId,
+    uint256 collateral,
+    uint256 lotSize,
+    uint256 indexed strike,
+    uint256 expiryBlock,
+    bool isEuro,
+    bool isPut,
+    bool RFP
   );
 
   event TransferPiggy(
-      address indexed from,
-      address indexed to,
-      uint256 indexed tokenId
+    address indexed from,
+    address indexed to,
+    uint256 indexed tokenId
   );
 
   event UpdateRFP(
-      address indexed from,
-      uint256 indexed tokenId,
-      address collateralERC,
-      address premiumERC,
-      address dataResolverNow,
-      address dataResolverAtExpiry,
-      uint256 reqCollateral,
-      uint256 lotSize,
-      uint256 strikePrice,
-      uint256 expiry,
-      bool isEuro,
-      bool isPut
+    address indexed from,
+    uint256 indexed tokenId,
+    address collateralERC,
+    address premiumERC,
+    address dataResolverNow,
+    address dataResolverAtExpiry,
+    uint256 reqCollateral,
+    uint256 lotSize,
+    uint256 strikePrice,
+    uint256 expiry,
+    bool isEuro,
+    bool isPut
   );
 
   event ReclaimAndBurn(
-      address indexed from,
-      uint256 indexed tokenId,
-      bool indexed RFP
+    address indexed from,
+    uint256 indexed tokenId,
+    bool indexed RFP
   );
 
   event StartAuction(
-      address indexed from,
-      uint256 indexed tokenId,
-      uint256 startPrice,
-      uint256 reservePrice,
-      uint256 auctionLength,
-      uint256 timeStep,
-      uint256 priceStep
+    address indexed from,
+    uint256 indexed tokenId,
+    uint256 startPrice,
+    uint256 reservePrice,
+    uint256 auctionLength,
+    uint256 timeStep,
+    uint256 priceStep
   );
 
   event EndAuction(
-      address indexed from,
-      uint256 indexed tokenId,
-      bool indexed RFP
+    address indexed from,
+    uint256 indexed tokenId,
+    bool indexed RFP
   );
 
   event SatisfyAuction(
-      address indexed from,
-      uint256 indexed tokenId,
-      uint256 paidPremium,
-      uint256 change,
-      uint256 auctionPremium
+    address indexed from,
+    uint256 indexed tokenId,
+    uint256 paidPremium,
+    uint256 change,
+    uint256 auctionPremium
   );
 
   event RequestSettlementPrice(
-      address indexed feePayer,
-      uint256 indexed tokenId,
-      uint256 oracleFee,
-      address dataResolver
+    address indexed feePayer,
+    uint256 indexed tokenId,
+    uint256 oracleFee,
+    address dataResolver
   );
 
   event OracleReturned(
-      address indexed resolver,
-      uint256 indexed tokenId,
-      uint256 indexed price
+    address indexed resolver,
+    uint256 indexed tokenId,
+    uint256 indexed price
   );
 
   event SettlePiggy(
-     address indexed from,
-     uint256 indexed tokenId,
-     uint256 indexed holderPayout,
-     uint256 writerPayout
+   address indexed from,
+   uint256 indexed tokenId,
+   uint256 indexed holderPayout,
+   uint256 writerPayout
   );
 
   event ClaimPayout(
-      address indexed from,
-      uint256 indexed amount,
-      address indexed paymentToken
+    address indexed from,
+    uint256 indexed amount,
+    address indexed paymentToken
   );
 
   /**
@@ -252,17 +252,17 @@ contract SmartPiggies is ERC165 {
        will be calculated for a call option
    */
    function createPiggy(
-   address _collateralERC,
-   address _premiumERC,
-   address _dataResolverNow,
-   address _dataResolverAtExpiry,
-   uint256 _collateral,
-   uint256 _lotSize,
-   uint256 _strikePrice,
-   uint256 _expiry,
-   bool _isEuro,
-   bool _isPut,
-   bool _isRequest
+     address _collateralERC,
+     address _premiumERC,
+     address _dataResolverNow,
+     address _dataResolverAtExpiry,
+     uint256 _collateral,
+     uint256 _lotSize,
+     uint256 _strikePrice,
+     uint256 _expiry,
+     bool _isEuro,
+     bool _isPut,
+     bool _isRequest
    )
    public
    returns (bool)
@@ -280,60 +280,194 @@ contract SmartPiggies is ERC165 {
      _strikePrice != 0 &&
      _expiry != 0,
      "option parameters cannot be zero"
-   );
-   // if not an RFP, make sure the collateral can be transferred
-   if (!_isRequest) {
-     bool success = attemptPaymentTransfer(
-       _collateralERC, //_collateralERC
-       msg.sender,
-       address(this),
-       _collateral
-     );
-     require(success, "Token transfer did not complete");
-   }
-   // any other checks that need to be performed specifically for RFPs ?
+  );
+  // if not an RFP, make sure the collateral can be transferred
+  if (!_isRequest) {
+    bool success = attemptPaymentTransfer(
+      _collateralERC, //_collateralERC
+      msg.sender,
+      address(this),
+      _collateral
+    );
+    require(success, "Token transfer did not complete");
+  }
+  // any other checks that need to be performed specifically for RFPs ?
 
-   // assuming all checks have passed:
-   tokenId = tokenId.add(1);
+  // assuming all checks have passed:
+  tokenId = tokenId.add(1);
 
-   // write the values to storage, including _isRequest flag
-   Piggy storage p = piggies[tokenId];
-   p.addresses.holder = msg.sender;
-   p.addresses.collateralERC = _collateralERC;
-   p.addresses.premiumERC = _premiumERC;
-   p.addresses.dataResolverNow = _dataResolverNow;
-   p.addresses.dataResolverAtExpiry = _dataResolverAtExpiry;
-   p.uintDetails.collateralDecimals = _getERC20Decimals(_collateralERC);
-   p.uintDetails.lotSize = _lotSize;
-   p.uintDetails.strikePrice = _strikePrice;
-   p.uintDetails.expiry = _expiry.add(block.number);
-   p.flags.isEuro = _isEuro;
-   p.flags.isPut = _isPut;
-   p.flags.isRequest = _isRequest;
+  // write the values to storage, including _isRequest flag
+  Piggy storage p = piggies[tokenId];
+  p.addresses.holder = msg.sender;
+  p.addresses.collateralERC = _collateralERC;
+  p.addresses.premiumERC = _premiumERC;
+  p.addresses.dataResolverNow = _dataResolverNow;
+  p.addresses.dataResolverAtExpiry = _dataResolverAtExpiry;
+  p.uintDetails.collateralDecimals = _getERC20Decimals(_collateralERC);
+  p.uintDetails.lotSize = _lotSize;
+  p.uintDetails.strikePrice = _strikePrice;
+  p.uintDetails.expiry = _expiry.add(block.number);
+  p.flags.isEuro = _isEuro;
+  p.flags.isPut = _isPut;
+  p.flags.isRequest = _isRequest;
 
-   // conditional state variable assignments based on _isRequest:
-   if (_isRequest) {
-     p.uintDetails.reqCollateral = _collateral;
-   } else {
-     p.addresses.writer = msg.sender;
-     p.uintDetails.collateral = _collateral;
-   }
-   _addTokenToOwnedPiggies(msg.sender, tokenId);
+  // conditional state variable assignments based on _isRequest:
+  if (_isRequest) {
+    p.uintDetails.reqCollateral = _collateral;
+  } else {
+    p.addresses.writer = msg.sender;
+    p.uintDetails.collateral = _collateral;
+  }
+  _addTokenToOwnedPiggies(msg.sender, tokenId);
 
-   emit CreatePiggy(
-     msg.sender,
-     tokenId,
-     _collateral,
-     _lotSize,
-     _strikePrice,
-     _expiry.add(block.number),
-     _isEuro,
-     _isPut,
-     _isRequest
-   );
+  emit CreatePiggy(
+    msg.sender,
+    tokenId,
+    _collateral,
+    _lotSize,
+    _strikePrice,
+    _expiry.add(block.number),
+    _isEuro,
+    _isPut,
+    _isRequest
+  );
 
-   return true;
+  return true;
  }
+
+ function splitPiggy(
+   uint256 _tokenId
+ )
+ public
+ returns (bool)
+{
+  require(_tokenId != 0, "token ID cannot be zero");
+  require(piggies[_tokenId].addresses.writer != address(0), "token writer cannot be a zero address");
+  require(!piggies[_tokenId].flags.isRequest, "token cannot be an RFP");
+  require(piggies[_tokenId].uintDetails.collateral > 0, "token collateral must be greater than zero");
+  require(piggies[_tokenId].addresses.holder == msg.sender, "only the holder can split");
+
+ // assuming all checks have passed:
+
+ //calculate collaterail split accounting for interger division
+ uint256 splitCollateral2 = piggies[tokenId].uintDetails.collateral.div(2);
+ uint256 splitCollateral1 = piggies[tokenId].uintDetails.collateral.sub(splitCollateral2);
+
+ // assuming all checks have passed:
+ tokenId = tokenId.add(1);
+ uint256 tokenIdSplit1 = tokenId;
+
+ require(
+   _newSplitPiggy(
+     piggies[tokenId].addresses.collateralERC,
+     piggies[tokenId].addresses.premiumERC,
+     piggies[tokenId].addresses.dataResolverNow,
+     piggies[tokenId].addresses.dataResolverAtExpiry,
+     splitCollateral1,
+     piggies[tokenId].uintDetails.lotSize,
+     piggies[tokenId].uintDetails.strikePrice,
+     piggies[tokenId].uintDetails.expiry,
+     piggies[tokenId].flags.isEuro,
+     piggies[tokenId].flags.isPut,
+     false //piggies[tokenId].isRequest
+   ),
+   "failed to make a new piggy"
+ ); //check to make sure this rolls back the reset if it fails
+
+tokenId = tokenId.add(1);
+uint256 tokenIdSplit2 = tokenId;
+
+require(
+  _newSplitPiggy(
+    piggies[tokenId].addresses.collateralERC,
+    piggies[tokenId].addresses.premiumERC,
+    piggies[tokenId].addresses.dataResolverNow,
+    piggies[tokenId].addresses.dataResolverAtExpiry,
+    splitCollateral1,
+    piggies[tokenId].uintDetails.lotSize,
+    piggies[tokenId].uintDetails.strikePrice,
+    piggies[tokenId].uintDetails.expiry,
+    piggies[tokenId].flags.isEuro,
+    piggies[tokenId].flags.isPut,
+    false //piggies[tokenId].isRequest
+  ),
+  "failed to make a new piggy"
+); //check to make sure this rolls back the reset if it fails
+
+//remove current token ID
+_removeTokenFromOwnedPiggies(msg.sender, _tokenId); //should this be piggies[_tokenId].holder
+//clean up piggyId
+_resetPiggy(_tokenId);
+
+_addTokenToOwnedPiggies(msg.sender, tokenIdSplit1);
+_addTokenToOwnedPiggies(msg.sender, tokenIdSplit2);
+
+ return true;
+}
+
+function _newSplitPiggy(
+  address _collateralERC,
+  address _premiumERC,
+  address _dataResolverNow,
+  address _dataResolverAtExpiry,
+  uint256 _collateral,
+  uint256 _lotSize,
+  uint256 _strikePrice,
+  uint256 _expiry,
+  bool _isEuro,
+  bool _isPut,
+  bool _isRequest
+)
+public
+returns (bool)
+{
+  require(
+    _collateralERC != address(0) &&
+    _premiumERC != address(0) &&
+    _dataResolverNow != address(0) &&
+    _dataResolverAtExpiry != address(0),
+    "addresses cannot be zero"
+  );
+  require(
+    _collateral != 0 &&
+    _lotSize != 0 &&
+    _strikePrice != 0 &&
+    _expiry != 0,
+    "option parameters cannot be zero"
+  );
+
+  //check if collateral is sufficient in SmartPiggies contract???
+
+  // write the values to storage, including _isRequest flag
+  Piggy storage p = piggies[tokenId];
+  p.addresses.holder = msg.sender;
+  p.addresses.collateralERC = _collateralERC;
+  p.addresses.premiumERC = _premiumERC;
+  p.addresses.dataResolverNow = _dataResolverNow;
+  p.addresses.dataResolverAtExpiry = _dataResolverAtExpiry;
+  p.uintDetails.collateralDecimals = _getERC20Decimals(_collateralERC);
+  p.uintDetails.lotSize = _lotSize;
+  p.uintDetails.strikePrice = _strikePrice;
+  p.uintDetails.expiry = _expiry;
+  p.flags.isEuro = _isEuro;
+  p.flags.isPut = _isPut;
+  p.addresses.writer = msg.sender;
+  p.uintDetails.collateral = _collateral;
+
+  emit CreatePiggy(
+    msg.sender,
+    tokenId,
+    _collateral,
+    _lotSize,
+    _strikePrice,
+    _expiry,
+    _isEuro,
+    _isPut,
+    _isRequest
+  );
+
+  return true;
+}
 
 // make sure the ERC-20 contract for collateral correctly reports decimals
 function _getERC20Decimals(address _ERC20)

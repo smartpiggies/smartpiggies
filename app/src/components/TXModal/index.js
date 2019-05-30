@@ -72,6 +72,14 @@ class TXModal extends Component {
                 txStatus: this.props.transactions[stackId].status
               })
               break
+            case '5':
+              endpoint = 'https://goerli.etherscan.io/tx/' + stackId
+              this.setState({
+                open: true,
+                txHash: <a href={endpoint} target='new'>{stackId}</a>,
+                txStatus: this.props.transactions[stackId].status
+              })
+              break
             default:
             this.setState({
               open: true,

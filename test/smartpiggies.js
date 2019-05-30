@@ -422,6 +422,422 @@ contract ('SmartPiggies', function(accounts) {
   //end describe Failure block
   });
 
+  //Test Splitting SmartPiggies
+  describe("Testing Split functionality for a SmartPiggies token", function() {
+
+    it("Should split a token", function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = web3.utils.toBN(500)
+      isEuro = false
+      isPut = true
+      isRequest = false
+      zeroParam = 0
+      currentBlock = web3.utils.toBN(0)
+      origExpiry = web3.utils.toBN(0)
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        origExpiry = result.logs[0].args.expiryBlock
+
+        return piggyInstance.splitPiggy(1, {from: owner})
+      })
+      .then(result => {
+        //console.log(result.logs[0].args)
+
+        //test first create event
+        assert.isTrue(result.receipt.status, "create did not return true")
+        assert.strictEqual(result.logs[0].event, "CreatePiggy", "Event log from create didn't return correct event name")
+        assert.strictEqual(result.logs[0].args.from, owner, "Event log from create didn't return correct sender")
+        assert.strictEqual(result.logs[0].args.tokenId.toString(), "2", "Event log from create didn't return correct tokenId")
+        assert.strictEqual(result.logs[0].args.collateral.toString(), collateral.sub(collateral.div(web3.utils.toBN(2))).toString(), "Event log from create didn't return correct collateral")
+        assert.strictEqual(result.logs[0].args.lotSize.toString(), lotSize.toString(), "Event log from create didn't return correct lotSize")
+        assert.strictEqual(result.logs[0].args.strike.toString(), strikePrice.toString(), "Event log from create didn't return correct strike")
+        assert.strictEqual(result.logs[0].args.expiryBlock.toString(), origExpiry.toString(), "Event log from create didn't return correct expiry")
+        assert.isNotTrue(result.logs[0].args.isEuro, "Event log from create didn't return false for isEuro")
+        assert.isTrue(result.logs[0].args.isPut, "Event log from create didn't return false for isPut")
+        assert.isNotTrue(result.logs[0].args.RFP, "Event log from create didn't return false for RFP")
+        //test second create event
+        assert.strictEqual(result.logs[1].event, "CreatePiggy", "Event log from create didn't return correct event name")
+        assert.strictEqual(result.logs[1].args.from, owner, "Event log from create didn't return correct sender")
+        assert.strictEqual(result.logs[1].args.tokenId.toString(), "3", "Event log from create didn't return correct tokenId")
+        assert.strictEqual(result.logs[1].args.collateral.toString(), collateral.div(web3.utils.toBN(2)).toString(), "Event log from create didn't return correct collateral")
+        assert.strictEqual(result.logs[1].args.lotSize.toString(), lotSize.toString(), "Event log from create didn't return correct lotSize")
+        assert.strictEqual(result.logs[1].args.strike.toString(), strikePrice.toString(), "Event log from create didn't return correct strike")
+        assert.strictEqual(result.logs[1].args.expiryBlock.toString(), origExpiry.toString(), "Event log from create didn't return correct expiry")
+        assert.isNotTrue(result.logs[1].args.isEuro, "Event log from create didn't return false for isEuro")
+        assert.isTrue(result.logs[1].args.isPut, "Event log from create didn't return false for isPut")
+        assert.isNotTrue(result.logs[1].args.RFP, "Event log from create didn't return false for RFP")
+
+        return piggyInstance.getOwnedPiggies(owner, {from: owner})
+      })
+      .then(result => {
+        assert.strictEqual(result[0].toString(), "2", "getOwnedPiggies did not return correct piggies")
+        assert.strictEqual(result[1].toString(), "3", "getOwnedPiggies did not return correct piggies")
+
+        return piggyInstance.getDetails(2, {from: owner})
+      })
+      .then(result => {
+        //check DetailAddresses
+        assert.strictEqual(result[0].writer, owner, "Details should have correct writer address.")
+        assert.strictEqual(result[0].holder, owner, "Details should have correct holder address.")
+        assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.")
+        assert.strictEqual(result[0].premiumERC, premiumERC, "Details should have correct premiumERC address.")
+        assert.strictEqual(result[0].dataResolverNow, dataResolverNow, "Details should have correct dataResolverNow address.")
+        assert.strictEqual(result[0].dataResolverAtExpiry, dataResolverAtExpiry, "Details should have correct dataResolverAtExpiry address.")
+        //check DetailUints
+        assert.strictEqual(result[1].collateral, collateral.sub(collateral.div(web3.utils.toBN(2))).toString(), "Details should have correct collateral amount.")
+        assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
+        assert.strictEqual(result[1].strikePrice, strikePrice.toString(), "Details should have correct strikePrice amount.")
+        assert.strictEqual(result[1].expiry, origExpiry.toString(), "Details should have correct expiry amount.")
+        assert.strictEqual(result[1].settlementPrice, "0", "Details should have returned settlementPrice amount of 0.")
+        assert.strictEqual(result[1].reqCollateral, "0", "Details should have returned reqCollateral amount of 0.")
+        assert.strictEqual(result[1].collateralDecimals, "18", "Details should have returned collateralDecimals amount of 18.")
+        //check BoolFlags
+        assert.isNotTrue(result[2].isRequest, "Details should have returned false for isRequest.")
+        assert.isNotTrue(result[2].isEuro, "Details should have returned false for isEuro.")
+        assert.isTrue(result[2].isPut, "Details should have returned true for isPut.")
+        assert.isNotTrue(result[2].hasBeenCleared, "Details should have returned false for hasBeenCleared.")
+
+        return piggyInstance.getDetails(3, {from: owner})
+      })
+      .then(result => {
+        //check DetailAddresses
+        assert.strictEqual(result[0].writer, owner, "Details should have correct writer address.")
+        assert.strictEqual(result[0].holder, owner, "Details should have correct holder address.")
+        assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.")
+        assert.strictEqual(result[0].premiumERC, premiumERC, "Details should have correct premiumERC address.")
+        assert.strictEqual(result[0].dataResolverNow, dataResolverNow, "Details should have correct dataResolverNow address.")
+        assert.strictEqual(result[0].dataResolverAtExpiry, dataResolverAtExpiry, "Details should have correct dataResolverAtExpiry address.")
+        //check DetailUints
+        assert.strictEqual(result[1].collateral, collateral.div(web3.utils.toBN(2)).toString(), "Details should have correct collateral amount.")
+        assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
+        assert.strictEqual(result[1].strikePrice, strikePrice.toString(), "Details should have correct strikePrice amount.")
+        assert.strictEqual(result[1].expiry, origExpiry.toString(), "Details should have correct expiry amount.")
+        assert.strictEqual(result[1].settlementPrice, "0", "Details should have returned settlementPrice amount of 0.")
+        assert.strictEqual(result[1].reqCollateral, "0", "Details should have returned reqCollateral amount of 0.")
+        assert.strictEqual(result[1].collateralDecimals, "18", "Details should have returned collateralDecimals amount of 18.")
+        //check BoolFlags
+        assert.isNotTrue(result[2].isRequest, "Details should have returned false for isRequest.")
+        assert.isNotTrue(result[2].isEuro, "Details should have returned false for isEuro.")
+        assert.isTrue(result[2].isPut, "Details should have returned true for isPut.")
+        assert.isNotTrue(result[2].hasBeenCleared, "Details should have returned false for hasBeenCleared.")
+      })
+      //end test block
+    });
+
+    //end describe Create block
+  });
+
+  //Test Split SmartPiggies fail cases
+  describe("Testing Failure cases for Splitting SmartPiggies tokens", function() {
+    beforeEach(function() {
+      collateralERC = tokenInstance.address
+      premiumERC = tokenInstance.address
+      dataResolverNow = resolverInstance.address
+      dataResolverAtExpiry = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = 500
+      isEuro = false
+      isPut = true
+      isRequest = false
+    })
+
+    it("Should fail to split a token if tokenId is 0", function() {
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner})
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+
+        return expectedExceptionPromise(
+            () => piggyInstance.splitPiggy(
+              tokenId.sub(web3.utils.toBN(1)),
+              {from: owner, gas: 8000000 }), //sending tokenId 0 should fail
+            3000000);
+      })
+      //end test
+    });
+
+    it.skip("Should test for failure if writer is a zero address", function() {
+        //end test
+    });
+
+    it("Should fail to split a token if RFP", function() {
+
+      isRequest = true //create RFP
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner})
+      })
+      .then(tokenId => {
+
+        return expectedExceptionPromise(
+            () => piggyInstance.splitPiggy(
+              tokenId,
+              {from: owner, gas: 8000000 }), //splitting RFP should fail
+            3000000);
+      })
+      //end test
+    });
+
+    it.skip("Should test for failure if collateral is zero", function() {
+        //end test
+    });
+
+    it("Should fail to split a token if sender is not the holder", function() {
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner})
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+
+        return expectedExceptionPromise(
+            () => piggyInstance.splitPiggy(
+              tokenId,
+              {from: user01, gas: 8000000 }), //splitting from a non-holder should fail
+            3000000);
+      })
+      //end test
+    });
+
+    it("Should test for failure if expired", function() {
+
+      expiry = 5 //create a soon to be expired token
+      currentBlock = web3.utils.toBN(0)
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+
+        //burn some blocks
+        return sequentialPromise([
+          () => Promise.resolve(tokenInstance.mint(user01, 500, {from: owner})),
+          () => Promise.resolve(tokenInstance.mint(user01, 500, {from: owner})),
+          () => Promise.resolve(tokenInstance.mint(user01, 500, {from: owner})),
+          () => Promise.resolve(tokenInstance.mint(user01, 500, {from: owner})),
+          () => Promise.resolve(tokenInstance.mint(user01, 500, {from: owner})),
+          () => Promise.resolve(tokenInstance.mint(user01, 500, {from: owner})),
+        ])
+      })
+      .then(() => {
+        return piggyInstance.tokenId({from: owner})
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+
+        web3.eth.getBlockNumberPromise()
+        .then(block => {
+          currentBlock = web3.utils.toBN(block) // will be mined in next block
+        })
+
+        return piggyInstance.getDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        expiryBlock = web3.utils.toBN(result[1].expiry)
+        assert.isTrue(expiryBlock.lt(currentBlock), "expiry block should be less than current block")
+
+        return expectedExceptionPromise(
+            () => piggyInstance.splitPiggy(
+              tokenId,
+              {from: owner, gas: 8000000 }), //splitting an expired token should fail
+            3000000);
+      })
+        //end test
+    });
+
+    it("Should test for failure if on auction", function() {
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = web3.utils.toBN(100)
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+      startBlock = web3.utils.toBN(0)
+      balanceBefore = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+
+        web3.eth.getBlockNumberPromise()
+        .then(block => {
+          startBlock = web3.utils.toBN(block).add(web3.utils.toBN(1)) // will be mined in next block
+        })
+
+        return piggyInstance.startAuction(
+          tokenId,
+          startPrice,
+          reservePrice,
+          auctionLength,
+          timeStep,
+          priceStep,
+          {from: owner}
+        )
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "startAuction did not return true")
+        assert.strictEqual(tokenId.toString(), "1", "token ID is not 1")
+
+        return expectedExceptionPromise(
+            () => piggyInstance.splitPiggy(
+              tokenId,
+              {from: owner, gas: 8000000 }), //splitting a token on auction should fail
+            3000000);
+      })
+        //end test
+    });
+
+    it("Should test for failure if on cleared", function() {
+      oracleFee = web3.utils.toBN('1000000000000000000')
+      strikePriceBN = web3.utils.toBN(strikePrice)
+      settlementPriceBN = web3.utils.toBN('0')
+      ownerBalanceBefore = web3.utils.toBN('0')
+      userBalanceBefore = web3.utils.toBN('0')
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        premiumERC,
+        dataResolverNow,
+        dataResolverAtExpiry,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        tokenId = result.logs[0].args.tokenId
+        return sequentialPromise([
+          () => Promise.resolve(piggyInstance.transferFrom(owner, user01, tokenId, {from: owner})),
+          () => Promise.resolve(linkInstance.mint(user01, supply, {from: owner})),
+          () => Promise.resolve(linkInstance.approve(resolverInstance.address, approveAmount, {from: user01})),
+        ])
+      })
+      .then(() => {
+        //clear piggy (request the price from the oracle)
+        return piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "requestSettlementPrice function did not return true")
+
+        return expectedExceptionPromise(
+            () => piggyInstance.splitPiggy(
+              tokenId,
+              {from: owner, gas: 8000000 }), //splitting a token that has been cleared should fail
+            3000000);
+      })
+        //end test
+    });
+
+
+  //end describe Failure block
+  });
+
   //Test Create Request For Piggy (RFP)
   describe("Testing RFP functionality", function() {
 

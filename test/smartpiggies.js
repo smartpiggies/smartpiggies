@@ -150,7 +150,6 @@ contract ('SmartPiggies', function(accounts) {
       collateralERC = tokenInstance.address
       premiumERC = tokenInstance.address
       dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -165,7 +164,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -179,7 +177,11 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].event, "CreatePiggy", "Event log from create didn't return correct event name")
         assert.strictEqual(result.logs[0].args.from, owner, "Event log from create didn't return correct sender")
         assert.strictEqual(result.logs[0].args.tokenId.toString(), "1", "Event log from create didn't return correct tokenId")
+        assert.strictEqual(result.logs[0].args.collateral.toString(), collateral.toString(), "Event log from create didn't return correct collateral")
+        assert.strictEqual(result.logs[0].args.lotSize.toString(), lotSize.toString(), "Event log from create didn't return correct lotSize")
         assert.strictEqual(result.logs[0].args.strike.toString(), strikePrice.toString(), "Event log from create didn't return correct strike")
+        assert.isNotTrue(result.logs[0].args.isEuro, isEuro, "Event log from create didn't return correct isEuro")
+        assert.isTrue(result.logs[0].args.isPut, isPut, "Event log from create didn't return correct isPut")
         assert.isNotTrue(result.logs[0].args.RFP, "Event log from create didn't return false for RFP")
 
         web3.eth.getBlockNumberPromise()
@@ -187,8 +189,8 @@ contract ('SmartPiggies', function(accounts) {
           currentBlock = web3.utils.toBN(block)
           assert.strictEqual(result.logs[0].args.expiryBlock.toString(), expiry.add(currentBlock).toString(), "Event log from create didn't return correct expiry block")
         })
-
-        return piggyInstance.getDetails(1, {from: owner});
+        let thisToken = result.logs[0].args.tokenId
+        return piggyInstance.getDetails(thisToken, {from: owner});
       })
       .then(result => {
 
@@ -198,12 +200,11 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.")
         assert.strictEqual(result[0].premiumERC, premiumERC, "Details should have correct premiumERC address.")
         assert.strictEqual(result[0].dataResolverNow, dataResolverNow, "Details should have correct dataResolverNow address.")
-        assert.strictEqual(result[0].dataResolverAtExpiry, dataResolverAtExpiry, "Details should have correct dataResolverAtExpiry address.")
         //check DetailUints
         assert.strictEqual(result[1].collateral, collateral.toString(), "Details should have correct collateral amount.")
         assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
         assert.strictEqual(result[1].strikePrice, strikePrice.toString(), "Details should have correct strikePrice amount.")
-        assert.strictEqual(result[1].expiry, currentBlock.add(expiry).toString(), "Details should have correct strikePrice amount.")
+        assert.strictEqual(result[1].expiry, currentBlock.add(expiry).toString(), "Details should have correct expiry amount.")
         assert.strictEqual(result[1].settlementPrice, "0", "Details should have returned settlementPrice amount of 0.")
         assert.strictEqual(result[1].reqCollateral, "0", "Details should have returned reqCollateral amount of 0.")
         assert.strictEqual(result[1].collateralDecimals, "18", "Details should have returned collateralDecimals amount of 18.")
@@ -226,7 +227,7 @@ contract ('SmartPiggies', function(accounts) {
 
   //Test Create SmartPiggies fail cases
   describe("Testing Failure cases for Creating SmartPiggies tokens", function() {
-    before(function() {
+    beforeEach(function() {
       collateralERC = tokenInstance.address
       premiumERC = tokenInstance.address
       dataResolverNow = resolverInstance.address
@@ -246,7 +247,6 @@ contract ('SmartPiggies', function(accounts) {
             addr00,
             premiumERC,
             dataResolverNow,
-            dataResolverAtExpiry,
             collateral,
             lotSize,
             strikePrice,
@@ -265,7 +265,6 @@ contract ('SmartPiggies', function(accounts) {
             collateralERC,
             addr00,
             dataResolverNow,
-            dataResolverAtExpiry,
             collateral,
             lotSize,
             strikePrice,
@@ -283,26 +282,6 @@ contract ('SmartPiggies', function(accounts) {
           () => piggyInstance.createPiggy(
             collateralERC,
             premiumERC,
-            addr00,
-            dataResolverAtExpiry,
-            collateral,
-            lotSize,
-            strikePrice,
-            expiry,
-            isEuro,
-            isPut,
-            isRequest,
-            {from: owner, gas: 8000000 }),
-          3000000);
-      //end test
-    });
-
-    it("Should fail to create if dataResolverAtExpiry is address(0)", function() {
-      return expectedExceptionPromise(
-          () => piggyInstance.createPiggy(
-            collateralERC,
-            premiumERC,
-            dataResolverNow,
             addr00,
             collateral,
             lotSize,
@@ -322,7 +301,6 @@ contract ('SmartPiggies', function(accounts) {
             collateralERC,
             premiumERC,
             dataResolverNow,
-            dataResolverAtExpiry,
             zeroParam,
             lotSize,
             strikePrice,
@@ -341,7 +319,6 @@ contract ('SmartPiggies', function(accounts) {
             collateralERC,
             premiumERC,
             dataResolverNow,
-            dataResolverAtExpiry,
             collateral,
             zeroParam,
             strikePrice,
@@ -360,7 +337,6 @@ contract ('SmartPiggies', function(accounts) {
             collateralERC,
             premiumERC,
             dataResolverNow,
-            dataResolverAtExpiry,
             collateral,
             lotSize,
             zeroParam,
@@ -379,7 +355,6 @@ contract ('SmartPiggies', function(accounts) {
             collateralERC,
             premiumERC,
             dataResolverNow,
-            dataResolverAtExpiry,
             collateral,
             lotSize,
             strikePrice,
@@ -405,7 +380,6 @@ contract ('SmartPiggies', function(accounts) {
               collateralERC,
               premiumERC,
               dataResolverNow,
-              dataResolverAtExpiry,
               collateral,
               lotSize,
               strikePrice,
@@ -440,12 +414,12 @@ contract ('SmartPiggies', function(accounts) {
       zeroParam = 0
       currentBlock = web3.utils.toBN(0)
       origExpiry = web3.utils.toBN(0)
+      let origToken, tokenSplit1, tokenSplit2
 
       return piggyInstance.createPiggy(
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -458,8 +432,8 @@ contract ('SmartPiggies', function(accounts) {
       .then(result => {
         assert.isTrue(result.receipt.status, "create did not return true")
         origExpiry = result.logs[0].args.expiryBlock
-
-        return piggyInstance.splitPiggy(1, {from: owner})
+        origToken = result.logs[0].args.tokenId
+        return piggyInstance.splitPiggy(origToken, {from: owner})
       })
       .then(result => {
         //console.log(result.logs[0].args)
@@ -494,7 +468,10 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].toString(), "2", "getOwnedPiggies did not return correct piggies")
         assert.strictEqual(result[1].toString(), "3", "getOwnedPiggies did not return correct piggies")
 
-        return piggyInstance.getDetails(2, {from: owner})
+        tokenSplit1 = result[0]
+        tokenSplit2 = result[1]
+
+        return piggyInstance.getDetails(tokenSplit1, {from: owner})
       })
       .then(result => {
         //check DetailAddresses
@@ -503,7 +480,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.")
         assert.strictEqual(result[0].premiumERC, premiumERC, "Details should have correct premiumERC address.")
         assert.strictEqual(result[0].dataResolverNow, dataResolverNow, "Details should have correct dataResolverNow address.")
-        assert.strictEqual(result[0].dataResolverAtExpiry, dataResolverAtExpiry, "Details should have correct dataResolverAtExpiry address.")
+
         //check DetailUints
         assert.strictEqual(result[1].collateral, collateral.sub(collateral.div(web3.utils.toBN(2))).toString(), "Details should have correct collateral amount.")
         assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
@@ -518,7 +495,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.isTrue(result[2].isPut, "Details should have returned true for isPut.")
         assert.isNotTrue(result[2].hasBeenCleared, "Details should have returned false for hasBeenCleared.")
 
-        return piggyInstance.getDetails(3, {from: owner})
+        return piggyInstance.getDetails(tokenSplit2, {from: owner})
       })
       .then(result => {
         //check DetailAddresses
@@ -527,7 +504,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.")
         assert.strictEqual(result[0].premiumERC, premiumERC, "Details should have correct premiumERC address.")
         assert.strictEqual(result[0].dataResolverNow, dataResolverNow, "Details should have correct dataResolverNow address.")
-        assert.strictEqual(result[0].dataResolverAtExpiry, dataResolverAtExpiry, "Details should have correct dataResolverAtExpiry address.")
+
         //check DetailUints
         assert.strictEqual(result[1].collateral, collateral.div(web3.utils.toBN(2)).toString(), "Details should have correct collateral amount.")
         assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
@@ -540,6 +517,29 @@ contract ('SmartPiggies', function(accounts) {
         assert.isNotTrue(result[2].isRequest, "Details should have returned false for isRequest.")
         assert.isNotTrue(result[2].isEuro, "Details should have returned false for isEuro.")
         assert.isTrue(result[2].isPut, "Details should have returned true for isPut.")
+        assert.isNotTrue(result[2].hasBeenCleared, "Details should have returned false for hasBeenCleared.")
+
+        return piggyInstance.getDetails(origToken, {from: owner})
+      })
+      .then(result => {
+        //check DetailAddresses
+        assert.strictEqual(result[0].writer, addr00, "Details should have correct writer address.")
+        assert.strictEqual(result[0].holder, addr00, "Details should have correct holder address.")
+        assert.strictEqual(result[0].collateralERC, addr00, "Details should have correct collateralERC address.")
+        assert.strictEqual(result[0].premiumERC, addr00, "Details should have correct premiumERC address.")
+        assert.strictEqual(result[0].dataResolverNow, addr00, "Details should have correct dataResolverNow address.")
+        //check DetailUints
+        assert.strictEqual(result[1].collateral, "0", "Details should have correct collateral amount.")
+        assert.strictEqual(result[1].lotSize, "0", "Details should have correct lotSize amount.")
+        assert.strictEqual(result[1].strikePrice, "0", "Details should have correct strikePrice amount.")
+        assert.strictEqual(result[1].expiry, "0", "Details should have correct expiry amount.")
+        assert.strictEqual(result[1].settlementPrice, "0", "Details should have returned settlementPrice amount of 0.")
+        assert.strictEqual(result[1].reqCollateral, "0", "Details should have returned reqCollateral amount of 0.")
+        assert.strictEqual(result[1].collateralDecimals, "0", "Details should have returned collateralDecimals amount of 18.")
+        //check BoolFlags
+        assert.isNotTrue(result[2].isRequest, "Details should have returned false for isRequest.")
+        assert.isNotTrue(result[2].isEuro, "Details should have returned false for isEuro.")
+        assert.isNotTrue(result[2].isPut, "Details should have returned true for isPut.")
         assert.isNotTrue(result[2].hasBeenCleared, "Details should have returned false for hasBeenCleared.")
       })
       //end test block
@@ -569,7 +569,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -608,7 +607,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -642,7 +640,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -678,7 +675,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -742,7 +738,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -799,7 +794,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -858,7 +852,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -884,7 +877,6 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.");
         assert.strictEqual(result[0].premiumERC, premiumERC, "Details should have correct premiumERC address.");
         assert.strictEqual(result[0].dataResolverNow, dataResolverNow, "Details should have correct dataResolverNow address.");
-        assert.strictEqual(result[0].dataResolverAtExpiry, dataResolverAtExpiry, "Details should have correct dataResolverAtExpiry address.");
         //check DetailUints
         assert.strictEqual(result[1].collateral, "0", "Details should have correct collateral amount.");
         assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.");
@@ -915,7 +907,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -940,7 +931,6 @@ contract ('SmartPiggies', function(accounts) {
           updatedCollateralERC,
           addr00,
           addr00,
-          addr00,
           paramZero,
           paramZero,
           paramZero,
@@ -958,7 +948,6 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.collateralERC, updatedCollateralERC, "Event log from update didn't return correct collaterialERC")
         assert.strictEqual(result.logs[0].args.premiumERC, addr00, "Event log from update didn't return correct premiumERC")
         assert.strictEqual(result.logs[0].args.dataResolverNow, addr00, "Event log from update didn't return correct dataResolverNow")
-        assert.strictEqual(result.logs[0].args.dataResolverAtExpiry, addr00, "Event log from update didn't return correct dataResolverAtExpiry")
         assert.strictEqual(result.logs[0].args.reqCollateral.toString(), '0', "Event log from update didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.lotSize.toString(), "0", "Event log from update didn't return correct lotSize")
         assert.strictEqual(result.logs[0].args.strikePrice.toString(), '0', "Event log from update didn't return correct strikePrice")
@@ -975,7 +964,6 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].collateralERC, updatedCollateralERC, "Details should have correct collateralERC address.")
         assert.strictEqual(result[0].premiumERC, premiumERC, "Details should have correct premiumERC address.")
         assert.strictEqual(result[0].dataResolverNow, dataResolverNow, "Details should have correct dataResolverNow address.")
-        assert.strictEqual(result[0].dataResolverAtExpiry, dataResolverAtExpiry, "Details should have correct dataResolverAtExpiry address.")
         //check DetailUints
         assert.strictEqual(result[1].collateral, "0", "Details should have correct collateral amount.")
         assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
@@ -1001,7 +989,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -1026,7 +1013,6 @@ contract ('SmartPiggies', function(accounts) {
           addr00,
           updatedPremiumERC,
           addr00,
-          addr00,
           paramZero,
           paramZero,
           paramZero,
@@ -1044,7 +1030,6 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.collateralERC, addr00, "Event log from update didn't return correct collaterialERC")
         assert.strictEqual(result.logs[0].args.premiumERC, updatedPremiumERC, "Event log from update didn't return correct premiumERC")
         assert.strictEqual(result.logs[0].args.dataResolverNow, addr00, "Event log from update didn't return correct dataResolverNow")
-        assert.strictEqual(result.logs[0].args.dataResolverAtExpiry, addr00, "Event log from update didn't return correct dataResolverAtExpiry")
         assert.strictEqual(result.logs[0].args.reqCollateral.toString(), '0', "Event log from update didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.lotSize.toString(), "0", "Event log from update didn't return correct lotSize")
         assert.strictEqual(result.logs[0].args.strikePrice.toString(), '0', "Event log from update didn't return correct strikePrice")
@@ -1061,7 +1046,6 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.")
         assert.strictEqual(result[0].premiumERC, updatedPremiumERC, "Details should have correct premiumERC address.")
         assert.strictEqual(result[0].dataResolverNow, dataResolverNow, "Details should have correct dataResolverNow address.")
-        assert.strictEqual(result[0].dataResolverAtExpiry, dataResolverAtExpiry, "Details should have correct dataResolverAtExpiry address.")
         //check DetailUints
         assert.strictEqual(result[1].collateral, "0", "Details should have correct collateral amount.")
         assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
@@ -1087,7 +1071,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -1112,7 +1095,6 @@ contract ('SmartPiggies', function(accounts) {
           addr00,
           addr00,
           updatedDataResolverNow,
-          addr00,
           paramZero,
           paramZero,
           paramZero,
@@ -1130,7 +1112,6 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.collateralERC, addr00, "Event log from update didn't return correct collaterialERC")
         assert.strictEqual(result.logs[0].args.premiumERC, addr00, "Event log from update didn't return correct premiumERC")
         assert.strictEqual(result.logs[0].args.dataResolverNow, updatedDataResolverNow, "Event log from update didn't return correct dataResolverNow")
-        assert.strictEqual(result.logs[0].args.dataResolverAtExpiry, addr00, "Event log from update didn't return correct dataResolverAtExpiry")
         assert.strictEqual(result.logs[0].args.reqCollateral.toString(), '0', "Event log from update didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.lotSize.toString(), "0", "Event log from update didn't return correct lotSize")
         assert.strictEqual(result.logs[0].args.strikePrice.toString(), '0', "Event log from update didn't return correct strikePrice")
@@ -1147,93 +1128,6 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.")
         assert.strictEqual(result[0].premiumERC, premiumERC, "Details should have correct premiumERC address.")
         assert.strictEqual(result[0].dataResolverNow, updatedDataResolverNow, "Details should have correct dataResolverNow address.")
-        assert.strictEqual(result[0].dataResolverAtExpiry, dataResolverAtExpiry, "Details should have correct dataResolverAtExpiry address.")
-        //check DetailUints
-        assert.strictEqual(result[1].collateral, "0", "Details should have correct collateral amount.")
-        assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
-        assert.strictEqual(result[1].strikePrice, strikePrice.toString(), "Details should have correct strikePrice amount.")
-        assert.strictEqual(result[1].settlementPrice, "0", "Details should have returned settlementPrice amount of 0.")
-        assert.strictEqual(result[1].reqCollateral, collateral.toString(), "Details should have returned reqCollateral amount of 0.")
-        assert.strictEqual(result[1].collateralDecimals, "18", "Details should have returned collateralDecimals amount of 18.")
-        //check BoolFlags
-        assert.isTrue(result[2].isRequest, "Details should have returned false for isRequest.")
-        assert.isNotTrue(result[2].isEuro, "Details should have returned false for isEuro.")
-        assert.isTrue(result[2].isPut, "Details should have returned true for isPut.")
-        assert.isNotTrue(result[2].hasBeenCleared, "Details should have returned false for hasBeenCleared.")
-      })
-      //end test block
-    });
-
-    it("Should update dataResolverAtExpiry address of an RFP token", function() {
-
-      updatedDataResolverAtExpiry = "0x1230000000000000000000000000000000000000"
-      paramZero = 0
-
-      return piggyInstance.createPiggy(
-        collateralERC,
-        premiumERC,
-        dataResolverNow,
-        dataResolverAtExpiry,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
-        {from: owner}
-      )
-      .then(result => {
-        assert.isTrue(result.receipt.status, "Create did not return true")
-        return piggyInstance.tokenId({from: owner});
-      })
-      .then(result => {
-        tokenId = result
-        return piggyInstance.getDetails(tokenId, {from: owner});
-      })
-      .then(result => {
-        assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.");
-        return piggyInstance.updateRFP(
-          tokenId,
-          addr00,
-          addr00,
-          addr00,
-          updatedDataResolverAtExpiry,
-          paramZero,
-          paramZero,
-          paramZero,
-          paramZero,
-          isEuro,
-          isPut,
-          {from: owner}
-        )
-      })
-      .then(result => {
-        assert.isTrue(result.receipt.status, "updateRFP did not return true")
-        assert.strictEqual(result.logs[0].event, "UpdateRFP", "Event log from update didn't return correct event name")
-        assert.strictEqual(result.logs[0].args.from, owner, "Event log from update didn't return correct sender")
-        assert.strictEqual(result.logs[0].args.tokenId.toString(), "1", "Event log from update didn't return correct tokenId")
-        assert.strictEqual(result.logs[0].args.collateralERC, addr00, "Event log from update didn't return correct collaterialERC")
-        assert.strictEqual(result.logs[0].args.premiumERC, addr00, "Event log from update didn't return correct premiumERC")
-        assert.strictEqual(result.logs[0].args.dataResolverNow, addr00, "Event log from update didn't return correct dataResolverNow")
-        assert.strictEqual(result.logs[0].args.dataResolverAtExpiry, updatedDataResolverAtExpiry, "Event log from update didn't return correct dataResolverAtExpiry")
-        assert.strictEqual(result.logs[0].args.reqCollateral.toString(), '0', "Event log from update didn't return correct collateral")
-        assert.strictEqual(result.logs[0].args.lotSize.toString(), "0", "Event log from update didn't return correct lotSize")
-        assert.strictEqual(result.logs[0].args.strikePrice.toString(), '0', "Event log from update didn't return correct strikePrice")
-        assert.strictEqual(result.logs[0].args.expiry.toString(), "0", "Event log from update didn't return correct expiry")
-        assert.isNotTrue(result.logs[0].args.isEuro, "updateRFP did not return false for isEuro")
-        assert.isTrue(result.logs[0].args.isPut, "updateRFP did not return true for isPut")
-
-        return piggyInstance.getDetails(tokenId, {from: owner});
-      })
-      .then(result => {
-        //check DetailAddresses
-        assert.strictEqual(result[0].writer, addr00, "Details should have correct writer address.")
-        assert.strictEqual(result[0].holder, owner, "Details should have correct holder address.")
-        assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.")
-        assert.strictEqual(result[0].premiumERC, premiumERC, "Details should have correct premiumERC address.")
-        assert.strictEqual(result[0].dataResolverNow, dataResolverNow, "Details should have correct dataResolverNow address.")
-        assert.strictEqual(result[0].dataResolverAtExpiry, updatedDataResolverAtExpiry, "Details should have correct dataResolverAtExpiry address.")
         //check DetailUints
         assert.strictEqual(result[1].collateral, "0", "Details should have correct collateral amount.")
         assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
@@ -1259,7 +1153,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -1285,7 +1178,6 @@ contract ('SmartPiggies', function(accounts) {
           addr00,
           addr00,
           addr00,
-          addr00,
           updatedCollateral,
           paramZero,
           paramZero,
@@ -1303,7 +1195,6 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.collateralERC, addr00, "Event log from update didn't return correct collaterialERC")
         assert.strictEqual(result.logs[0].args.premiumERC, addr00, "Event log from update didn't return correct premiumERC")
         assert.strictEqual(result.logs[0].args.dataResolverNow, addr00, "Event log from update didn't return correct dataResolverNow")
-        assert.strictEqual(result.logs[0].args.dataResolverAtExpiry, addr00, "Event log from update didn't return correct dataResolverAtExpiry")
         assert.strictEqual(result.logs[0].args.reqCollateral.toString(), updatedCollateral.toString(), "Event log from update didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.lotSize.toString(), "0", "Event log from update didn't return correct lotSize")
         assert.strictEqual(result.logs[0].args.strikePrice.toString(), '0', "Event log from update didn't return correct strikePrice")
@@ -1320,7 +1211,6 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.")
         assert.strictEqual(result[0].premiumERC, premiumERC, "Details should have correct premiumERC address.")
         assert.strictEqual(result[0].dataResolverNow, dataResolverNow, "Details should have correct dataResolverNow address.")
-        assert.strictEqual(result[0].dataResolverAtExpiry, dataResolverAtExpiry, "Details should have correct dataResolverAtExpiry address.")
         //check DetailUints
         assert.strictEqual(result[1].collateral, "0", "Details should have correct collateral amount.")
         assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
@@ -1346,7 +1236,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -1372,7 +1261,6 @@ contract ('SmartPiggies', function(accounts) {
           addr00,
           addr00,
           addr00,
-          addr00,
           paramZero,
           updatedLotSize,
           paramZero,
@@ -1390,7 +1278,6 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.collateralERC.toString(), addr00, "Event log from update didn't return correct collaterialERC")
         assert.strictEqual(result.logs[0].args.premiumERC.toString(), addr00, "Event log from update didn't return correct premiumERC")
         assert.strictEqual(result.logs[0].args.dataResolverNow.toString(), addr00, "Event log from update didn't return correct dataResolverNow")
-        assert.strictEqual(result.logs[0].args.dataResolverAtExpiry.toString(), addr00, "Event log from update didn't return correct dataResolverAtExpiry")
         assert.strictEqual(result.logs[0].args.reqCollateral.toString(), '0', "Event log from update didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.lotSize.toString(), updatedLotSize.toString(), "Event log from update didn't return correct lotSize")
         assert.strictEqual(result.logs[0].args.strikePrice.toString(), '0', "Event log from update didn't return correct strikePrice")
@@ -1427,7 +1314,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -1452,7 +1338,6 @@ contract ('SmartPiggies', function(accounts) {
           addr00,
           addr00,
           addr00,
-          addr00,
           paramZero,
           paramZero,
           updatedStrikePrice,
@@ -1470,7 +1355,6 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.collateralERC, addr00, "Event log from update didn't return correct collaterialERC")
         assert.strictEqual(result.logs[0].args.premiumERC, addr00, "Event log from update didn't return correct premiumERC")
         assert.strictEqual(result.logs[0].args.dataResolverNow, addr00, "Event log from update didn't return correct dataResolverNow")
-        assert.strictEqual(result.logs[0].args.dataResolverAtExpiry, addr00, "Event log from update didn't return correct dataResolverAtExpiry")
         assert.strictEqual(result.logs[0].args.reqCollateral.toString(), "0", "Event log from update didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.lotSize.toString(), "0", "Event log from update didn't return correct lotSize")
         assert.strictEqual(result.logs[0].args.strikePrice.toString(), updatedStrikePrice.toString(), "Event log from update didn't return correct strikePrice")
@@ -1507,7 +1391,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -1545,7 +1428,6 @@ contract ('SmartPiggies', function(accounts) {
           addr00,
           addr00,
           addr00,
-          addr00,
           paramZero,
           paramZero,
           paramZero,
@@ -1563,7 +1445,6 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.collateralERC, addr00, "Event log from update didn't return correct collaterialERC")
         assert.strictEqual(result.logs[0].args.premiumERC, addr00, "Event log from update didn't return correct premiumERC")
         assert.strictEqual(result.logs[0].args.dataResolverNow, addr00, "Event log from update didn't return correct dataResolverNow")
-        assert.strictEqual(result.logs[0].args.dataResolverAtExpiry, addr00, "Event log from update didn't return correct dataResolverAtExpiry")
         assert.strictEqual(result.logs[0].args.reqCollateral.toString(), "0", "Event log from update didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.lotSize.toString(), "0", "Event log from update didn't return correct lotSize")
         assert.strictEqual(result.logs[0].args.strikePrice.toString(), "0", "Event log from update didn't return correct strikePrice")
@@ -1600,7 +1481,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -1626,7 +1506,6 @@ contract ('SmartPiggies', function(accounts) {
           addr00,
           addr00,
           addr00,
-          addr00,
           paramZero,
           paramZero,
           paramZero,
@@ -1644,7 +1523,6 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.collateralERC, addr00, "Event log from update didn't return correct collaterialERC")
         assert.strictEqual(result.logs[0].args.premiumERC, addr00, "Event log from update didn't return correct premiumERC")
         assert.strictEqual(result.logs[0].args.dataResolverNow, addr00, "Event log from update didn't return correct dataResolverNow")
-        assert.strictEqual(result.logs[0].args.dataResolverAtExpiry, addr00, "Event log from update didn't return correct dataResolverAtExpiry")
         assert.strictEqual(result.logs[0].args.reqCollateral.toString(), "0", "Event log from update didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.lotSize.toString(), "0", "Event log from update didn't return correct lotSize")
         assert.strictEqual(result.logs[0].args.strikePrice.toString(), "0", "Event log from update didn't return correct strikePrice")
@@ -1680,7 +1558,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -1706,7 +1583,6 @@ contract ('SmartPiggies', function(accounts) {
           addr00,
           addr00,
           addr00,
-          addr00,
           paramZero,
           paramZero,
           paramZero,
@@ -1724,7 +1600,6 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.collateralERC, addr00, "Event log from update didn't return correct collaterialERC")
         assert.strictEqual(result.logs[0].args.premiumERC, addr00, "Event log from update didn't return correct premiumERC")
         assert.strictEqual(result.logs[0].args.dataResolverNow, addr00, "Event log from update didn't return correct dataResolverNow")
-        assert.strictEqual(result.logs[0].args.dataResolverAtExpiry, addr00, "Event log from update didn't return correct dataResolverAtExpiry")
         assert.strictEqual(result.logs[0].args.reqCollateral.toString(), "0", "Event log from update didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.lotSize.toString(), "0", "Event log from update didn't return correct lotSize")
         assert.strictEqual(result.logs[0].args.strikePrice.toString(), "0", "Event log from update didn't return correct strikePrice")
@@ -1780,7 +1655,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -1883,7 +1757,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -1983,7 +1856,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -2066,7 +1938,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -2124,7 +1995,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -2193,7 +2063,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -2255,7 +2124,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -2375,7 +2243,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -2488,7 +2355,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -2608,7 +2474,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -2696,7 +2561,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -2750,7 +2614,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -2804,7 +2667,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -2860,7 +2722,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -2924,7 +2785,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -2995,7 +2855,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -3066,7 +2925,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -3149,7 +3007,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -3229,7 +3086,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -3291,7 +3147,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -3352,7 +3207,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -3493,7 +3347,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -3632,7 +3485,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -3751,7 +3603,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -3836,7 +3687,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -3936,7 +3786,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -4031,7 +3880,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -4119,7 +3967,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -4195,7 +4042,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -4291,7 +4137,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -4376,7 +4221,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -4461,7 +4305,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -4546,7 +4389,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -4631,7 +4473,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -4722,7 +4563,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -4815,7 +4655,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -4911,7 +4750,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -4969,7 +4807,6 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].collateralERC, addr00, "Details should have correct collateralERC address.");
         assert.strictEqual(result[0].premiumERC, addr00, "Details should have correct premiumERC address.");
         assert.strictEqual(result[0].dataResolverNow, addr00, "Details should have correct dataResolverNow address.");
-        assert.strictEqual(result[0].dataResolverAtExpiry, addr00, "Details should have correct dataResolverAtExpiry address.");
         //check DetailUints
         assert.strictEqual(result[1].collateral, "0", "Details should have correct collateral amount.");
         assert.strictEqual(result[1].lotSize, "0", "Details should have correct lotSize amount.");
@@ -5044,7 +4881,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -5138,7 +4974,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -5232,7 +5067,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -5326,7 +5160,7 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
+
         collateral,
         lotSize,
         strikePrice,
@@ -5419,7 +5253,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -5512,7 +5345,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -5605,7 +5437,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -5698,7 +5529,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -5791,7 +5621,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -5869,7 +5698,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -5949,7 +5777,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -6042,7 +5869,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -6135,7 +5961,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -6228,7 +6053,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -6321,7 +6145,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -6414,7 +6237,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -6507,7 +6329,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -6585,7 +6406,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -6669,7 +6489,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -6774,7 +6593,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -6862,7 +6680,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -6958,7 +6775,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -7039,7 +6855,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -7132,16 +6947,16 @@ contract ('SmartPiggies', function(accounts) {
       return sequentialPromise([
         () => Promise.resolve(tokenInstance.approve(piggyInstance.address, supply, {from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(
-          collateralERC,premiumERC,dataResolverNow,dataResolverAtExpiry,
-          collateral,lotSize,strikePrice,expiry,isEuro,isPut,isRequest,
+          collateralERC,premiumERC,dataResolverNow,collateral,
+          lotSize,strikePrice,expiry,isEuro,isPut,isRequest,
           {from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(
-          collateralERC,premiumERC,dataResolverNow,dataResolverAtExpiry,
-          collateral,lotSize,strikePrice,expiry,isEuro,isPut,isRequest,
+          collateralERC,premiumERC,dataResolverNow,collateral,
+          lotSize,strikePrice,expiry,isEuro,isPut,isRequest,
           {from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(
-          collateralERC,premiumERC,dataResolverNow,dataResolverAtExpiry,
-          collateral,lotSize,strikePrice,expiry,isEuro,isPut,isRequest,
+          collateralERC,premiumERC,dataResolverNow,collateral,
+          lotSize,strikePrice,expiry,isEuro,isPut,isRequest,
           {from: owner})),
         () => Promise.resolve(piggyInstance.getOwnedPiggies(owner, {from: owner})),
       ])
@@ -7192,7 +7007,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,
@@ -7252,7 +7066,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC,
         premiumERC,
         dataResolverNow,
-        dataResolverAtExpiry,
         collateral,
         lotSize,
         strikePrice,

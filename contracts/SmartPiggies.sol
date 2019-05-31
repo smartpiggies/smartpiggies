@@ -48,7 +48,6 @@ contract SmartPiggies is ERC165 {
     address collateralERC;
     address premiumERC;
     address dataResolverNow;
-    address dataResolverAtExpiry;
   }
 
   struct DetailUints {
@@ -119,7 +118,6 @@ contract SmartPiggies is ERC165 {
     address collateralERC,
     address premiumERC,
     address dataResolverNow,
-    address dataResolverAtExpiry,
     uint256 reqCollateral,
     uint256 lotSize,
     uint256 strikePrice,
@@ -395,8 +393,8 @@ contract SmartPiggies is ERC165 {
     internal
     returns (bool)
   {
-
     // assuming all checks have passed:
+    uint256 tokenExpiry;
     tokenId = tokenId.add(1);
 
     // write the values to storage, including _isRequest flag
@@ -413,9 +411,10 @@ contract SmartPiggies is ERC165 {
 
     // conditional state variable assignments based on _isRequest:
     if (_isRequest) {
+      tokenExpiry = _expiry.add(block.number);
       p.uintDetails.reqCollateral = _collateral;
       p.uintDetails.collateralDecimals = _getERC20Decimals(_collateralERC);
-      p.uintDetails.expiry = _expiry.add(block.number);
+      p.uintDetails.expiry = tokenExpiry;
     } else if (_isSplit) {
       require(_splitTokenId != 0, "token ID cannot be zero");
       require(!piggies[_splitTokenId].flags.isRequest, "token cannot be an RFP");
@@ -423,16 +422,18 @@ contract SmartPiggies is ERC165 {
       require(block.number < piggies[_splitTokenId].uintDetails.expiry, "cannot split expired token");
       require(!auctions[_splitTokenId].auctionActive, "cannot split token on auction");
       require(!piggies[_splitTokenId].flags.hasBeenCleared, "cannot split token that has been cleared");
+      tokenExpiry = piggies[_splitTokenId].uintDetails.expiry;
       p.addresses.writer = piggies[_splitTokenId].addresses.writer;
       p.uintDetails.collateral = _collateral;
       p.uintDetails.collateralDecimals = piggies[_splitTokenId].uintDetails.collateralDecimals;
-      p.uintDetails.expiry = piggies[_splitTokenId].uintDetails.expiry;
+      p.uintDetails.expiry = tokenExpiry;
     } else {
-      require(!_isSplit);
+      require(!_isSplit, "split cannot be true when creating a new piggy");
+      tokenExpiry = _expiry.add(block.number);
       p.addresses.writer = msg.sender;
       p.uintDetails.collateral = _collateral;
       p.uintDetails.collateralDecimals = _getERC20Decimals(_collateralERC);
-      p.uintDetails.expiry = _expiry.add(block.number);
+      p.uintDetails.expiry = tokenExpiry;
     }
 
     _addTokenToOwnedPiggies(msg.sender, tokenId);
@@ -443,7 +444,7 @@ contract SmartPiggies is ERC165 {
       _collateral,
       _lotSize,
       _strikePrice,
-      _expiry.add(block.number),
+      tokenExpiry,
       _isEuro,
       _isPut,
       _isRequest
@@ -538,7 +539,6 @@ function _getERC20Decimals(address _ERC20)
     address _collateralERC,
     address _premiumERC,
     address _dataResolverNow,
-    address _dataResolverAtExpiry,
     uint256 _reqCollateral,
     uint256 _lotSize,
     uint256 _strikePrice,
@@ -560,9 +560,6 @@ function _getERC20Decimals(address _ERC20)
     }
     if (_dataResolverNow != address(0)) {
       piggies[_tokenId].addresses.dataResolverNow = _dataResolverNow;
-    }
-    if (_dataResolverAtExpiry != address(0)) {
-      piggies[_tokenId].addresses.dataResolverAtExpiry = _dataResolverAtExpiry;
     }
     if (_reqCollateral != 0) {
       piggies[_tokenId].uintDetails.reqCollateral = _reqCollateral;
@@ -587,7 +584,6 @@ function _getERC20Decimals(address _ERC20)
       _collateralERC,
       _premiumERC,
       _dataResolverNow,
-      _dataResolverAtExpiry,
       _reqCollateral,
       _lotSize,
       _strikePrice,
@@ -852,7 +848,7 @@ function _getERC20Decimals(address _ERC20)
     address _dataResolver;
     if (piggies[_tokenId].flags.isEuro || (piggies[_tokenId].uintDetails.expiry < block.number))
     {
-      _dataResolver = piggies[_tokenId].addresses.dataResolverAtExpiry;
+      _dataResolver = piggies[_tokenId].addresses.dataResolverNow; //changed from dataResolverAtExpiry
     } else {
       require(msg.sender == piggies[_tokenId].addresses.holder, "only the holder can settle an American style option before expiry");
       _dataResolver = piggies[_tokenId].addresses.dataResolverNow;
@@ -889,7 +885,7 @@ function _getERC20Decimals(address _ERC20)
     address _dataResolver;
     if (piggies[_tokenId].flags.isEuro || (piggies[_tokenId].uintDetails.expiry < block.number))
     {
-      _dataResolver = piggies[_tokenId].addresses.dataResolverAtExpiry;
+      _dataResolver = piggies[_tokenId].addresses.dataResolverNow; // changed from dataResolverAtExpiry
     } else {
       _dataResolver = piggies[_tokenId].addresses.dataResolverNow;
     }
@@ -1054,7 +1050,7 @@ function _getERC20Decimals(address _ERC20)
     piggies[_tokenId].addresses.collateralERC = address(0);
     piggies[_tokenId].addresses.premiumERC = address(0);
     piggies[_tokenId].addresses.dataResolverNow = address(0);
-    piggies[_tokenId].addresses.dataResolverAtExpiry = address(0);
+    //piggies[_tokenId].addresses.dataResolverAtExpiry = address(0);
     piggies[_tokenId].uintDetails.collateral = 0;
     piggies[_tokenId].uintDetails.lotSize = 0;
     piggies[_tokenId].uintDetails.strikePrice = 0;

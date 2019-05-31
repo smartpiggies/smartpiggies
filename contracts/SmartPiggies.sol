@@ -232,7 +232,7 @@ contract SmartPiggies is ERC165 {
        If `_asRequest` is false, the ERC-59 contract must take ownership of `_collateral` amount
        of ERC-20 tokens governed by the `_collateralERC` contract.
       @param _collateralERC The address of the reference ERC-20 token to be used as collateral
-      @param _premiumERC The address of the reference ERC-20 token to be used to pay the premium
+
       param _oracle The address of a service contract which will return the settlement price
       param _asRequest If true, will create the token as an "RFP" / request for a particular option
       param _underlyingNow An identifier for the reference underlying which the contract at `_oracle`
@@ -255,7 +255,6 @@ contract SmartPiggies is ERC165 {
     address _collateralERC,
     address _premiumERC,
     address _dataResolverNow,
-    address _dataResolverAtExpiry,
     uint256 _collateral,
     uint256 _lotSize,
     uint256 _strikePrice,
@@ -270,8 +269,7 @@ contract SmartPiggies is ERC165 {
     require(
       _collateralERC != address(0) &&
       _premiumERC != address(0) &&
-      _dataResolverNow != address(0) &&
-      _dataResolverAtExpiry != address(0),
+      _dataResolverNow != address(0),
       "addresses cannot be zero"
     );
     require(
@@ -293,44 +291,24 @@ contract SmartPiggies is ERC165 {
     }
     // any other checks that need to be performed specifically for RFPs ?
 
-    // assuming all checks have passed:
-    tokenId = tokenId.add(1);
-
-    // write the values to storage, including _isRequest flag
-    Piggy storage p = piggies[tokenId];
-    p.addresses.holder = msg.sender;
-    p.addresses.collateralERC = _collateralERC;
-    p.addresses.premiumERC = _premiumERC;
-    p.addresses.dataResolverNow = _dataResolverNow;
-    p.addresses.dataResolverAtExpiry = _dataResolverAtExpiry;
-    p.uintDetails.collateralDecimals = _getERC20Decimals(_collateralERC);
-    p.uintDetails.lotSize = _lotSize;
-    p.uintDetails.strikePrice = _strikePrice;
-    p.uintDetails.expiry = _expiry.add(block.number);
-    p.flags.isEuro = _isEuro;
-    p.flags.isPut = _isPut;
-    p.flags.isRequest = _isRequest;
-
-    // conditional state variable assignments based on _isRequest:
-    if (_isRequest) {
-      p.uintDetails.reqCollateral = _collateral;
-    } else {
-      p.addresses.writer = msg.sender;
-      p.uintDetails.collateral = _collateral;
-    }
-    _addTokenToOwnedPiggies(msg.sender, tokenId);
-
-    emit CreatePiggy(
-      msg.sender,
-      tokenId,
-      _collateral,
-      _lotSize,
-      _strikePrice,
-      _expiry.add(block.number),
-      _isEuro,
-      _isPut,
-      _isRequest
+    require(
+      _constructPiggy(
+        _collateralERC,
+        _premiumERC,
+        _dataResolverNow,
+        _collateral,
+        _lotSize,
+        _strikePrice,
+        _expiry,
+        0,
+        _isEuro,
+        _isPut,
+        _isRequest,
+        false
+      ),
+      "failed to create piggy"
     );
+
 
     return true;
   }
@@ -352,123 +330,127 @@ contract SmartPiggies is ERC165 {
 
     // assuming all checks have passed:
 
-    //calculate collaterail split accounting for interger division
-    uint256 splitCollateral2 = piggies[tokenId].uintDetails.collateral.div(2);
-    uint256 splitCollateral1 = piggies[tokenId].uintDetails.collateral.sub(splitCollateral2);
-
-    // assuming all checks have passed:
-    tokenId = tokenId.add(1);
-
-    require(
-      _newSplitPiggy(
-        piggies[_tokenId].addresses.collateralERC,
-        piggies[_tokenId].addresses.premiumERC,
-        piggies[_tokenId].addresses.dataResolverNow,
-        piggies[_tokenId].addresses.dataResolverAtExpiry,
-        splitCollateral1,
-        piggies[_tokenId].uintDetails.lotSize,
-        piggies[_tokenId].uintDetails.strikePrice,
-        piggies[_tokenId].uintDetails.expiry,
-        piggies[_tokenId].flags.isEuro,
-        piggies[_tokenId].flags.isPut,
-        false //piggies[tokenId].isRequest
-      ),
-      "failed to make a new piggy"
-    ); //check to make sure this rolls back the reset if it fails
-
-    tokenId = tokenId.add(1);
-
-    require(
-      _newSplitPiggy(
-        piggies[_tokenId].addresses.collateralERC,
-        piggies[_tokenId].addresses.premiumERC,
-        piggies[_tokenId].addresses.dataResolverNow,
-        piggies[_tokenId].addresses.dataResolverAtExpiry,
-        splitCollateral2,
-        piggies[_tokenId].uintDetails.lotSize,
-        piggies[_tokenId].uintDetails.strikePrice,
-        piggies[_tokenId].uintDetails.expiry,
-        piggies[_tokenId].flags.isEuro,
-        piggies[_tokenId].flags.isPut,
-        false //piggies[tokenId].isRequest
-      ),
-      "failed to make a new piggy"
-    ); //check to make sure this rolls back the reset if it fails
+    //calculate collateral split
+    uint256 splitCollateral = piggies[tokenId].uintDetails.collateral.div(2);
 
     //remove current token ID
     _removeTokenFromOwnedPiggies(msg.sender, _tokenId); //should this be piggies[_tokenId].holder
+
+    require(
+      _constructPiggy(
+        piggies[_tokenId].addresses.collateralERC,
+        piggies[_tokenId].addresses.premiumERC,
+        piggies[_tokenId].addresses.dataResolverNow,
+        piggies[tokenId].uintDetails.collateral.sub(splitCollateral), //accounting for interger division
+        piggies[_tokenId].uintDetails.lotSize,
+        piggies[_tokenId].uintDetails.strikePrice,
+        piggies[_tokenId].uintDetails.expiry,
+        _tokenId,
+        piggies[_tokenId].flags.isEuro,
+        piggies[_tokenId].flags.isPut,
+        false, //piggies[tokenId].isRequest
+        true //split piggy
+      ),
+      "failed to create a new piggy"
+    ); //check to make sure this rolls back the reset if it fails
+
+    require(
+      _constructPiggy(
+        piggies[_tokenId].addresses.collateralERC,
+        piggies[_tokenId].addresses.premiumERC,
+        piggies[_tokenId].addresses.dataResolverNow,
+        splitCollateral,
+        piggies[_tokenId].uintDetails.lotSize,
+        piggies[_tokenId].uintDetails.strikePrice,
+        piggies[_tokenId].uintDetails.expiry,
+        _tokenId,
+        piggies[_tokenId].flags.isEuro,
+        piggies[_tokenId].flags.isPut,
+        false, //piggies[tokenId].isRequest
+        true //split piggy
+      ),
+      "failed to make a new piggy"
+    ); //check to make sure this rolls back the reset if it fails
+
     //clean up piggyId
     _resetPiggy(_tokenId);
-
-    _addTokenToOwnedPiggies(msg.sender, tokenId-1);
-    _addTokenToOwnedPiggies(msg.sender, tokenId);
 
     return true;
   }
 
-  function _newSplitPiggy(
+  function _constructPiggy(
     address _collateralERC,
     address _premiumERC,
     address _dataResolverNow,
-    address _dataResolverAtExpiry,
     uint256 _collateral,
     uint256 _lotSize,
     uint256 _strikePrice,
     uint256 _expiry,
+    uint256 _splitTokenId,
     bool _isEuro,
     bool _isPut,
-    bool _isRequest
+    bool _isRequest,
+    bool _isSplit
   )
-    public
+    internal
     returns (bool)
   {
-  require(
-    _collateralERC != address(0) &&
-    _premiumERC != address(0) &&
-    _dataResolverNow != address(0) &&
-    _dataResolverAtExpiry != address(0),
-    "addresses cannot be zero"
-  );
-  require(
-    _collateral != 0 &&
-    _lotSize != 0 &&
-    _strikePrice != 0 &&
-    _expiry != 0,
-    "option parameters cannot be zero"
-  );
 
-  //check if collateral is sufficient in SmartPiggies contract???
+    // assuming all checks have passed:
+    tokenId = tokenId.add(1);
 
-  // write the values to storage, including _isRequest flag
-  Piggy storage p = piggies[tokenId];
-  p.addresses.holder = msg.sender;
-  p.addresses.collateralERC = _collateralERC;
-  p.addresses.premiumERC = _premiumERC;
-  p.addresses.dataResolverNow = _dataResolverNow;
-  p.addresses.dataResolverAtExpiry = _dataResolverAtExpiry;
-  p.uintDetails.collateralDecimals = _getERC20Decimals(_collateralERC);
-  p.uintDetails.lotSize = _lotSize;
-  p.uintDetails.strikePrice = _strikePrice;
-  p.uintDetails.expiry = _expiry;
-  p.flags.isEuro = _isEuro;
-  p.flags.isPut = _isPut;
-  p.addresses.writer = msg.sender;
-  p.uintDetails.collateral = _collateral;
+    // write the values to storage, including _isRequest flag
+    Piggy storage p = piggies[tokenId];
+    p.addresses.holder = msg.sender;
+    p.addresses.collateralERC = _collateralERC;
+    p.addresses.premiumERC = _premiumERC;
+    p.addresses.dataResolverNow = _dataResolverNow;
+    p.uintDetails.lotSize = _lotSize;
+    p.uintDetails.strikePrice = _strikePrice;
+    p.flags.isEuro = _isEuro;
+    p.flags.isPut = _isPut;
+    p.flags.isRequest = _isRequest;
 
-  emit CreatePiggy(
-    msg.sender,
-    tokenId,
-    _collateral,
-    _lotSize,
-    _strikePrice,
-    _expiry,
-    _isEuro,
-    _isPut,
-    _isRequest
-  );
+    // conditional state variable assignments based on _isRequest:
+    if (_isRequest) {
+      p.uintDetails.reqCollateral = _collateral;
+      p.uintDetails.collateralDecimals = _getERC20Decimals(_collateralERC);
+      p.uintDetails.expiry = _expiry.add(block.number);
+    } else if (_isSplit) {
+      require(_splitTokenId != 0, "token ID cannot be zero");
+      require(!piggies[_splitTokenId].flags.isRequest, "token cannot be an RFP");
+      require(piggies[_splitTokenId].addresses.holder == msg.sender, "only the holder can split");
+      require(block.number < piggies[_splitTokenId].uintDetails.expiry, "cannot split expired token");
+      require(!auctions[_splitTokenId].auctionActive, "cannot split token on auction");
+      require(!piggies[_splitTokenId].flags.hasBeenCleared, "cannot split token that has been cleared");
+      p.addresses.writer = piggies[_splitTokenId].addresses.writer;
+      p.uintDetails.collateral = _collateral;
+      p.uintDetails.collateralDecimals = piggies[_splitTokenId].uintDetails.collateralDecimals;
+      p.uintDetails.expiry = piggies[_splitTokenId].uintDetails.expiry;
+    } else {
+      require(!_isSplit);
+      p.addresses.writer = msg.sender;
+      p.uintDetails.collateral = _collateral;
+      p.uintDetails.collateralDecimals = _getERC20Decimals(_collateralERC);
+      p.uintDetails.expiry = _expiry.add(block.number);
+    }
 
-  return true;
-}
+    _addTokenToOwnedPiggies(msg.sender, tokenId);
+
+    emit CreatePiggy(
+      msg.sender,
+      tokenId,
+      _collateral,
+      _lotSize,
+      _strikePrice,
+      _expiry.add(block.number),
+      _isEuro,
+      _isPut,
+      _isRequest
+    );
+
+    return true;
+  }
 
 // make sure the ERC-20 contract for collateral correctly reports decimals
 function _getERC20Decimals(address _ERC20)

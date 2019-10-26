@@ -34,7 +34,7 @@ interface PaymentToken {
 import "./ERC165.sol";
 import "./SafeMath.sol";
 
-/** @title ERC-59 (subject to change) Smart Option Standard
+/** @title SmartPiggies: A Smart Option Standard
 */
 contract SmartPiggies is ERC165 {
   using SafeMath for uint256;
@@ -194,21 +194,6 @@ contract SmartPiggies is ERC165 {
     owner = msg.sender; //so we can delete if from the testnet
   }
 
-  // abstract ERC-20 TransferFrom attepmts
-  function attemptPaymentTransfer(address _ERC20, address _from, address _to, uint256 _amount)
-    private
-    returns (bool)
-  {
-    (bool success, ) = address(PaymentToken(_ERC20)).call(
-      abi.encodeWithSignature(
-        "transferFrom(address,address,uint256)",
-        _from,
-        _to,
-        _amount
-      )
-    );
-    return success;
-  }
 
   // token should capture claim fields --> "getSellerClaim()" / "getOwnerClaim()" ?
   // the oracle has to do a lot of heavy lifting in the current design, and the token needs
@@ -376,159 +361,11 @@ contract SmartPiggies is ERC165 {
     return true;
   }
 
-  function _constructPiggy(
-    address _collateralERC,
-    address _premiumERC,
-    address _dataResolverNow,
-    uint256 _collateral,
-    uint256 _lotSize,
-    uint256 _strikePrice,
-    uint256 _expiry,
-    uint256 _splitTokenId,
-    bool _isEuro,
-    bool _isPut,
-    bool _isRequest,
-    bool _isSplit
-  )
-    internal
-    returns (bool)
-  {
-    // assuming all checks have passed:
-    uint256 tokenExpiry;
-    tokenId = tokenId.add(1);
-
-    // write the values to storage, including _isRequest flag
-    Piggy storage p = piggies[tokenId];
-    p.addresses.holder = msg.sender;
-    p.addresses.collateralERC = _collateralERC;
-    p.addresses.premiumERC = _premiumERC;
-    p.addresses.dataResolverNow = _dataResolverNow;
-    p.uintDetails.lotSize = _lotSize;
-    p.uintDetails.strikePrice = _strikePrice;
-    p.flags.isEuro = _isEuro;
-    p.flags.isPut = _isPut;
-    p.flags.isRequest = _isRequest;
-
-    // conditional state variable assignments based on _isRequest:
-    if (_isRequest) {
-      tokenExpiry = _expiry.add(block.number);
-      p.uintDetails.reqCollateral = _collateral;
-      p.uintDetails.collateralDecimals = _getERC20Decimals(_collateralERC);
-      p.uintDetails.expiry = tokenExpiry;
-    } else if (_isSplit) {
-      require(_splitTokenId != 0, "token ID cannot be zero");
-      require(!piggies[_splitTokenId].flags.isRequest, "token cannot be an RFP");
-      require(piggies[_splitTokenId].addresses.holder == msg.sender, "only the holder can split");
-      require(block.number < piggies[_splitTokenId].uintDetails.expiry, "cannot split expired token");
-      require(!auctions[_splitTokenId].auctionActive, "cannot split token on auction");
-      require(!piggies[_splitTokenId].flags.hasBeenCleared, "cannot split token that has been cleared");
-      tokenExpiry = piggies[_splitTokenId].uintDetails.expiry;
-      p.addresses.writer = piggies[_splitTokenId].addresses.writer;
-      p.uintDetails.collateral = _collateral;
-      p.uintDetails.collateralDecimals = piggies[_splitTokenId].uintDetails.collateralDecimals;
-      p.uintDetails.expiry = tokenExpiry;
-    } else {
-      require(!_isSplit, "split cannot be true when creating a new piggy");
-      tokenExpiry = _expiry.add(block.number);
-      p.addresses.writer = msg.sender;
-      p.uintDetails.collateral = _collateral;
-      p.uintDetails.collateralDecimals = _getERC20Decimals(_collateralERC);
-      p.uintDetails.expiry = tokenExpiry;
-    }
-
-    _addTokenToOwnedPiggies(msg.sender, tokenId);
-
-    emit CreatePiggy(
-      msg.sender,
-      tokenId,
-      _collateral,
-      _lotSize,
-      _strikePrice,
-      tokenExpiry,
-      _isEuro,
-      _isPut,
-      _isRequest
-    );
-
-    return true;
-  }
-
-// make sure the ERC-20 contract for collateral correctly reports decimals
-function _getERC20Decimals(address _ERC20)
-  internal
-  returns (uint8)
-{
-  (bool success, bytes memory _decBytes) = address(PaymentToken(_ERC20)).call(
-      abi.encodeWithSignature("decimals()")
-    );
-   require(success, "collateral ERC-20 contract does not properly specify decimals");
-   // convert bytes to uint8:
-   uint256 _ERCdecimals;
-   for(uint256 i=0; i < _decBytes.length; i++) {
-     _ERCdecimals = _ERCdecimals + uint8(_decBytes[i])*(2**(8*(_decBytes.length-(i+1))));
-   }
-   return uint8(_ERCdecimals);
-}
-
-  // helper function to view info from about the piggy outside of the contract
-  function getDetails(uint256 _tokenId)
-    public
-    view
-    returns (Piggy memory)
-  {
-    return piggies[_tokenId];
-  }
-
-  // this is a helper function to allow view of auction details
-  function getAuctionDetails(uint256 _tokenId)
-    public
-    view
-    returns (DetailAuction memory)
-  {
-    return auctions[_tokenId];
-  }
-
-  /** @notice Count the number of ERC-59 tokens owned by a particular address
-      @dev ERC-59 tokens assigned to the zero address are considered invalid, and this
-       function throws for queries about the zero address.
-      @param _owner An address for which to query the balance of ERC-59 tokens
-      @return The number of ERC-59 tokens owned by `_owner`, possibly zero
-   */
-  function getOwnedPiggies(address _owner)
-    public
-    view
-    returns (uint256[] memory)
-  {
-    require(_owner != address(0), "address cannot be zero");
-    return ownedPiggies[_owner];
-  }
-
-  function getERC20balance(address _owner, address _erc20)
-    public
-    view
-    returns (uint256)
-  {
-    require(_owner != address(0), "address cannot be zero");
-    return ERC20balances[_owner][_erc20];
-  }
-
   function transferFrom(address _from, address _to, uint256 _tokenId)
     public
   {
     require(msg.sender == piggies[_tokenId].addresses.holder, "msg.sender is not the owner"); //openzep doesn't do this
     _internalTransfer(_from, _to, _tokenId);
-  }
-
-  // internal transfer for transfers made on behalf of the contract
-  function _internalTransfer(address _from, address _to, uint256 _tokenId)
-    internal
-  {
-    require(_from == piggies[_tokenId].addresses.holder, "from address is not the owner");
-    require(_to != address(0), "to address is zero");
-    _removeTokenFromOwnedPiggies(_from, _tokenId);
-    _addTokenToOwnedPiggies(_to, _tokenId);
-    piggies[_tokenId].addresses.holder = _to;
-    emit TransferPiggy(_from, _to, _tokenId);
   }
 
   // possibly add function to update reqCollateral if token is an RFP and hasn't been successfully fulfilled
@@ -615,20 +452,6 @@ function _getERC20Decimals(address _ERC20)
     return true;
   }
 
-  function _clearAuctionDetails(uint256 _tokenId)
-    internal
-  {
-    auctions[_tokenId].startBlock = 0;
-    auctions[_tokenId].expiryBlock = 0;
-    auctions[_tokenId].startPrice = 0;
-    auctions[_tokenId].reservePrice = 0;
-    auctions[_tokenId].timeStep = 0;
-    auctions[_tokenId].priceStep = 0;
-    auctions[_tokenId].auctionActive = false;
-    // I don't think we want this one to touch the two state flags; handle those on a per-function basis in the order that makes sense probably
-    // MIGHT be ok to set auctionActive = false here though actually...
-  }
-
   function startAuction(
     uint256 _tokenId,
     uint256 _startPrice,
@@ -695,25 +518,6 @@ function _getERC20Decimals(address _ERC20)
     _clearAuctionDetails(_tokenId);
     emit EndAuction(msg.sender, _tokenId, piggies[_tokenId].flags.isRequest);
     return true;
-  }
-
-  // calculate the price for satisfaction of an auction
-  // this is an interpolated linear price based on the supplied auction parameters at a resolution of 1 block
-  function getAuctionPrice(uint256 _tokenId)
-    internal
-    view
-    returns (uint256)
-  {
-    // I think we can skip various checks here since they will be in the satisfyAuction function instead
-    // (e.g. making sure auction is active and not expired, etc. etc.)
-    uint256 _pStart = auctions[_tokenId].startPrice;
-    // price delta is (time elapsed) * (price change per time step)
-    uint256 _pDelta = (block.number).sub(auctions[_tokenId].startBlock).mul(auctions[_tokenId].priceStep).div(auctions[_tokenId].timeStep);
-    if (piggies[_tokenId].flags.isRequest) {
-      return _pStart.add(_pDelta);
-    } else {
-      return (_pStart.sub(_pDelta));
-    }
   }
 
   // consider possible attacks and refactor if needed
@@ -857,25 +661,6 @@ function _getERC20Decimals(address _ERC20)
     return true;
   }
 
-  function _callResolver(address _dataResolver, address _feePayer, uint256 _oracleFee, uint256 _tokenId)
-    internal
-    returns (bool)
-  {
-    (bool success, ) = address(_dataResolver).call(
-      abi.encodeWithSignature("fetchData(address,uint256,uint256)", _feePayer, _oracleFee, _tokenId)
-    );
-    require(success, "fetch success did not return true");
-
-    emit RequestSettlementPrice(
-      _feePayer,
-      _tokenId,
-      _oracleFee,
-      _dataResolver
-    );
-
-    return true;
-  }
-
   function _callback(
     uint256 _tokenId,
     uint256 _price
@@ -899,43 +684,6 @@ function _getERC20Decimals(address _ERC20)
       _price
     );
 
-  }
-
-  // this appears to basically be redundant w/ requestSettlementPrice
-  // function clearOption(uint256 _tokenId)
-  //   public
-  //   returns (bool)
-  // {
-  //   require(msg.sender != address(0));
-  //   //require(ownerOf(_piggyId) == msg.sender);
-  //   //what check should be done to check that piggy is active?
-  //   require(_tokenId != 0);
-
-  //   //Get a price from the oracle
-  //   piggies[_tokenId].requestId = requestSettlementPrice(_tokenId);
-
-  //   return true;
-  // }
-
-  function _calculateLongPayout(
-    bool _isPut,
-    uint256 _exercisePrice,
-    uint256 _strikePrice,
-    uint256 _lotSize,
-    uint8 _decimals
-  )
-    internal
-    pure
-    returns (uint256 _payout)
-  {
-    if (_isPut && (_strikePrice > _exercisePrice)) {
-      _payout = _strikePrice.sub(_exercisePrice);
-    }
-    if (!_isPut && (_exercisePrice > _strikePrice)) {
-      _payout = _exercisePrice.sub(_strikePrice);
-    }
-    _payout = _payout.mul(10**uint256(_decimals)).mul(_lotSize).div(100);
-    return _payout;
   }
 
   // calculate settlement using oracle's callback data
@@ -1019,6 +767,245 @@ function _getERC20Decimals(address _ERC20)
     );
 
     return true;
+  }
+
+  /** Helper functions
+  */
+  // helper function to view info from about the piggy outside of the contract
+  function getDetails(uint256 _tokenId)
+    public
+    view
+    returns (Piggy memory)
+  {
+    return piggies[_tokenId];
+  }
+
+  // this is a helper function to allow view of auction details
+  function getAuctionDetails(uint256 _tokenId)
+    public
+    view
+    returns (DetailAuction memory)
+  {
+    return auctions[_tokenId];
+  }
+
+  /** @notice Count the number of ERC-59 tokens owned by a particular address
+      @dev ERC-59 tokens assigned to the zero address are considered invalid, and this
+       function throws for queries about the zero address.
+      @param _owner An address for which to query the balance of ERC-59 tokens
+      @return The number of ERC-59 tokens owned by `_owner`, possibly zero
+   */
+  function getOwnedPiggies(address _owner)
+    public
+    view
+    returns (uint256[] memory)
+  {
+    require(_owner != address(0), "address cannot be zero");
+    return ownedPiggies[_owner];
+  }
+
+  function getERC20balance(address _owner, address _erc20)
+    public
+    view
+    returns (uint256)
+  {
+    require(_owner != address(0), "address cannot be zero");
+    return ERC20balances[_owner][_erc20];
+  }
+
+  function _constructPiggy(
+    address _collateralERC,
+    address _premiumERC,
+    address _dataResolverNow,
+    uint256 _collateral,
+    uint256 _lotSize,
+    uint256 _strikePrice,
+    uint256 _expiry,
+    uint256 _splitTokenId,
+    bool _isEuro,
+    bool _isPut,
+    bool _isRequest,
+    bool _isSplit
+  )
+    internal
+    returns (bool)
+  {
+    // assuming all checks have passed:
+    uint256 tokenExpiry;
+    tokenId = tokenId.add(1);
+
+    // write the values to storage, including _isRequest flag
+    Piggy storage p = piggies[tokenId];
+    p.addresses.holder = msg.sender;
+    p.addresses.collateralERC = _collateralERC;
+    p.addresses.premiumERC = _premiumERC;
+    p.addresses.dataResolverNow = _dataResolverNow;
+    p.uintDetails.lotSize = _lotSize;
+    p.uintDetails.strikePrice = _strikePrice;
+    p.flags.isEuro = _isEuro;
+    p.flags.isPut = _isPut;
+    p.flags.isRequest = _isRequest;
+
+    // conditional state variable assignments based on _isRequest:
+    if (_isRequest) {
+      tokenExpiry = _expiry.add(block.number);
+      p.uintDetails.reqCollateral = _collateral;
+      p.uintDetails.collateralDecimals = _getERC20Decimals(_collateralERC);
+      p.uintDetails.expiry = tokenExpiry;
+    } else if (_isSplit) {
+      require(_splitTokenId != 0, "token ID cannot be zero");
+      require(!piggies[_splitTokenId].flags.isRequest, "token cannot be an RFP");
+      require(piggies[_splitTokenId].addresses.holder == msg.sender, "only the holder can split");
+      require(block.number < piggies[_splitTokenId].uintDetails.expiry, "cannot split expired token");
+      require(!auctions[_splitTokenId].auctionActive, "cannot split token on auction");
+      require(!piggies[_splitTokenId].flags.hasBeenCleared, "cannot split token that has been cleared");
+      tokenExpiry = piggies[_splitTokenId].uintDetails.expiry;
+      p.addresses.writer = piggies[_splitTokenId].addresses.writer;
+      p.uintDetails.collateral = _collateral;
+      p.uintDetails.collateralDecimals = piggies[_splitTokenId].uintDetails.collateralDecimals;
+      p.uintDetails.expiry = tokenExpiry;
+    } else {
+      require(!_isSplit, "split cannot be true when creating a new piggy");
+      tokenExpiry = _expiry.add(block.number);
+      p.addresses.writer = msg.sender;
+      p.uintDetails.collateral = _collateral;
+      p.uintDetails.collateralDecimals = _getERC20Decimals(_collateralERC);
+      p.uintDetails.expiry = tokenExpiry;
+    }
+
+    _addTokenToOwnedPiggies(msg.sender, tokenId);
+
+    emit CreatePiggy(
+      msg.sender,
+      tokenId,
+      _collateral,
+      _lotSize,
+      _strikePrice,
+      tokenExpiry,
+      _isEuro,
+      _isPut,
+      _isRequest
+    );
+
+    return true;
+  }
+
+  // make sure the ERC-20 contract for collateral correctly reports decimals
+  function _getERC20Decimals(address _ERC20)
+    internal
+    returns (uint8)
+  {
+    (bool success, bytes memory _decBytes) = address(PaymentToken(_ERC20)).call(
+        abi.encodeWithSignature("decimals()")
+      );
+     require(success, "collateral ERC-20 contract does not properly specify decimals");
+     // convert bytes to uint8:
+     uint256 _ERCdecimals;
+     for(uint256 i=0; i < _decBytes.length; i++) {
+       _ERCdecimals = _ERCdecimals + uint8(_decBytes[i])*(2**(8*(_decBytes.length-(i+1))));
+     }
+     return uint8(_ERCdecimals);
+  }
+
+  // internal transfer for transfers made on behalf of the contract
+  function _internalTransfer(address _from, address _to, uint256 _tokenId)
+    internal
+  {
+    require(_from == piggies[_tokenId].addresses.holder, "from address is not the owner");
+    require(_to != address(0), "to address is zero");
+    _removeTokenFromOwnedPiggies(_from, _tokenId);
+    _addTokenToOwnedPiggies(_to, _tokenId);
+    piggies[_tokenId].addresses.holder = _to;
+    emit TransferPiggy(_from, _to, _tokenId);
+  }
+
+  function _clearAuctionDetails(uint256 _tokenId)
+    internal
+  {
+    auctions[_tokenId].startBlock = 0;
+    auctions[_tokenId].expiryBlock = 0;
+    auctions[_tokenId].startPrice = 0;
+    auctions[_tokenId].reservePrice = 0;
+    auctions[_tokenId].timeStep = 0;
+    auctions[_tokenId].priceStep = 0;
+    auctions[_tokenId].auctionActive = false;
+    // I don't think we want this one to touch the two state flags; handle those on a per-function basis in the order that makes sense probably
+    // MIGHT be ok to set auctionActive = false here though actually...
+  }
+
+  // calculate the price for satisfaction of an auction
+  // this is an interpolated linear price based on the supplied auction parameters at a resolution of 1 block
+  function getAuctionPrice(uint256 _tokenId)
+    internal
+    view
+    returns (uint256)
+  {
+    // I think we can skip various checks here since they will be in the satisfyAuction function instead
+    // (e.g. making sure auction is active and not expired, etc. etc.)
+    uint256 _pStart = auctions[_tokenId].startPrice;
+    // price delta is (time elapsed) * (price change per time step)
+    uint256 _pDelta = (block.number).sub(auctions[_tokenId].startBlock).mul(auctions[_tokenId].priceStep).div(auctions[_tokenId].timeStep);
+    if (piggies[_tokenId].flags.isRequest) {
+      return _pStart.add(_pDelta);
+    } else {
+      return (_pStart.sub(_pDelta));
+    }
+  }
+
+  function _callResolver(address _dataResolver, address _feePayer, uint256 _oracleFee, uint256 _tokenId)
+    internal
+    returns (bool)
+  {
+    (bool success, ) = address(_dataResolver).call(
+      abi.encodeWithSignature("fetchData(address,uint256,uint256)", _feePayer, _oracleFee, _tokenId)
+    );
+    require(success, "fetch success did not return true");
+
+    emit RequestSettlementPrice(
+      _feePayer,
+      _tokenId,
+      _oracleFee,
+      _dataResolver
+    );
+
+    return true;
+  }
+
+  function _calculateLongPayout(
+    bool _isPut,
+    uint256 _exercisePrice,
+    uint256 _strikePrice,
+    uint256 _lotSize,
+    uint8 _decimals
+  )
+    internal
+    pure
+    returns (uint256 _payout)
+  {
+    if (_isPut && (_strikePrice > _exercisePrice)) {
+      _payout = _strikePrice.sub(_exercisePrice);
+    }
+    if (!_isPut && (_exercisePrice > _strikePrice)) {
+      _payout = _exercisePrice.sub(_strikePrice);
+    }
+    _payout = _payout.mul(10**uint256(_decimals)).mul(_lotSize).div(100);
+    return _payout;
+  }
+
+  // abstract ERC-20 TransferFrom attepmts
+  function attemptPaymentTransfer(address _ERC20, address _from, address _to, uint256 _amount)
+    private
+    returns (bool)
+  {
+    (bool success, ) = address(PaymentToken(_ERC20)).call(
+      abi.encodeWithSignature(
+        "transferFrom(address,address,uint256)",
+        _from,
+        _to,
+        _amount
+      )
+    );
+    return success;
   }
 
   function _addTokenToOwnedPiggies(address _to, uint256 _tokenId)

@@ -92,7 +92,6 @@ contract ('SmartPiggies', function(accounts) {
         collateralERC = tokenInstance.address
         premiumERC = tokenInstance.address
         dataResolverNow = resolverInstance.address
-        dataResolverAtExpiry = resolverInstance.address
         collateral = web3.utils.toBN(100 * decimals)
         lotSize = web3.utils.toBN(10)
         strikePrice = web3.utils.toBN((strike + (i*5)))
@@ -111,7 +110,6 @@ contract ('SmartPiggies', function(accounts) {
           collateralERC,
           premiumERC,
           dataResolverNow,
-          dataResolverAtExpiry,
           collateral,
           lotSize,
           strikePrice,

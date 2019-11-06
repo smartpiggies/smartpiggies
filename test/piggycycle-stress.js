@@ -90,8 +90,7 @@ contract ('SmartPiggies', function(accounts) {
     for (let i = 0; i < count; i++) {
       it("Should create an American Put piggy with strike: " + (strike + (i*5)), function() {
         collateralERC = tokenInstance.address
-        premiumERC = tokenInstance.address
-        dataResolverNow = resolverInstance.address
+        dataResolver = resolverInstance.address
         collateral = web3.utils.toBN(100 * decimals)
         lotSize = web3.utils.toBN(10)
         strikePrice = web3.utils.toBN((strike + (i*5)))
@@ -108,8 +107,7 @@ contract ('SmartPiggies', function(accounts) {
 
         return piggyInstance.createPiggy(
           collateralERC,
-          premiumERC,
-          dataResolverNow,
+          dataResolver,
           collateral,
           lotSize,
           strikePrice,
@@ -122,18 +120,19 @@ contract ('SmartPiggies', function(accounts) {
         .then(result => {
           assert.isTrue(result.receipt.status, "create did not return true")
           assert.strictEqual(result.logs[0].event, "CreatePiggy", "Event log from create didn't return correct event name")
-          assert.strictEqual(result.logs[0].args.from, owner, "Event log from create didn't return correct sender")
-          assert.strictEqual(result.logs[0].args.tokenId.toString(), "1", "Event log from create didn't return correct tokenId")
-          assert.strictEqual(result.logs[0].args.collateral.toString(), collateral.toString(), "Event log from create didn't return correct collateral")
-          assert.strictEqual(result.logs[0].args.lotSize.toString(), lotSize.toString(), "Event log from create didn't return correct lot size")
-          assert.strictEqual(result.logs[0].args.strike.toString(), strikePrice.toString(), "Event log from create didn't return correct strike")
-          assert.isNotTrue(result.logs[0].args.isEuro, "Event log from create didn't return false for is European")
-          assert.isTrue(result.logs[0].args.isPut, "Event log from create didn't return true for is put")
-          assert.isNotTrue(result.logs[0].args.RFP, "Event log from create didn't return false for RFP")
+          assert.strictEqual(result.logs[0].args.addresses[0], owner, "Event log from create didn't return correct sender")
+          assert.strictEqual(result.logs[0].args.addresses[1], dataResolver, "Event log from create didn't return correct resolver")
+          assert.strictEqual(result.logs[0].args.ints[0].toString(), "1", "Event log from create didn't return correct tokenId")
+          assert.strictEqual(result.logs[0].args.ints[1].toString(), collateral.toString(), "Event log from create didn't return correct collateral")
+          assert.strictEqual(result.logs[0].args.ints[2].toString(), lotSize.toString(), "Event log from create didn't return correct lot size")
+          assert.strictEqual(result.logs[0].args.ints[3].toString(), strikePrice.toString(), "Event log from create didn't return correct strike")
+          assert.isNotTrue(result.logs[0].args.bools[0], "Event log from create didn't return false for is European")
+          assert.isTrue(result.logs[0].args.bools[1], "Event log from create didn't return true for is put")
+          assert.isNotTrue(result.logs[0].args.bools[2], "Event log from create didn't return false for RFP")
           web3.eth.getBlockNumberPromise()
           .then(block => {
             currentBlock = web3.utils.toBN(block)
-            assert.strictEqual(result.logs[0].args.expiryBlock.toString(), expiry.add(currentBlock).toString(), "Event log from create didn't return correct expiry block")
+            assert.strictEqual(result.logs[0].args.ints[4].toString(), expiry.add(currentBlock).toString(), "Event log from create didn't return correct expiry block")
           })
           return piggyInstance.tokenId({from: owner});
         })
@@ -166,16 +165,16 @@ contract ('SmartPiggies', function(accounts) {
           assert.isTrue(result.receipt.status, "requestSettlementPrice function did not return true")
           //Oracle Event
           assert.strictEqual(result.logs[0].event, "OracleReturned", "Event log from oracle didn't return correct event name")
-          assert.strictEqual(result.logs[0].args.resolver, dataResolverNow, "Event log from oracle didn't return correct sender")
+          assert.strictEqual(result.logs[0].args.resolver, dataResolver, "Event log from oracle didn't return correct sender")
           assert.strictEqual(result.logs[0].args.tokenId.toString(), tokenId.toString(), "Event log from oracle didn't return correct tokenId")
-          assert.strictEqual(result.logs[0].args.price.toString(), oraclePrice.toString(), "Event log from oracle didn't return correct tokenId")
+          assert.strictEqual(result.logs[0].args.price.toString(), oraclePrice.toString(), "Event log from oracle didn't return correct price")
 
           //Satisfy Event
           assert.strictEqual(result.logs[1].event, "RequestSettlementPrice", "Event log from request didn't return correct event name")
           assert.strictEqual(result.logs[1].args.feePayer, user01, "Event log from request didn't return correct sender")
           assert.strictEqual(result.logs[1].args.tokenId.toString(), tokenId.toString(), "Event log from request didn't return correct tokenId")
           assert.strictEqual(result.logs[1].args.oracleFee.toString(), oracleFee.toString(), "Event log from request didn't return correct tokenId")
-          assert.strictEqual(result.logs[1].args.dataResolver.toString(), dataResolverNow, "Event log from request didn't return correct tokenId")
+          assert.strictEqual(result.logs[1].args.dataResolver.toString(), dataResolver, "Event log from request didn't return correct resolver")
 
           return piggyInstance.getDetails(tokenId, {from: user01})
         })

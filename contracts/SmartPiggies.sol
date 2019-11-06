@@ -39,6 +39,15 @@ import "./SafeMath.sol";
 contract SmartPiggies is ERC165 {
   using SafeMath for uint256;
 
+  // Supported Interfaces
+  // 0xb99bd9b2 == this.createPiggy.selector ^
+  //  this.splitPiggy.selector ^ this.transferFrom.selector ^
+  //  this.updateRFP.selector ^ this.reclaimAndBurn.selector ^
+  //  this.startAuction.selector ^ this.endAuction.selector ^
+  //  this.satisfyAuction.selector ^ this.requestSettlementPrice.selector ^
+  //  this.settlePiggy.selector ^ this.claimPayout.selector;
+  bytes4 constant SMARTPIGGIES_INTERFACE = 0xb99bd9b2;
+
   address payable owner;
   uint256 public tokenId;
 
@@ -46,8 +55,7 @@ contract SmartPiggies is ERC165 {
     address writer;
     address holder;
     address collateralERC;
-    address premiumERC;
-    address dataResolverNow;
+    address dataResolver;
   }
 
   struct DetailUints {
@@ -95,15 +103,9 @@ contract SmartPiggies is ERC165 {
   */
 
   event CreatePiggy(
-    address indexed from,
-    uint256 indexed tokenId,
-    uint256 collateral,
-    uint256 lotSize,
-    uint256 indexed strike,
-    uint256 expiryBlock,
-    bool isEuro,
-    bool isPut,
-    bool RFP
+    address[] addresses,
+    uint256[] ints,
+    bool[] bools
   );
 
   event TransferPiggy(
@@ -116,8 +118,7 @@ contract SmartPiggies is ERC165 {
     address indexed from,
     uint256 indexed tokenId,
     address collateralERC,
-    address premiumERC,
-    address dataResolverNow,
+    address dataResolver,
     uint256 reqCollateral,
     uint256 lotSize,
     uint256 strikePrice,
@@ -191,53 +192,27 @@ contract SmartPiggies is ERC165 {
     public
   {
     //declarations here
-    owner = msg.sender; //so we can delete if from the testnet
+    owner = msg.sender;
+    _registerInterface(SMARTPIGGIES_INTERFACE);
   }
 
-
-  // token should capture claim fields --> "getSellerClaim()" / "getOwnerClaim()" ?
-  // the oracle has to do a lot of heavy lifting in the current design, and the token needs
-  // to be created with extreme care wrt the oracle metadata
-  // if we want to do "capped" options as traditional, need more metadata re: endpoints i guess
-  /** @notice Create a new ERC-59 token
-      @dev Throws if `_collateralERC` is not a valid Ethereum (ERC-20) address.
-       Throws if `_premiumERC` is not a valid Ethereum (ERC-20) address (may be same
-       as `_collateralERC`).
-       Throws if `_oracle` is not a valid Ethereum address.
-       Throws if `_expiry` < block.number.
-       If `_asRequest` is true, throws if `_reqCollateral` == 0.
-       If `_asRequest` is false, throws if msg.sender has not delegated at least `_collateral`
-       in the ERC-20 token whose contract is `_collateralERC` to the ERC-59 contract.
-       When a new token is created, msg.sender should be recorded as the creator and owner.
-       If `_asRequest` is true, the zero address should be recorded as the seller.
-       If `_asRequest` is false, msg.sender should be recorded as the seller.
-       If `_asRequest` is false, `_reqCollateral` will be irrelevant and should be captured as 0.
-       If `_asRequest` is false, the ERC-59 contract must take ownership of `_collateral` amount
-       of ERC-20 tokens governed by the `_collateralERC` contract.
+  /** @notice Create a new token
       @param _collateralERC The address of the reference ERC-20 token to be used as collateral
-
-      param _oracle The address of a service contract which will return the settlement price
-      param _asRequest If true, will create the token as an "RFP" / request for a particular option
-      param _underlyingNow An identifier for the reference underlying which the contract at `_oracle`
-       is able to parse to return the current price of the underlying
-      param _underlyingExpiry An identifier for the reference underlying which the contract at
-       `_oracle` is able to parse to return the price of the underlying at `_expiry`
+      param _dataResolver The address of a service contract which will return the settlement price
       @param _collateral The amount of collateral for the option, denominated in units of the token
        at the `_collateralERC` address
       @param _lotSize A multiplier on the settlement price used to determine settlement claims
       @param _strikePrice The strike value of the option, in the same units as the settlement price
       @param _expiry The block height at which the option will expire
-      param _reqCollateral The amount of collateral desired in the option, if creating with
-       `_asRequest` == true, denominated in units of the token at the `_collateralERC` address
       @param _isEuro If true, the option can only be settled at or after `_expiry` is reached, else
        it can be settled at any time
       @param _isPut If true, the settlement claims will be calculated for a put option; else they
        will be calculated for a call option
+      @param _isRequest If true, will create the token as an "RFP" / request for a particular option
   */
   function createPiggy(
     address _collateralERC,
-    address _premiumERC,
-    address _dataResolverNow,
+    address _dataResolver,
     uint256 _collateral,
     uint256 _lotSize,
     uint256 _strikePrice,
@@ -251,8 +226,7 @@ contract SmartPiggies is ERC165 {
   {
     require(
       _collateralERC != address(0) &&
-      _premiumERC != address(0) &&
-      _dataResolverNow != address(0),
+      _dataResolver != address(0),
       "addresses cannot be zero"
     );
     require(
@@ -270,15 +244,14 @@ contract SmartPiggies is ERC165 {
         address(this),
         _collateral
       );
-      require(success, "Token transfer did not complete");
+      require(success, "token transfer did not complete");
     }
     // any other checks that need to be performed specifically for RFPs ?
 
     require(
       _constructPiggy(
         _collateralERC,
-        _premiumERC,
-        _dataResolverNow,
+        _dataResolver,
         _collateral,
         _lotSize,
         _strikePrice,
@@ -322,8 +295,7 @@ contract SmartPiggies is ERC165 {
     require(
       _constructPiggy(
         piggies[_tokenId].addresses.collateralERC,
-        piggies[_tokenId].addresses.premiumERC,
-        piggies[_tokenId].addresses.dataResolverNow,
+        piggies[_tokenId].addresses.dataResolver,
         piggies[tokenId].uintDetails.collateral.sub(splitCollateral), //accounting for interger division
         piggies[_tokenId].uintDetails.lotSize,
         piggies[_tokenId].uintDetails.strikePrice,
@@ -340,8 +312,7 @@ contract SmartPiggies is ERC165 {
     require(
       _constructPiggy(
         piggies[_tokenId].addresses.collateralERC,
-        piggies[_tokenId].addresses.premiumERC,
-        piggies[_tokenId].addresses.dataResolverNow,
+        piggies[_tokenId].addresses.dataResolver,
         splitCollateral,
         piggies[_tokenId].uintDetails.lotSize,
         piggies[_tokenId].uintDetails.strikePrice,
@@ -374,8 +345,7 @@ contract SmartPiggies is ERC165 {
   function updateRFP(
     uint256 _tokenId,
     address _collateralERC,
-    address _premiumERC,
-    address _dataResolverNow,
+    address _dataResolver,
     uint256 _reqCollateral,
     uint256 _lotSize,
     uint256 _strikePrice,
@@ -392,11 +362,8 @@ contract SmartPiggies is ERC165 {
     if (_collateralERC != address(0)) {
       piggies[_tokenId].addresses.collateralERC = _collateralERC;
     }
-    if (_premiumERC != address(0)) {
-      piggies[_tokenId].addresses.premiumERC = _premiumERC;
-    }
-    if (_dataResolverNow != address(0)) {
-      piggies[_tokenId].addresses.dataResolverNow = _dataResolverNow;
+    if (_dataResolver != address(0)) {
+      piggies[_tokenId].addresses.dataResolver = _dataResolver;
     }
     if (_reqCollateral != 0) {
       piggies[_tokenId].uintDetails.reqCollateral = _reqCollateral;
@@ -412,6 +379,7 @@ contract SmartPiggies is ERC165 {
       expiryBlock = _expiry.add(block.number);
       piggies[_tokenId].uintDetails.expiry = expiryBlock;
     }
+    // Both must be specified
     piggies[_tokenId].flags.isEuro = _isEuro;
     piggies[_tokenId].flags.isPut = _isPut;
 
@@ -419,8 +387,7 @@ contract SmartPiggies is ERC165 {
       msg.sender,
       _tokenId,
       _collateralERC,
-      _premiumERC,
-      _dataResolverNow,
+      _dataResolver,
       _reqCollateral,
       _lotSize,
       _strikePrice,
@@ -469,11 +436,10 @@ contract SmartPiggies is ERC165 {
     require(piggies[_tokenId].uintDetails.expiry > _auctionExpiry, "auction cannot expire after the option");
     require(!piggies[_tokenId].flags.hasBeenCleared, "option cannot have been cleared");
     require(!auctions[_tokenId].auctionActive, "auction cannot already be running");
-    // as specified below, this is not needed if we change the function (as I have done) to accept an _auctionLength rather than a direct _auctionExpiry value
-    //require(_auctionExpiry > block.number, "auction must expire in the future");  // DO WE WANT TO ALSO ADD A BUFFER HERE? LIKE IT MUST EXPIRE AT LEAST XX BLOCKS IN THE FUTURE?
+
     if (piggies[_tokenId].flags.isRequest) {
       bool success = attemptPaymentTransfer(
-        piggies[_tokenId].addresses.premiumERC,
+        piggies[_tokenId].addresses.collateralERC,
         msg.sender,
         address(this),
         _reservePrice  // this should be the max the requestor is willing to pay in a reverse dutch auction
@@ -512,8 +478,7 @@ contract SmartPiggies is ERC165 {
     if (piggies[_tokenId].flags.isRequest) {
       // refund the _reservePrice premium
       uint256 _premiumToReturn = auctions[_tokenId].reservePrice;
-      //auctions[_tokenId].reservePrice = 0;  // this sort of offends my sensibilities because we only zero out one auction param, but it is the only one required to change for this logic to work
-      PaymentToken(piggies[_tokenId].addresses.premiumERC).transfer(msg.sender, _premiumToReturn);
+      PaymentToken(piggies[_tokenId].addresses.collateralERC).transfer(msg.sender, _premiumToReturn);
     }
     _clearAuctionDetails(_tokenId);
     emit EndAuction(msg.sender, _tokenId, piggies[_tokenId].flags.isRequest);
@@ -530,7 +495,6 @@ contract SmartPiggies is ERC165 {
     require(auctions[_tokenId].auctionActive, "auction must be active to satisfy it");
     // if auction is "active" according to state but has expired, change state
     if (auctions[_tokenId].expiryBlock < block.number) {
-      //auctions[_tokenId].auctionActive = false;  // handled by _clearAuctionDetails now
       _clearAuctionDetails(_tokenId);
       return false;
     }
@@ -561,10 +525,10 @@ contract SmartPiggies is ERC165 {
         _change = auctions[_tokenId].reservePrice.sub(_adjPremium);
       }
       // current holder pays premium (via amount already delegated to this contract in startAuction)
-      PaymentToken(piggies[_tokenId].addresses.premiumERC).transfer(msg.sender, _adjPremium);
+      PaymentToken(piggies[_tokenId].addresses.collateralERC).transfer(msg.sender, _adjPremium);
       // current holder receives any change due
       if (_change > 0) {
-        PaymentToken(piggies[_tokenId].addresses.premiumERC).transfer(piggies[_tokenId].addresses.holder, _change);
+        PaymentToken(piggies[_tokenId].addresses.collateralERC).transfer(piggies[_tokenId].addresses.holder, _change);
       }
       // isRequest becomes false
       piggies[_tokenId].flags.isRequest = false;
@@ -587,9 +551,9 @@ contract SmartPiggies is ERC165 {
       }
       // msg.sender pays (adjusted) premium
       bool success = attemptPaymentTransfer(
-        piggies[_tokenId].addresses.premiumERC,
+        piggies[_tokenId].addresses.collateralERC,
         msg.sender,
-        piggies[_tokenId].addresses.holder,  // should the SP contract escrow it first?
+        piggies[_tokenId].addresses.holder,
         _adjPremium
       );
       if (!success) {
@@ -616,7 +580,7 @@ contract SmartPiggies is ERC165 {
   }
 
   /** @notice Call the oracle to fetch the settlement price
-      @dev Throws if `_tokenId` is not a valid ERC-59 token.
+      @dev Throws if `_tokenId` is not a valid token.
        Throws if `_oracle` is not a valid contract address.
        Throws if `onMarket(_tokenId)` is true.
        If `isEuro` is true for the specified token, throws if `_expiry` > block.number.
@@ -628,36 +592,33 @@ contract SmartPiggies is ERC165 {
        Depending on the oracle service implemented, additional state will need to be referenced in
        order to call the oracle, e.g. an endpoint to fetch. This state handling will need to be
        managed on an implementation basis for specific oracle services.
-      @param _tokenId The identifier of the specific ERC-59 token for which to fetch a settlement price
-       _oracle The address of the oracle contract used to fetch the external settlement price
-       _priceNow A boolean for specifying whether to fetch a "live" price or a fixed price at
-       expiry of the option
+      @param _tokenId The identifier of the token
+      @param _oracleFee Fee paid to oracle service
+        A value needs to be provided for this function to succeed
+        If the oracle doesn't need payment, include a positive garbage value
       @return The settlement price from the oracle to be used in `settleOption()`
    */
-  function requestSettlementPrice(uint256 _tokenId, uint256 _oracleFee) // this should be renamed perhaps, s.t. it is obvious that this is the "clearing phase"
+  function requestSettlementPrice(uint256 _tokenId, uint256 _oracleFee)
     public
     returns (bool)
   {
     require(msg.sender != address(0), "sender cannot be the zero address");
     //what check should be done to check that piggy is active?
     require(!auctions[_tokenId].auctionActive, "cannot clear a token while auction is active");
-    require(!piggies[_tokenId].flags.hasBeenCleared, "token has already been cleared");  // this is potentially problematic in the case of "garbage data"
+    require(!piggies[_tokenId].flags.hasBeenCleared, "token has already been cleared");
     require(_tokenId != 0, "_tokenId cannot be zero");
     require(_oracleFee != 0, "oracle fee cannot be zero");
-    //if Euro require past expiry
+    // check if Euro require past expiry
     if (piggies[_tokenId].flags.isEuro) {
-      require(piggies[_tokenId].uintDetails.expiry <= block.number);
+      require(piggies[_tokenId].uintDetails.expiry <= block.number, "cannot request a price on a European option before expiry");
+    }
+    // check if American and less than expiry, only holder can call
+    if (!piggies[_tokenId].flags.isEuro && (block.number < piggies[_tokenId].uintDetails.expiry))
+    {
+      require(msg.sender == piggies[_tokenId].addresses.holder, "only the holder can settle an American style option before expiry");
     }
     //fetch data from dataResolver contract
-    address _dataResolver;
-    if (piggies[_tokenId].flags.isEuro || (piggies[_tokenId].uintDetails.expiry < block.number))
-    {
-      _dataResolver = piggies[_tokenId].addresses.dataResolverNow; //changed from dataResolverAtExpiry
-    } else {
-      require(msg.sender == piggies[_tokenId].addresses.holder, "only the holder can settle an American style option before expiry");
-      _dataResolver = piggies[_tokenId].addresses.dataResolverNow;
-    }
-    require(_callResolver(_dataResolver, msg.sender, _oracleFee, _tokenId), "call to resolver did not return true");
+    require(_callResolver(piggies[_tokenId].addresses.dataResolver, msg.sender, _oracleFee, _tokenId), "call to resolver did not return true");
     return true;
   }
 
@@ -667,14 +628,7 @@ contract SmartPiggies is ERC165 {
   )
     public
   {
-    address _dataResolver;
-    if (piggies[_tokenId].flags.isEuro || (piggies[_tokenId].uintDetails.expiry < block.number))
-    {
-      _dataResolver = piggies[_tokenId].addresses.dataResolverNow; // changed from dataResolverAtExpiry
-    } else {
-      _dataResolver = piggies[_tokenId].addresses.dataResolverNow;
-    }
-    require(msg.sender == _dataResolver, "resolve address was not correct"); // MUST restrict a call to only the resolver address
+    require(msg.sender == piggies[_tokenId].addresses.dataResolver, "resolver calling address was not correct"); // MUST restrict a call to only the resolver address
     piggies[_tokenId].uintDetails.settlementPrice = _price;
     piggies[_tokenId].flags.hasBeenCleared = true;
 
@@ -686,16 +640,10 @@ contract SmartPiggies is ERC165 {
 
   }
 
-  // calculate settlement using oracle's callback data
-  // needs to have _settlementPrice from oracle
-  // options math goes here -- conditionals based on call/put
   /** @notice Calculate the settlement of ownership of option collateral
       @dev Throws if `_tokenId` is not a valid ERC-59 token.
        Throws if msg.sender is not one of: seller, owner of `_tokenId`.
        Throws if `hasSettlementPrice(_tokenId)` is false.
-
-       [Option settlement math goes here for call / put situations]
-
    */
    function settlePiggy(uint256 _tokenId)
      public
@@ -815,8 +763,7 @@ contract SmartPiggies is ERC165 {
 
   function _constructPiggy(
     address _collateralERC,
-    address _premiumERC,
-    address _dataResolverNow,
+    address _dataResolver,
     uint256 _collateral,
     uint256 _lotSize,
     uint256 _strikePrice,
@@ -838,8 +785,7 @@ contract SmartPiggies is ERC165 {
     Piggy storage p = piggies[tokenId];
     p.addresses.holder = msg.sender;
     p.addresses.collateralERC = _collateralERC;
-    p.addresses.premiumERC = _premiumERC;
-    p.addresses.dataResolverNow = _dataResolverNow;
+    p.addresses.dataResolver = _dataResolver;
     p.uintDetails.lotSize = _lotSize;
     p.uintDetails.strikePrice = _strikePrice;
     p.flags.isEuro = _isEuro;
@@ -875,16 +821,26 @@ contract SmartPiggies is ERC165 {
 
     _addTokenToOwnedPiggies(msg.sender, tokenId);
 
+    address[] memory a = new address[](2);
+    a[0] = msg.sender;
+    a[1] = _dataResolver;
+
+    uint256[] memory i = new uint256[](5);
+    i[0] = tokenId;
+    i[1] = _collateral;
+    i[2] = _lotSize;
+    i[3] = _strikePrice;
+    i[4] = tokenExpiry;
+
+    bool[] memory b = new bool[](3);
+    b[0] = _isEuro;
+    b[1] = _isPut;
+    b[2] = _isRequest;
+
     emit CreatePiggy(
-      msg.sender,
-      tokenId,
-      _collateral,
-      _lotSize,
-      _strikePrice,
-      tokenExpiry,
-      _isEuro,
-      _isPut,
-      _isRequest
+      a,
+      i,
+      b
     );
 
     return true;
@@ -929,8 +885,6 @@ contract SmartPiggies is ERC165 {
     auctions[_tokenId].timeStep = 0;
     auctions[_tokenId].priceStep = 0;
     auctions[_tokenId].auctionActive = false;
-    // I don't think we want this one to touch the two state flags; handle those on a per-function basis in the order that makes sense probably
-    // MIGHT be ok to set auctionActive = false here though actually...
   }
 
   // calculate the price for satisfaction of an auction
@@ -940,10 +894,8 @@ contract SmartPiggies is ERC165 {
     view
     returns (uint256)
   {
-    // I think we can skip various checks here since they will be in the satisfyAuction function instead
-    // (e.g. making sure auction is active and not expired, etc. etc.)
+
     uint256 _pStart = auctions[_tokenId].startPrice;
-    // price delta is (time elapsed) * (price change per time step)
     uint256 _pDelta = (block.number).sub(auctions[_tokenId].startBlock).mul(auctions[_tokenId].priceStep).div(auctions[_tokenId].timeStep);
     if (piggies[_tokenId].flags.isRequest) {
       return _pStart.add(_pDelta);
@@ -1035,9 +987,7 @@ contract SmartPiggies is ERC165 {
     piggies[_tokenId].addresses.writer = address(0);
     piggies[_tokenId].addresses.holder = address(0);
     piggies[_tokenId].addresses.collateralERC = address(0);
-    piggies[_tokenId].addresses.premiumERC = address(0);
-    piggies[_tokenId].addresses.dataResolverNow = address(0);
-    //piggies[_tokenId].addresses.dataResolverAtExpiry = address(0);
+    piggies[_tokenId].addresses.dataResolver = address(0);
     piggies[_tokenId].uintDetails.collateral = 0;
     piggies[_tokenId].uintDetails.lotSize = 0;
     piggies[_tokenId].uintDetails.strikePrice = 0;
@@ -1051,6 +1001,20 @@ contract SmartPiggies is ERC165 {
     piggies[_tokenId].flags.hasBeenCleared = false;
   }
 
+  function getOwner()
+    public
+    view
+    returns (address)
+  {
+    return owner;
+  }
+  function changeOwner(address payable _newAddress)
+    public
+    returns (bool)
+  {
+    require(msg.sender == owner);
+    owner = _newAddress;
+  }
   function kill()
     public
   {

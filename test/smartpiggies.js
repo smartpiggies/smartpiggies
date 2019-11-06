@@ -148,8 +148,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should create a token", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -162,8 +161,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -174,22 +172,26 @@ contract ('SmartPiggies', function(accounts) {
         {from: owner}
       )
       .then(result => {
+
         assert.strictEqual(result.logs[0].event, "CreatePiggy", "Event log from create didn't return correct event name")
-        assert.strictEqual(result.logs[0].args.from, owner, "Event log from create didn't return correct sender")
-        assert.strictEqual(result.logs[0].args.tokenId.toString(), "1", "Event log from create didn't return correct tokenId")
-        assert.strictEqual(result.logs[0].args.collateral.toString(), collateral.toString(), "Event log from create didn't return correct collateral")
-        assert.strictEqual(result.logs[0].args.lotSize.toString(), lotSize.toString(), "Event log from create didn't return correct lotSize")
-        assert.strictEqual(result.logs[0].args.strike.toString(), strikePrice.toString(), "Event log from create didn't return correct strike")
-        assert.isNotTrue(result.logs[0].args.isEuro, isEuro, "Event log from create didn't return correct isEuro")
-        assert.isTrue(result.logs[0].args.isPut, isPut, "Event log from create didn't return correct isPut")
-        assert.isNotTrue(result.logs[0].args.RFP, "Event log from create didn't return false for RFP")
+        assert.strictEqual(result.logs[0].args.addresses[0], owner, "Event log from create didn't return correct sender")
+        assert.strictEqual(result.logs[0].args.addresses[1], dataResolver, "Event log from create didn't return correct sender")
+
+        assert.strictEqual(result.logs[0].args.ints[0].toString(), "1", "Event log from create didn't return correct tokenId")
+        assert.strictEqual(result.logs[0].args.ints[1].toString(), collateral.toString(), "Event log from create didn't return correct collateral")
+        assert.strictEqual(result.logs[0].args.ints[2].toString(), lotSize.toString(), "Event log from create didn't return correct lotSize")
+        assert.strictEqual(result.logs[0].args.ints[3].toString(), strikePrice.toString(), "Event log from create didn't return correct strike")
+        assert.isNotTrue(result.logs[0].args.bools[0], isEuro, "Event log from create didn't return correct isEuro")
+        assert.isTrue(result.logs[0].args.bools[1], isPut, "Event log from create didn't return correct isPut")
+        assert.isNotTrue(result.logs[0].args.bools[2], "Event log from create didn't return false for RFP")
 
         web3.eth.getBlockNumberPromise()
         .then(block => {
           currentBlock = web3.utils.toBN(block)
-          assert.strictEqual(result.logs[0].args.expiryBlock.toString(), expiry.add(currentBlock).toString(), "Event log from create didn't return correct expiry block")
+          assert.strictEqual(result.logs[0].args.ints[4].toString(), expiry.add(currentBlock).toString(), "Event log from create didn't return correct expiry block")
         })
-        let thisToken = result.logs[0].args.tokenId
+        let thisToken = result.logs[0].args.ints[0]
+
         return piggyInstance.getDetails(thisToken, {from: owner});
       })
       .then(result => {
@@ -198,8 +200,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].writer, owner, "Details should have correct writer address.")
         assert.strictEqual(result[0].holder, owner, "Details should have correct holder address.")
         assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.")
-        assert.strictEqual(result[0].premiumERC, premiumERC, "Details should have correct premiumERC address.")
-        assert.strictEqual(result[0].dataResolverNow, dataResolverNow, "Details should have correct dataResolverNow address.")
+        assert.strictEqual(result[0].dataResolver, dataResolver, "Details should have correct dataResolverNow address.")
         //check DetailUints
         assert.strictEqual(result[1].collateral, collateral.toString(), "Details should have correct collateral amount.")
         assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
@@ -229,9 +230,7 @@ contract ('SmartPiggies', function(accounts) {
   describe("Testing Failure cases for Creating SmartPiggies tokens", function() {
     beforeEach(function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -245,8 +244,7 @@ contract ('SmartPiggies', function(accounts) {
       return expectedExceptionPromise(
           () => piggyInstance.createPiggy(
             addr00,
-            premiumERC,
-            dataResolverNow,
+            dataResolver,
             collateral,
             lotSize,
             strikePrice,
@@ -257,31 +255,12 @@ contract ('SmartPiggies', function(accounts) {
             {from: owner, gas: 8000000 }),
           3000000);
       //end test
-    });
+    })
 
-    it("Should fail to create if premiumERC is address(0)", function() {
+    it("Should fail to create if dataResolver is address(0)", function() {
       return expectedExceptionPromise(
           () => piggyInstance.createPiggy(
             collateralERC,
-            addr00,
-            dataResolverNow,
-            collateral,
-            lotSize,
-            strikePrice,
-            expiry,
-            isEuro,
-            isPut,
-            isRequest,
-            {from: owner, gas: 8000000 }),
-          3000000);
-      //end test
-    });
-
-    it("Should fail to create if dataResolverNow is address(0)", function() {
-      return expectedExceptionPromise(
-          () => piggyInstance.createPiggy(
-            collateralERC,
-            premiumERC,
             addr00,
             collateral,
             lotSize,
@@ -299,8 +278,7 @@ contract ('SmartPiggies', function(accounts) {
       return expectedExceptionPromise(
           () => piggyInstance.createPiggy(
             collateralERC,
-            premiumERC,
-            dataResolverNow,
+            dataResolver,
             zeroParam,
             lotSize,
             strikePrice,
@@ -317,8 +295,7 @@ contract ('SmartPiggies', function(accounts) {
       return expectedExceptionPromise(
           () => piggyInstance.createPiggy(
             collateralERC,
-            premiumERC,
-            dataResolverNow,
+            dataResolver,
             collateral,
             zeroParam,
             strikePrice,
@@ -335,8 +312,7 @@ contract ('SmartPiggies', function(accounts) {
       return expectedExceptionPromise(
           () => piggyInstance.createPiggy(
             collateralERC,
-            premiumERC,
-            dataResolverNow,
+            dataResolver,
             collateral,
             lotSize,
             zeroParam,
@@ -353,8 +329,7 @@ contract ('SmartPiggies', function(accounts) {
       return expectedExceptionPromise(
           () => piggyInstance.createPiggy(
             collateralERC,
-            premiumERC,
-            dataResolverNow,
+            dataResolver,
             collateral,
             lotSize,
             strikePrice,
@@ -378,8 +353,7 @@ contract ('SmartPiggies', function(accounts) {
         return expectedExceptionPromise(
             () => piggyInstance.createPiggy(
               collateralERC,
-              premiumERC,
-              dataResolverNow,
+              dataResolver,
               collateral,
               lotSize,
               strikePrice,
@@ -401,9 +375,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should split a token", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -418,8 +390,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -431,8 +402,8 @@ contract ('SmartPiggies', function(accounts) {
       )
       .then(result => {
         assert.isTrue(result.receipt.status, "create did not return true")
-        origExpiry = result.logs[0].args.expiryBlock
-        origToken = result.logs[0].args.tokenId
+        origExpiry = result.logs[0].args.ints[4]
+        origToken = result.logs[0].args.ints[0]
         return piggyInstance.splitPiggy(origToken, {from: owner})
       })
       .then(result => {
@@ -441,26 +412,28 @@ contract ('SmartPiggies', function(accounts) {
         //test first create event
         assert.isTrue(result.receipt.status, "create did not return true")
         assert.strictEqual(result.logs[0].event, "CreatePiggy", "Event log from create didn't return correct event name")
-        assert.strictEqual(result.logs[0].args.from, owner, "Event log from create didn't return correct sender")
-        assert.strictEqual(result.logs[0].args.tokenId.toString(), "2", "Event log from create didn't return correct tokenId")
-        assert.strictEqual(result.logs[0].args.collateral.toString(), collateral.sub(collateral.div(web3.utils.toBN(2))).toString(), "Event log from create didn't return correct collateral")
-        assert.strictEqual(result.logs[0].args.lotSize.toString(), lotSize.toString(), "Event log from create didn't return correct lotSize")
-        assert.strictEqual(result.logs[0].args.strike.toString(), strikePrice.toString(), "Event log from create didn't return correct strike")
-        assert.strictEqual(result.logs[0].args.expiryBlock.toString(), origExpiry.toString(), "Event log from create didn't return correct expiry")
-        assert.isNotTrue(result.logs[0].args.isEuro, "Event log from create didn't return false for isEuro")
-        assert.isTrue(result.logs[0].args.isPut, "Event log from create didn't return false for isPut")
-        assert.isNotTrue(result.logs[0].args.RFP, "Event log from create didn't return false for RFP")
+        assert.strictEqual(result.logs[0].args.addresses[0], owner, "Event log from create didn't return correct sender")
+        assert.strictEqual(result.logs[0].args.addresses[1], dataResolver, "Event log from create didn't return correct resolver")
+        assert.strictEqual(result.logs[0].args.ints[0].toString(), "2", "Event log from create didn't return correct tokenId")
+        assert.strictEqual(result.logs[0].args.ints[1].toString(), collateral.sub(collateral.div(web3.utils.toBN(2))).toString(), "Event log from create didn't return correct collateral")
+        assert.strictEqual(result.logs[0].args.ints[2].toString(), lotSize.toString(), "Event log from create didn't return correct lotSize")
+        assert.strictEqual(result.logs[0].args.ints[3].toString(), strikePrice.toString(), "Event log from create didn't return correct strike")
+        assert.strictEqual(result.logs[0].args.ints[4].toString(), origExpiry.toString(), "Event log from create didn't return correct expiry")
+        assert.isNotTrue(result.logs[0].args.bools[0], "Event log from create didn't return false for isEuro")
+        assert.isTrue(result.logs[0].args.bools[1], "Event log from create didn't return false for isPut")
+        assert.isNotTrue(result.logs[0].args.bools[2], "Event log from create didn't return false for RFP")
         //test second create event
         assert.strictEqual(result.logs[1].event, "CreatePiggy", "Event log from create didn't return correct event name")
-        assert.strictEqual(result.logs[1].args.from, owner, "Event log from create didn't return correct sender")
-        assert.strictEqual(result.logs[1].args.tokenId.toString(), "3", "Event log from create didn't return correct tokenId")
-        assert.strictEqual(result.logs[1].args.collateral.toString(), collateral.div(web3.utils.toBN(2)).toString(), "Event log from create didn't return correct collateral")
-        assert.strictEqual(result.logs[1].args.lotSize.toString(), lotSize.toString(), "Event log from create didn't return correct lotSize")
-        assert.strictEqual(result.logs[1].args.strike.toString(), strikePrice.toString(), "Event log from create didn't return correct strike")
-        assert.strictEqual(result.logs[1].args.expiryBlock.toString(), origExpiry.toString(), "Event log from create didn't return correct expiry")
-        assert.isNotTrue(result.logs[1].args.isEuro, "Event log from create didn't return false for isEuro")
-        assert.isTrue(result.logs[1].args.isPut, "Event log from create didn't return false for isPut")
-        assert.isNotTrue(result.logs[1].args.RFP, "Event log from create didn't return false for RFP")
+        assert.strictEqual(result.logs[1].args.addresses[0], owner, "Event log from create didn't return correct sender")
+        assert.strictEqual(result.logs[0].args.addresses[1], dataResolver, "Event log from create didn't return correct resolver")
+        assert.strictEqual(result.logs[1].args.ints[0].toString(), "3", "Event log from create didn't return correct tokenId")
+        assert.strictEqual(result.logs[1].args.ints[1].toString(), collateral.div(web3.utils.toBN(2)).toString(), "Event log from create didn't return correct collateral")
+        assert.strictEqual(result.logs[1].args.ints[2].toString(), lotSize.toString(), "Event log from create didn't return correct lotSize")
+        assert.strictEqual(result.logs[1].args.ints[3].toString(), strikePrice.toString(), "Event log from create didn't return correct strike")
+        assert.strictEqual(result.logs[1].args.ints[4].toString(), origExpiry.toString(), "Event log from create didn't return correct expiry")
+        assert.isNotTrue(result.logs[1].args.bools[0], "Event log from create didn't return false for isEuro")
+        assert.isTrue(result.logs[1].args.bools[1], "Event log from create didn't return false for isPut")
+        assert.isNotTrue(result.logs[1].args.bools[2], "Event log from create didn't return false for RFP")
 
         return piggyInstance.getOwnedPiggies(owner, {from: owner})
       })
@@ -478,8 +451,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].writer, owner, "Details should have correct writer address.")
         assert.strictEqual(result[0].holder, owner, "Details should have correct holder address.")
         assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.")
-        assert.strictEqual(result[0].premiumERC, premiumERC, "Details should have correct premiumERC address.")
-        assert.strictEqual(result[0].dataResolverNow, dataResolverNow, "Details should have correct dataResolverNow address.")
+        assert.strictEqual(result[0].dataResolver, dataResolver, "Details should have correct dataResolverNow address.")
 
         //check DetailUints
         assert.strictEqual(result[1].collateral, collateral.sub(collateral.div(web3.utils.toBN(2))).toString(), "Details should have correct collateral amount.")
@@ -502,8 +474,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].writer, owner, "Details should have correct writer address.")
         assert.strictEqual(result[0].holder, owner, "Details should have correct holder address.")
         assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.")
-        assert.strictEqual(result[0].premiumERC, premiumERC, "Details should have correct premiumERC address.")
-        assert.strictEqual(result[0].dataResolverNow, dataResolverNow, "Details should have correct dataResolverNow address.")
+        assert.strictEqual(result[0].dataResolver, dataResolver, "Details should have correct dataResolver address.")
 
         //check DetailUints
         assert.strictEqual(result[1].collateral, collateral.div(web3.utils.toBN(2)).toString(), "Details should have correct collateral amount.")
@@ -526,8 +497,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].writer, addr00, "Details should have correct writer address.")
         assert.strictEqual(result[0].holder, addr00, "Details should have correct holder address.")
         assert.strictEqual(result[0].collateralERC, addr00, "Details should have correct collateralERC address.")
-        assert.strictEqual(result[0].premiumERC, addr00, "Details should have correct premiumERC address.")
-        assert.strictEqual(result[0].dataResolverNow, addr00, "Details should have correct dataResolverNow address.")
+        assert.strictEqual(result[0].dataResolver, addr00, "Details should have correct dataResolverNow address.")
         //check DetailUints
         assert.strictEqual(result[1].collateral, "0", "Details should have correct collateral amount.")
         assert.strictEqual(result[1].lotSize, "0", "Details should have correct lotSize amount.")
@@ -545,16 +515,156 @@ contract ('SmartPiggies', function(accounts) {
       //end test block
     });
 
-    //end describe Create block
+    it("Should split a token with low amount", function() {
+      collateralERC = tokenInstance.address
+      dataResolver = resolverInstance.address
+      collateral = web3.utils.toBN(1) // 1 wei
+      lotSize = 10
+      strikePrice = 28000
+      expiry = web3.utils.toBN(500)
+      isEuro = false
+      isPut = true
+      isRequest = false
+      zeroParam = 0
+      currentBlock = web3.utils.toBN(0)
+      origExpiry = web3.utils.toBN(0)
+      let origToken, tokenSplit1, tokenSplit2
+
+      return piggyInstance.createPiggy(
+        collateralERC,
+        dataResolver,
+        collateral,
+        lotSize,
+        strikePrice,
+        expiry,
+        isEuro,
+        isPut,
+        isRequest,
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        origExpiry = result.logs[0].args.ints[4]
+        origToken = result.logs[0].args.ints[0]
+        return piggyInstance.splitPiggy(origToken, {from: owner})
+      })
+      .then(result => {
+        //console.log(result.logs[0].args)
+
+        //test first create event
+        assert.isTrue(result.receipt.status, "create did not return true")
+        assert.strictEqual(result.logs[0].event, "CreatePiggy", "Event log from create didn't return correct event name")
+        assert.strictEqual(result.logs[0].args.addresses[0], owner, "Event log from create didn't return correct sender")
+        assert.strictEqual(result.logs[0].args.addresses[1], dataResolver, "Event log from create didn't return correct resolver")
+        assert.strictEqual(result.logs[0].args.ints[0].toString(), "2", "Event log from create didn't return correct tokenId")
+        assert.strictEqual(result.logs[0].args.ints[1].toString(), collateral.sub(collateral.div(web3.utils.toBN(2))).toString(), "Event log from create didn't return correct collateral")
+        assert.strictEqual(result.logs[0].args.ints[2].toString(), lotSize.toString(), "Event log from create didn't return correct lotSize")
+        assert.strictEqual(result.logs[0].args.ints[3].toString(), strikePrice.toString(), "Event log from create didn't return correct strike")
+        assert.strictEqual(result.logs[0].args.ints[4].toString(), origExpiry.toString(), "Event log from create didn't return correct expiry")
+        assert.isNotTrue(result.logs[0].args.bools[0], "Event log from create didn't return false for isEuro")
+        assert.isTrue(result.logs[0].args.bools[1], "Event log from create didn't return false for isPut")
+        assert.isNotTrue(result.logs[0].args.bools[2], "Event log from create didn't return false for RFP")
+        //test second create event
+        assert.strictEqual(result.logs[1].event, "CreatePiggy", "Event log from create didn't return correct event name")
+        assert.strictEqual(result.logs[1].args.addresses[0], owner, "Event log from create didn't return correct sender")
+        assert.strictEqual(result.logs[0].args.addresses[1], dataResolver, "Event log from create didn't return correct resolver")
+        assert.strictEqual(result.logs[1].args.ints[0].toString(), "3", "Event log from create didn't return correct tokenId")
+        assert.strictEqual(result.logs[1].args.ints[1].toString(), collateral.div(web3.utils.toBN(2)).toString(), "Event log from create didn't return correct collateral")
+        assert.strictEqual(result.logs[1].args.ints[2].toString(), lotSize.toString(), "Event log from create didn't return correct lotSize")
+        assert.strictEqual(result.logs[1].args.ints[3].toString(), strikePrice.toString(), "Event log from create didn't return correct strike")
+        assert.strictEqual(result.logs[1].args.ints[4].toString(), origExpiry.toString(), "Event log from create didn't return correct expiry")
+        assert.isNotTrue(result.logs[1].args.bools[0], "Event log from create didn't return false for isEuro")
+        assert.isTrue(result.logs[1].args.bools[1], "Event log from create didn't return false for isPut")
+        assert.isNotTrue(result.logs[1].args.bools[2], "Event log from create didn't return false for RFP")
+
+        return piggyInstance.getOwnedPiggies(owner, {from: owner})
+      })
+      .then(result => {
+        assert.strictEqual(result[0].toString(), "2", "getOwnedPiggies did not return correct piggies")
+        assert.strictEqual(result[1].toString(), "3", "getOwnedPiggies did not return correct piggies")
+
+        tokenSplit1 = result[0]
+        tokenSplit2 = result[1]
+
+        return piggyInstance.getDetails(tokenSplit1, {from: owner})
+      })
+      .then(result => {
+        //check DetailAddresses
+        assert.strictEqual(result[0].writer, owner, "Details should have correct writer address.")
+        assert.strictEqual(result[0].holder, owner, "Details should have correct holder address.")
+        assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.")
+        assert.strictEqual(result[0].dataResolver, dataResolver, "Details should have correct dataResolverNow address.")
+
+        //check DetailUints
+        assert.strictEqual(result[1].collateral, collateral.sub(collateral.div(web3.utils.toBN(2))).toString(), "Details should have correct collateral amount.")
+        assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
+        assert.strictEqual(result[1].strikePrice, strikePrice.toString(), "Details should have correct strikePrice amount.")
+        assert.strictEqual(result[1].expiry, origExpiry.toString(), "Details should have correct expiry amount.")
+        assert.strictEqual(result[1].settlementPrice, "0", "Details should have returned settlementPrice amount of 0.")
+        assert.strictEqual(result[1].reqCollateral, "0", "Details should have returned reqCollateral amount of 0.")
+        assert.strictEqual(result[1].collateralDecimals, "18", "Details should have returned collateralDecimals amount of 18.")
+        //check BoolFlags
+        assert.isNotTrue(result[2].isRequest, "Details should have returned false for isRequest.")
+        assert.isNotTrue(result[2].isEuro, "Details should have returned false for isEuro.")
+        assert.isTrue(result[2].isPut, "Details should have returned true for isPut.")
+        assert.isNotTrue(result[2].hasBeenCleared, "Details should have returned false for hasBeenCleared.")
+
+        return piggyInstance.getDetails(tokenSplit2, {from: owner})
+      })
+      .then(result => {
+        //check DetailAddresses
+        assert.strictEqual(result[0].writer, owner, "Details should have correct writer address.")
+        assert.strictEqual(result[0].holder, owner, "Details should have correct holder address.")
+        assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.")
+        assert.strictEqual(result[0].dataResolver, dataResolver, "Details should have correct dataResolver address.")
+
+        //check DetailUints
+        assert.strictEqual(result[1].collateral, collateral.div(web3.utils.toBN(2)).toString(), "Details should have correct collateral amount.")
+        assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
+        assert.strictEqual(result[1].strikePrice, strikePrice.toString(), "Details should have correct strikePrice amount.")
+        assert.strictEqual(result[1].expiry, origExpiry.toString(), "Details should have correct expiry amount.")
+        assert.strictEqual(result[1].settlementPrice, "0", "Details should have returned settlementPrice amount of 0.")
+        assert.strictEqual(result[1].reqCollateral, "0", "Details should have returned reqCollateral amount of 0.")
+        assert.strictEqual(result[1].collateralDecimals, "18", "Details should have returned collateralDecimals amount of 18.")
+        //check BoolFlags
+        assert.isNotTrue(result[2].isRequest, "Details should have returned false for isRequest.")
+        assert.isNotTrue(result[2].isEuro, "Details should have returned false for isEuro.")
+        assert.isTrue(result[2].isPut, "Details should have returned true for isPut.")
+        assert.isNotTrue(result[2].hasBeenCleared, "Details should have returned false for hasBeenCleared.")
+
+        return piggyInstance.getDetails(origToken, {from: owner})
+      })
+      .then(result => {
+        //check DetailAddresses
+        assert.strictEqual(result[0].writer, addr00, "Details should have correct writer address.")
+        assert.strictEqual(result[0].holder, addr00, "Details should have correct holder address.")
+        assert.strictEqual(result[0].collateralERC, addr00, "Details should have correct collateralERC address.")
+        assert.strictEqual(result[0].dataResolver, addr00, "Details should have correct dataResolverNow address.")
+        //check DetailUints
+        assert.strictEqual(result[1].collateral, "0", "Details should have correct collateral amount.")
+        assert.strictEqual(result[1].lotSize, "0", "Details should have correct lotSize amount.")
+        assert.strictEqual(result[1].strikePrice, "0", "Details should have correct strikePrice amount.")
+        assert.strictEqual(result[1].expiry, "0", "Details should have correct expiry amount.")
+        assert.strictEqual(result[1].settlementPrice, "0", "Details should have returned settlementPrice amount of 0.")
+        assert.strictEqual(result[1].reqCollateral, "0", "Details should have returned reqCollateral amount of 0.")
+        assert.strictEqual(result[1].collateralDecimals, "0", "Details should have returned collateralDecimals amount of 18.")
+        //check BoolFlags
+        assert.isNotTrue(result[2].isRequest, "Details should have returned false for isRequest.")
+        assert.isNotTrue(result[2].isEuro, "Details should have returned false for isEuro.")
+        assert.isNotTrue(result[2].isPut, "Details should have returned true for isPut.")
+        assert.isNotTrue(result[2].hasBeenCleared, "Details should have returned false for hasBeenCleared.")
+      })
+      //end test block
+    });
+
+    //end describe Split block
   });
 
   //Test Split SmartPiggies fail cases
   describe("Testing Failure cases for Splitting SmartPiggies tokens", function() {
     beforeEach(function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -567,8 +677,7 @@ contract ('SmartPiggies', function(accounts) {
     it("Should fail to split a token if tokenId is 0", function() {
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -605,8 +714,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -638,8 +746,7 @@ contract ('SmartPiggies', function(accounts) {
     it("Should fail to split a token if sender is not the holder", function() {
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -673,8 +780,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -736,8 +842,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -792,8 +897,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -805,7 +909,7 @@ contract ('SmartPiggies', function(accounts) {
       )
       .then(result => {
         assert.isTrue(result.receipt.status, "create did not return true")
-        tokenId = result.logs[0].args.tokenId
+        tokenId = result.logs[0].args.ints[0]
         return sequentialPromise([
           () => Promise.resolve(piggyInstance.transferFrom(owner, user01, tokenId, {from: owner})),
           () => Promise.resolve(linkInstance.mint(user01, supply, {from: owner})),
@@ -837,9 +941,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should create an RFP token", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -850,8 +952,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -863,9 +964,10 @@ contract ('SmartPiggies', function(accounts) {
       )
       .then(result => {
         assert.strictEqual(result.logs[0].event, "CreatePiggy", "Event log from create didn't return correct event name")
-        assert.strictEqual(result.logs[0].args.from, owner, "Event log from create didn't return correct sender")
-        assert.strictEqual(result.logs[0].args.tokenId.toString(), "1", "Event log from create didn't return correct tokenId")
-        assert.isTrue(result.logs[0].args.RFP, "Event log from create didn't return true for RFP")
+        assert.strictEqual(result.logs[0].args.addresses[0], owner, "Event log from create didn't return correct sender")
+        assert.strictEqual(result.logs[0].args.addresses[1], dataResolver, "Event log from create didn't return correct resolver")
+        assert.strictEqual(result.logs[0].args.ints[0].toString(), "1", "Event log from create didn't return correct tokenId")
+        assert.isTrue(result.logs[0].args.bools[2], "Event log from create didn't return true for RFP")
 
         return piggyInstance.getDetails(1, {from: owner});
       })
@@ -875,8 +977,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].writer, addr00, "Details should have correct writer address.");
         assert.strictEqual(result[0].holder, owner, "Details should have correct holder address.");
         assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.");
-        assert.strictEqual(result[0].premiumERC, premiumERC, "Details should have correct premiumERC address.");
-        assert.strictEqual(result[0].dataResolverNow, dataResolverNow, "Details should have correct dataResolverNow address.");
+        assert.strictEqual(result[0].dataResolver, dataResolver, "Details should have correct dataResolverNow address.");
         //check DetailUints
         assert.strictEqual(result[1].collateral, "0", "Details should have correct collateral amount.");
         assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.");
@@ -905,8 +1006,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -930,7 +1030,6 @@ contract ('SmartPiggies', function(accounts) {
           tokenId,
           updatedCollateralERC,
           addr00,
-          addr00,
           paramZero,
           paramZero,
           paramZero,
@@ -946,8 +1045,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.from, owner, "Event log from update didn't return correct sender")
         assert.strictEqual(result.logs[0].args.tokenId.toString(), "1", "Event log from update didn't return correct tokenId")
         assert.strictEqual(result.logs[0].args.collateralERC, updatedCollateralERC, "Event log from update didn't return correct collaterialERC")
-        assert.strictEqual(result.logs[0].args.premiumERC, addr00, "Event log from update didn't return correct premiumERC")
-        assert.strictEqual(result.logs[0].args.dataResolverNow, addr00, "Event log from update didn't return correct dataResolverNow")
+        assert.strictEqual(result.logs[0].args.dataResolver, addr00, "Event log from update didn't return correct dataResolverNow")
         assert.strictEqual(result.logs[0].args.reqCollateral.toString(), '0', "Event log from update didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.lotSize.toString(), "0", "Event log from update didn't return correct lotSize")
         assert.strictEqual(result.logs[0].args.strikePrice.toString(), '0', "Event log from update didn't return correct strikePrice")
@@ -962,8 +1060,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].writer, addr00, "Details should have correct writer address.")
         assert.strictEqual(result[0].holder, owner, "Details should have correct holder address.")
         assert.strictEqual(result[0].collateralERC, updatedCollateralERC, "Details should have correct collateralERC address.")
-        assert.strictEqual(result[0].premiumERC, premiumERC, "Details should have correct premiumERC address.")
-        assert.strictEqual(result[0].dataResolverNow, dataResolverNow, "Details should have correct dataResolverNow address.")
+        assert.strictEqual(result[0].dataResolver, dataResolver, "Details should have correct dataResolverNow address.")
         //check DetailUints
         assert.strictEqual(result[1].collateral, "0", "Details should have correct collateral amount.")
         assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
@@ -980,15 +1077,14 @@ contract ('SmartPiggies', function(accounts) {
       //end test block
     });
 
-    it("Should update premiumERC address of an RFP token", function() {
+    it("Should update dataResolver address of an RFP token", function() {
 
-      updatedPremiumERC = "0x1230000000000000000000000000000000000000"
+      updatedDataResolver = "0x1230000000000000000000000000000000000000"
       paramZero = 0
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -1011,8 +1107,7 @@ contract ('SmartPiggies', function(accounts) {
         return piggyInstance.updateRFP(
           tokenId,
           addr00,
-          updatedPremiumERC,
-          addr00,
+          updatedDataResolver,
           paramZero,
           paramZero,
           paramZero,
@@ -1028,8 +1123,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.from, owner, "Event log from update didn't return correct sender")
         assert.strictEqual(result.logs[0].args.tokenId.toString(), "1", "Event log from update didn't return correct tokenId")
         assert.strictEqual(result.logs[0].args.collateralERC, addr00, "Event log from update didn't return correct collaterialERC")
-        assert.strictEqual(result.logs[0].args.premiumERC, updatedPremiumERC, "Event log from update didn't return correct premiumERC")
-        assert.strictEqual(result.logs[0].args.dataResolverNow, addr00, "Event log from update didn't return correct dataResolverNow")
+        assert.strictEqual(result.logs[0].args.dataResolver, updatedDataResolver, "Event log from update didn't return correct dataResolverNow")
         assert.strictEqual(result.logs[0].args.reqCollateral.toString(), '0', "Event log from update didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.lotSize.toString(), "0", "Event log from update didn't return correct lotSize")
         assert.strictEqual(result.logs[0].args.strikePrice.toString(), '0', "Event log from update didn't return correct strikePrice")
@@ -1044,90 +1138,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].writer, addr00, "Details should have correct writer address.")
         assert.strictEqual(result[0].holder, owner, "Details should have correct holder address.")
         assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.")
-        assert.strictEqual(result[0].premiumERC, updatedPremiumERC, "Details should have correct premiumERC address.")
-        assert.strictEqual(result[0].dataResolverNow, dataResolverNow, "Details should have correct dataResolverNow address.")
-        //check DetailUints
-        assert.strictEqual(result[1].collateral, "0", "Details should have correct collateral amount.")
-        assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
-        assert.strictEqual(result[1].strikePrice, strikePrice.toString(), "Details should have correct strikePrice amount.")
-        assert.strictEqual(result[1].settlementPrice, "0", "Details should have returned settlementPrice amount of 0.")
-        assert.strictEqual(result[1].reqCollateral, collateral.toString(), "Details should have returned reqCollateral amount of 0.")
-        assert.strictEqual(result[1].collateralDecimals, "18", "Details should have returned collateralDecimals amount of 18.")
-        //check BoolFlags
-        assert.isTrue(result[2].isRequest, "Details should have returned false for isRequest.")
-        assert.isNotTrue(result[2].isEuro, "Details should have returned false for isEuro.")
-        assert.isTrue(result[2].isPut, "Details should have returned true for isPut.")
-        assert.isNotTrue(result[2].hasBeenCleared, "Details should have returned false for hasBeenCleared.")
-      })
-      //end test block
-    });
-
-    it("Should update dataResolverNow address of an RFP token", function() {
-
-      updatedDataResolverNow = "0x1230000000000000000000000000000000000000"
-      paramZero = 0
-
-      return piggyInstance.createPiggy(
-        collateralERC,
-        premiumERC,
-        dataResolverNow,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
-        {from: owner}
-      )
-      .then(result => {
-        assert.isTrue(result.receipt.status, "Create did not return true")
-        return piggyInstance.tokenId({from: owner});
-      })
-      .then(result => {
-        tokenId = result
-        return piggyInstance.getDetails(tokenId, {from: owner});
-      })
-      .then(result => {
-        assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.");
-        return piggyInstance.updateRFP(
-          tokenId,
-          addr00,
-          addr00,
-          updatedDataResolverNow,
-          paramZero,
-          paramZero,
-          paramZero,
-          paramZero,
-          isEuro,
-          isPut,
-          {from: owner}
-        )
-      })
-      .then(result => {
-        assert.isTrue(result.receipt.status, "updateRFP did not return true")
-        assert.strictEqual(result.logs[0].event, "UpdateRFP", "Event log from update didn't return correct event name")
-        assert.strictEqual(result.logs[0].args.from, owner, "Event log from update didn't return correct sender")
-        assert.strictEqual(result.logs[0].args.tokenId.toString(), "1", "Event log from update didn't return correct tokenId")
-        assert.strictEqual(result.logs[0].args.collateralERC, addr00, "Event log from update didn't return correct collaterialERC")
-        assert.strictEqual(result.logs[0].args.premiumERC, addr00, "Event log from update didn't return correct premiumERC")
-        assert.strictEqual(result.logs[0].args.dataResolverNow, updatedDataResolverNow, "Event log from update didn't return correct dataResolverNow")
-        assert.strictEqual(result.logs[0].args.reqCollateral.toString(), '0', "Event log from update didn't return correct collateral")
-        assert.strictEqual(result.logs[0].args.lotSize.toString(), "0", "Event log from update didn't return correct lotSize")
-        assert.strictEqual(result.logs[0].args.strikePrice.toString(), '0', "Event log from update didn't return correct strikePrice")
-        assert.strictEqual(result.logs[0].args.expiry.toString(), "0", "Event log from update didn't return correct expiry")
-        assert.isNotTrue(result.logs[0].args.isEuro, "updateRFP did not return false for isEuro")
-        assert.isTrue(result.logs[0].args.isPut, "updateRFP did not return true for isPut")
-
-        return piggyInstance.getDetails(tokenId, {from: owner});
-      })
-      .then(result => {
-        //check DetailAddresses
-        assert.strictEqual(result[0].writer, addr00, "Details should have correct writer address.")
-        assert.strictEqual(result[0].holder, owner, "Details should have correct holder address.")
-        assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.")
-        assert.strictEqual(result[0].premiumERC, premiumERC, "Details should have correct premiumERC address.")
-        assert.strictEqual(result[0].dataResolverNow, updatedDataResolverNow, "Details should have correct dataResolverNow address.")
+        assert.strictEqual(result[0].dataResolver, updatedDataResolver, "Details should have correct dataResolver address.")
         //check DetailUints
         assert.strictEqual(result[1].collateral, "0", "Details should have correct collateral amount.")
         assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
@@ -1151,8 +1162,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -1177,7 +1187,6 @@ contract ('SmartPiggies', function(accounts) {
           tokenId,
           addr00,
           addr00,
-          addr00,
           updatedCollateral,
           paramZero,
           paramZero,
@@ -1193,8 +1202,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.from, owner, "Event log from update didn't return correct sender")
         assert.strictEqual(result.logs[0].args.tokenId.toString(), "1", "Event log from update didn't return correct tokenId")
         assert.strictEqual(result.logs[0].args.collateralERC, addr00, "Event log from update didn't return correct collaterialERC")
-        assert.strictEqual(result.logs[0].args.premiumERC, addr00, "Event log from update didn't return correct premiumERC")
-        assert.strictEqual(result.logs[0].args.dataResolverNow, addr00, "Event log from update didn't return correct dataResolverNow")
+        assert.strictEqual(result.logs[0].args.dataResolver, addr00, "Event log from update didn't return correct dataResolver")
         assert.strictEqual(result.logs[0].args.reqCollateral.toString(), updatedCollateral.toString(), "Event log from update didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.lotSize.toString(), "0", "Event log from update didn't return correct lotSize")
         assert.strictEqual(result.logs[0].args.strikePrice.toString(), '0', "Event log from update didn't return correct strikePrice")
@@ -1209,8 +1217,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].writer, addr00, "Details should have correct writer address.")
         assert.strictEqual(result[0].holder, owner, "Details should have correct holder address.")
         assert.strictEqual(result[0].collateralERC, collateralERC, "Details should have correct collateralERC address.")
-        assert.strictEqual(result[0].premiumERC, premiumERC, "Details should have correct premiumERC address.")
-        assert.strictEqual(result[0].dataResolverNow, dataResolverNow, "Details should have correct dataResolverNow address.")
+        assert.strictEqual(result[0].dataResolver, dataResolver, "Details should have correct dataResolver address.")
         //check DetailUints
         assert.strictEqual(result[1].collateral, "0", "Details should have correct collateral amount.")
         assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
@@ -1234,8 +1241,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -1260,7 +1266,6 @@ contract ('SmartPiggies', function(accounts) {
           tokenId,
           addr00,
           addr00,
-          addr00,
           paramZero,
           updatedLotSize,
           paramZero,
@@ -1276,8 +1281,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.from, owner, "Event log from update didn't return correct sender")
         assert.strictEqual(result.logs[0].args.tokenId.toString(), "1", "Event log from update didn't return correct tokenId")
         assert.strictEqual(result.logs[0].args.collateralERC.toString(), addr00, "Event log from update didn't return correct collaterialERC")
-        assert.strictEqual(result.logs[0].args.premiumERC.toString(), addr00, "Event log from update didn't return correct premiumERC")
-        assert.strictEqual(result.logs[0].args.dataResolverNow.toString(), addr00, "Event log from update didn't return correct dataResolverNow")
+        assert.strictEqual(result.logs[0].args.dataResolver.toString(), addr00, "Event log from update didn't return correct dataResolver")
         assert.strictEqual(result.logs[0].args.reqCollateral.toString(), '0', "Event log from update didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.lotSize.toString(), updatedLotSize.toString(), "Event log from update didn't return correct lotSize")
         assert.strictEqual(result.logs[0].args.strikePrice.toString(), '0', "Event log from update didn't return correct strikePrice")
@@ -1312,8 +1316,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -1337,7 +1340,6 @@ contract ('SmartPiggies', function(accounts) {
           tokenId,
           addr00,
           addr00,
-          addr00,
           paramZero,
           paramZero,
           updatedStrikePrice,
@@ -1353,8 +1355,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.from, owner, "Event log from update didn't return correct sender")
         assert.strictEqual(result.logs[0].args.tokenId.toString(), "1", "Event log from update didn't return correct tokenId")
         assert.strictEqual(result.logs[0].args.collateralERC, addr00, "Event log from update didn't return correct collaterialERC")
-        assert.strictEqual(result.logs[0].args.premiumERC, addr00, "Event log from update didn't return correct premiumERC")
-        assert.strictEqual(result.logs[0].args.dataResolverNow, addr00, "Event log from update didn't return correct dataResolverNow")
+        assert.strictEqual(result.logs[0].args.dataResolver, addr00, "Event log from update didn't return correct dataResolver")
         assert.strictEqual(result.logs[0].args.reqCollateral.toString(), "0", "Event log from update didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.lotSize.toString(), "0", "Event log from update didn't return correct lotSize")
         assert.strictEqual(result.logs[0].args.strikePrice.toString(), updatedStrikePrice.toString(), "Event log from update didn't return correct strikePrice")
@@ -1389,8 +1390,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -1427,7 +1427,6 @@ contract ('SmartPiggies', function(accounts) {
           tokenId,
           addr00,
           addr00,
-          addr00,
           paramZero,
           paramZero,
           paramZero,
@@ -1443,8 +1442,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.from, owner, "Event log from update didn't return correct sender")
         assert.strictEqual(result.logs[0].args.tokenId.toString(), "1", "Event log from update didn't return correct tokenId")
         assert.strictEqual(result.logs[0].args.collateralERC, addr00, "Event log from update didn't return correct collaterialERC")
-        assert.strictEqual(result.logs[0].args.premiumERC, addr00, "Event log from update didn't return correct premiumERC")
-        assert.strictEqual(result.logs[0].args.dataResolverNow, addr00, "Event log from update didn't return correct dataResolverNow")
+        assert.strictEqual(result.logs[0].args.dataResolver, addr00, "Event log from update didn't return correct dataResolver")
         assert.strictEqual(result.logs[0].args.reqCollateral.toString(), "0", "Event log from update didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.lotSize.toString(), "0", "Event log from update didn't return correct lotSize")
         assert.strictEqual(result.logs[0].args.strikePrice.toString(), "0", "Event log from update didn't return correct strikePrice")
@@ -1479,8 +1477,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -1505,7 +1502,6 @@ contract ('SmartPiggies', function(accounts) {
           tokenId,
           addr00,
           addr00,
-          addr00,
           paramZero,
           paramZero,
           paramZero,
@@ -1521,8 +1517,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.from, owner, "Event log from update didn't return correct sender")
         assert.strictEqual(result.logs[0].args.tokenId.toString(), "1", "Event log from update didn't return correct tokenId")
         assert.strictEqual(result.logs[0].args.collateralERC, addr00, "Event log from update didn't return correct collaterialERC")
-        assert.strictEqual(result.logs[0].args.premiumERC, addr00, "Event log from update didn't return correct premiumERC")
-        assert.strictEqual(result.logs[0].args.dataResolverNow, addr00, "Event log from update didn't return correct dataResolverNow")
+        assert.strictEqual(result.logs[0].args.dataResolver, addr00, "Event log from update didn't return correct dataResolver")
         assert.strictEqual(result.logs[0].args.reqCollateral.toString(), "0", "Event log from update didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.lotSize.toString(), "0", "Event log from update didn't return correct lotSize")
         assert.strictEqual(result.logs[0].args.strikePrice.toString(), "0", "Event log from update didn't return correct strikePrice")
@@ -1556,8 +1551,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -1582,7 +1576,6 @@ contract ('SmartPiggies', function(accounts) {
           tokenId,
           addr00,
           addr00,
-          addr00,
           paramZero,
           paramZero,
           paramZero,
@@ -1598,8 +1591,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.from, owner, "Event log from update didn't return correct sender")
         assert.strictEqual(result.logs[0].args.tokenId.toString(), "1", "Event log from update didn't return correct tokenId")
         assert.strictEqual(result.logs[0].args.collateralERC, addr00, "Event log from update didn't return correct collaterialERC")
-        assert.strictEqual(result.logs[0].args.premiumERC, addr00, "Event log from update didn't return correct premiumERC")
-        assert.strictEqual(result.logs[0].args.dataResolverNow, addr00, "Event log from update didn't return correct dataResolverNow")
+        assert.strictEqual(result.logs[0].args.dataResolver, addr00, "Event log from update didn't return correct dataResolver")
         assert.strictEqual(result.logs[0].args.reqCollateral.toString(), "0", "Event log from update didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.lotSize.toString(), "0", "Event log from update didn't return correct lotSize")
         assert.strictEqual(result.logs[0].args.strikePrice.toString(), "0", "Event log from update didn't return correct strikePrice")
@@ -1634,9 +1626,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should create an American Put piggy", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -1653,8 +1643,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -1736,9 +1725,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should create an American Put piggy", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 27850
@@ -1755,8 +1742,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -1835,9 +1821,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should transfer an American Put piggy", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 27850
@@ -1854,8 +1838,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -1916,9 +1899,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should transfer an RFP", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 27850
@@ -1936,8 +1917,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -1974,9 +1954,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should transfer a piggy after settlement", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 27850
@@ -1993,8 +1971,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -2042,9 +2019,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to transfer when not owner", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 27850
@@ -2061,8 +2036,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -2099,9 +2073,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should auction a token", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -2122,8 +2094,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -2218,9 +2189,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should auction for the reserve price", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -2241,8 +2210,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -2329,9 +2297,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should auction an RFP token", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -2353,8 +2319,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -2453,9 +2418,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should auction and transfer a token", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -2472,8 +2435,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -2540,9 +2502,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to auction when not the owner", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -2559,8 +2519,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -2593,9 +2552,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to auction if piggy is expired", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -2612,8 +2569,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -2646,9 +2602,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to auction if auction will expire after piggy", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -2665,8 +2619,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -2699,9 +2652,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to auction if piggy has been cleared", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -2720,8 +2671,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -2764,9 +2714,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to auction if already on auction", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -2783,8 +2731,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -2834,9 +2781,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to auction if RFP premium transfer fails", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -2853,8 +2798,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -2904,9 +2848,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should end an auction", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -2923,8 +2865,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -2982,9 +2923,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should end an auction for an RFP token", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -3005,8 +2944,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -3065,9 +3003,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to end auction when not the owner", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -3084,8 +3020,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -3126,9 +3061,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to end auction when not active", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -3145,8 +3078,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -3180,9 +3112,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should satisfy an auction", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -3205,8 +3135,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -3321,9 +3250,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should satisfy an RFP auction", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -3345,8 +3272,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -3461,9 +3387,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should reset auction params if auction is expired for satisfy", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -3483,8 +3407,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -3577,9 +3500,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to satisfy an auction if satisfied by holder", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -3601,8 +3522,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -3660,9 +3580,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to satisfy an auction that has already been satisfied", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -3685,8 +3603,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -3760,9 +3677,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should clear an American Put piggy", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -3784,8 +3699,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -3832,7 +3746,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.isTrue(result.receipt.status, "requestSettlementPrice did not return true")
         //Oracle Event
         assert.strictEqual(result.logs[0].event, "OracleReturned", "Event log from oracle didn't return correct event name")
-        assert.strictEqual(result.logs[0].args.resolver, dataResolverNow, "Event log from oracle didn't return correct sender")
+        assert.strictEqual(result.logs[0].args.resolver, dataResolver, "Event log from oracle didn't return correct sender")
         assert.strictEqual(result.logs[0].args.tokenId.toString(), tokenId.toString(), "Event log from oracle didn't return correct tokenId")
         assert.strictEqual(result.logs[0].args.price.toString(), oraclePrice.toString(), "Event log from oracle didn't return correct tokenId")
 
@@ -3841,7 +3755,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[1].args.feePayer, user01, "Event log from request didn't return correct sender")
         assert.strictEqual(result.logs[1].args.tokenId.toString(), tokenId.toString(), "Event log from request didn't return correct tokenId")
         assert.strictEqual(result.logs[1].args.oracleFee.toString(), oracleFee.toString(), "Event log from request didn't return correct tokenId")
-        assert.strictEqual(result.logs[1].args.dataResolver.toString(), dataResolverNow, "Event log from request didn't return correct tokenId")
+        assert.strictEqual(result.logs[1].args.dataResolver.toString(), dataResolver, "Event log from request didn't return correct tokenId")
 
         return piggyInstance.getDetails(tokenId, {from: owner})
       })
@@ -3854,9 +3768,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should clear a European Put piggy", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -3878,8 +3790,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -3941,9 +3852,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to clear if piggy is on auction", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -3965,8 +3874,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -4016,9 +3924,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to clear a piggy if it has already been cleared", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -4040,8 +3946,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -4111,9 +4016,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to clear if piggy Id is Zero", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -4135,8 +4038,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -4195,9 +4097,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to clear if oracle fee is Zero", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -4219,8 +4119,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -4279,9 +4178,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to clear if European is called before expriy", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -4303,8 +4200,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -4363,9 +4259,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to clear if America is called before expriy by anyone but holder", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -4387,8 +4281,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -4447,9 +4340,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to clear if European is called before expriy by anyone", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -4471,8 +4362,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -4537,9 +4427,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should settle an American Put piggy with payout to writer", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(100)
       strikePrice = web3.utils.toBN(26900)
@@ -4561,8 +4449,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -4629,9 +4516,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should emit correct Settle Event when writer is paid full", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(100)
       strikePrice = web3.utils.toBN(26900)
@@ -4653,8 +4538,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -4722,9 +4606,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should settle an American Put piggy payout to holder", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(100)
       strikePrice = web3.utils.toBN(28000)
@@ -4748,8 +4630,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -4805,8 +4686,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].writer, addr00, "Details should have correct writer address.");
         assert.strictEqual(result[0].holder, addr00, "Details should have correct holder address.");
         assert.strictEqual(result[0].collateralERC, addr00, "Details should have correct collateralERC address.");
-        assert.strictEqual(result[0].premiumERC, addr00, "Details should have correct premiumERC address.");
-        assert.strictEqual(result[0].dataResolverNow, addr00, "Details should have correct dataResolverNow address.");
+        assert.strictEqual(result[0].dataResolver, addr00, "Details should have correct dataResolver address.");
         //check DetailUints
         assert.strictEqual(result[1].collateral, "0", "Details should have correct collateral amount.");
         assert.strictEqual(result[1].lotSize, "0", "Details should have correct lotSize amount.");
@@ -4855,9 +4735,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should emit correct Settle Event when holder is paid full", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(100)
       strikePrice = web3.utils.toBN(28000)
@@ -4879,8 +4757,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -4948,9 +4825,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should settle an American Put piggy with split payout", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(5)
       strikePrice = web3.utils.toBN(27100)
@@ -4972,8 +4847,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -5041,9 +4915,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should emit correct Settle Event when holder with split payout", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(5)
       strikePrice = web3.utils.toBN(27100)
@@ -5065,8 +4937,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -5134,9 +5005,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should settle an American Put piggy with no payout, strike = settlement", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(100)
       strikePrice = web3.utils.toBN(27000)
@@ -5158,9 +5027,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
-
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -5227,9 +5094,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should settle an American Call piggy with payout to writer", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(100)
       strikePrice = web3.utils.toBN(28000)
@@ -5251,8 +5116,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -5319,9 +5183,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should settle an American Call piggy with payout to holder", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(100)
       strikePrice = web3.utils.toBN(26000)
@@ -5343,8 +5205,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -5411,9 +5272,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should settle an American Call piggy with split payout", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(5)
       strikePrice = web3.utils.toBN(26500)
@@ -5435,8 +5294,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -5503,9 +5361,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should settle an American Call piggy with no payout, strike = settlement", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(100)
       strikePrice = web3.utils.toBN(27000)
@@ -5527,8 +5383,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -5595,9 +5450,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to settle a piggy for tokenId zero", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(100)
       strikePrice = web3.utils.toBN(27000)
@@ -5619,8 +5472,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -5672,9 +5524,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to settle a piggy if it has not been cleared", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(100)
       strikePrice = web3.utils.toBN(27000)
@@ -5696,8 +5546,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -5751,9 +5600,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should settle a European Put piggy with payout to writer", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(100)
       strikePrice = web3.utils.toBN(26000)
@@ -5775,8 +5622,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -5843,9 +5689,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should settle a European Put piggy with payout to holder", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(100)
       strikePrice = web3.utils.toBN(28000)
@@ -5867,8 +5711,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -5935,9 +5778,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should settle a European Put piggy with split payout", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(5)
       strikePrice = web3.utils.toBN(27100)
@@ -5959,8 +5800,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -6027,9 +5867,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should settle a European Call piggy with payout to writer", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(100)
       strikePrice = web3.utils.toBN(28000)
@@ -6051,8 +5889,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -6119,9 +5956,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should settle a European Call piggy with payout to holder", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(100)
       strikePrice = web3.utils.toBN(26000)
@@ -6143,8 +5978,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -6211,9 +6045,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should settle a European Call piggy with split payout", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(5)
       strikePrice = web3.utils.toBN(26900)
@@ -6235,8 +6067,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -6303,9 +6134,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to settle a piggy for tokenId zero", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(100)
       strikePrice = web3.utils.toBN(27000)
@@ -6327,8 +6156,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -6380,9 +6208,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to settle a piggy if it has not been cleared", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(100)
       strikePrice = web3.utils.toBN(27000)
@@ -6404,8 +6230,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -6460,9 +6285,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should claim payouts for holder and writer", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(5)
       strikePrice = web3.utils.toBN(26500)
@@ -6487,8 +6310,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -6567,9 +6389,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should emit Event for the claim of payouts for writer", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(5)
       strikePrice = web3.utils.toBN(26500)
@@ -6591,8 +6411,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -6651,9 +6470,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should fail to claim payouts if amount is greater than contract balance", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = web3.utils.toBN(5)
       strikePrice = web3.utils.toBN(26500)
@@ -6678,8 +6495,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -6752,9 +6568,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should add tokenId to ownedPiggiesIndex when there is a new owner", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -6773,8 +6587,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -6832,9 +6645,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should add tokenId to ownedPiggiesIndex after multiple transfers of a piggy", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -6853,8 +6664,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -6925,9 +6735,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should add tokenId to ownedPiggiesIndex for multiple piggies", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -6947,15 +6755,15 @@ contract ('SmartPiggies', function(accounts) {
       return sequentialPromise([
         () => Promise.resolve(tokenInstance.approve(piggyInstance.address, supply, {from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(
-          collateralERC,premiumERC,dataResolverNow,collateral,
+          collateralERC,dataResolver,collateral,
           lotSize,strikePrice,expiry,isEuro,isPut,isRequest,
           {from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(
-          collateralERC,premiumERC,dataResolverNow,collateral,
+          collateralERC,dataResolver,collateral,
           lotSize,strikePrice,expiry,isEuro,isPut,isRequest,
           {from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(
-          collateralERC,premiumERC,dataResolverNow,collateral,
+          collateralERC,dataResolver,collateral,
           lotSize,strikePrice,expiry,isEuro,isPut,isRequest,
           {from: owner})),
         () => Promise.resolve(piggyInstance.getOwnedPiggies(owner, {from: owner})),
@@ -6986,9 +6794,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should create a piggy then reclaim collaterial and burn", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -7005,8 +6811,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,
@@ -7045,9 +6850,7 @@ contract ('SmartPiggies', function(accounts) {
 
     it("Should emit event when reclaimed", function() {
       collateralERC = tokenInstance.address
-      premiumERC = tokenInstance.address
-      dataResolverNow = resolverInstance.address
-      dataResolverAtExpiry = resolverInstance.address
+      dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)
       lotSize = 10
       strikePrice = 28000
@@ -7064,8 +6867,7 @@ contract ('SmartPiggies', function(accounts) {
 
       return piggyInstance.createPiggy(
         collateralERC,
-        premiumERC,
-        dataResolverNow,
+        dataResolver,
         collateral,
         lotSize,
         strikePrice,

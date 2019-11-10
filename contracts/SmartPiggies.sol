@@ -550,16 +550,9 @@ contract SmartPiggies is ERC165 {
         _adjPremium = auctions[_tokenId].reservePrice;
       }
       // msg.sender pays (adjusted) premium
-      bool success = attemptPaymentTransfer(
-        piggies[_tokenId].addresses.collateralERC,
-        msg.sender,
-        piggies[_tokenId].addresses.holder,
-        _adjPremium
-      );
-      if (!success) {
-        auctions[_tokenId].satisfyInProgress = false;
-        return false;
-      }
+      // fail here if transfer doesn't complete
+      PaymentToken(piggies[_tokenId].addresses.collateralERC).transfer(piggies[_tokenId].addresses.holder, _adjPremium);
+
       // msg.sender becomes holder
       _internalTransfer(piggies[_tokenId].addresses.holder, msg.sender, _tokenId);
 

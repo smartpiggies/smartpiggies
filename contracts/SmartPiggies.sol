@@ -48,6 +48,7 @@ contract SmartPiggies is ERC165 {
   //  this.settlePiggy.selector ^ this.claimPayout.selector;
   bytes4 constant SMARTPIGGIES_INTERFACE = 0xb99bd9b2;
 
+  bytes32 constant TX_SUCCESS = bytes32(0x0000000000000000000000000000000000000000000000000000000000000001);
   address payable owner;
   uint256 public tokenId;
 
@@ -238,13 +239,14 @@ contract SmartPiggies is ERC165 {
     );
     // if not an RFP, make sure the collateral can be transferred
     if (!_isRequest) {
-      bool success = attemptPaymentTransfer(
+      (bool success, bytes memory result) = attemptPaymentTransfer(
         _collateralERC, //_collateralERC
         msg.sender,
         address(this),
         _collateral
       );
-      require(success, "token transfer did not complete");
+      bytes32 txCheck = abi.decode(result, (bytes32));
+      require(success && txCheck == TX_SUCCESS, "token transfer did not complete");
     }
     // any other checks that need to be performed specifically for RFPs ?
 
@@ -409,7 +411,10 @@ contract SmartPiggies is ERC165 {
     if (!piggies[_tokenId].flags.isRequest) {
       require(msg.sender == piggies[_tokenId].addresses.writer, "you must own the collateral to reclaim it");
       // return the collateral to sender
-      PaymentToken(piggies[_tokenId].addresses.collateralERC).transfer(msg.sender, piggies[_tokenId].uintDetails.collateral);
+      require(
+        PaymentToken(piggies[_tokenId].addresses.collateralERC).transfer(msg.sender, piggies[_tokenId].uintDetails.collateral),
+        "transfer did not return true"
+      );
     }
     emit ReclaimAndBurn(msg.sender, _tokenId, piggies[_tokenId].flags.isRequest);
     //remove id from index mapping
@@ -438,13 +443,14 @@ contract SmartPiggies is ERC165 {
     require(!auctions[_tokenId].auctionActive, "auction cannot already be running");
 
     if (piggies[_tokenId].flags.isRequest) {
-      bool success = attemptPaymentTransfer(
+      (bool success, bytes memory result) = attemptPaymentTransfer(
         piggies[_tokenId].addresses.collateralERC,
         msg.sender,
         address(this),
         _reservePrice  // this should be the max the requestor is willing to pay in a reverse dutch auction
       );
-      require(success, "transferFrom did not return true");
+      bytes32 txCheck = abi.decode(result, (bytes32));
+      require(success && txCheck == TX_SUCCESS, "transferFrom did not return true");
     }
     // if we made it past the various checks, set the auction metadata up in auctions mapping
     auctions[_tokenId].startBlock = block.number;
@@ -478,7 +484,10 @@ contract SmartPiggies is ERC165 {
     if (piggies[_tokenId].flags.isRequest) {
       // refund the _reservePrice premium
       uint256 _premiumToReturn = auctions[_tokenId].reservePrice;
-      PaymentToken(piggies[_tokenId].addresses.collateralERC).transfer(msg.sender, _premiumToReturn);
+      require(
+          PaymentToken(piggies[_tokenId].addresses.collateralERC).transfer(msg.sender, _premiumToReturn),
+          "transfer did not return true"
+      );
     }
     _clearAuctionDetails(_tokenId);
     emit EndAuction(msg.sender, _tokenId, piggies[_tokenId].flags.isRequest);
@@ -504,13 +513,14 @@ contract SmartPiggies is ERC165 {
     auctions[_tokenId].satisfyInProgress = true;
     if (piggies[_tokenId].flags.isRequest) {
       // msg.sender needs to delegate reqCollateral
-      bool success = attemptPaymentTransfer(
+      (bool success, bytes memory result) = attemptPaymentTransfer(
         piggies[_tokenId].addresses.collateralERC,
         msg.sender,
         address(this),
         piggies[_tokenId].uintDetails.reqCollateral
       );
-      if (!success) {
+      bytes32 txCheck = abi.decode(result, (bytes32));
+      if (!success || txCheck != TX_SUCCESS) {
         auctions[_tokenId].satisfyInProgress = false;
         return false;
       }
@@ -525,7 +535,10 @@ contract SmartPiggies is ERC165 {
         _change = auctions[_tokenId].reservePrice.sub(_adjPremium);
       }
       // current holder pays premium (via amount already delegated to this contract in startAuction)
-      PaymentToken(piggies[_tokenId].addresses.collateralERC).transfer(msg.sender, _adjPremium);
+      require(
+          PaymentToken(piggies[_tokenId].addresses.collateralERC).transfer(msg.sender, _adjPremium),
+          "tansfer did not return true"
+      );
       // current holder receives any change due
       if (_change > 0) {
         PaymentToken(piggies[_tokenId].addresses.collateralERC).transfer(piggies[_tokenId].addresses.holder, _change);
@@ -550,13 +563,14 @@ contract SmartPiggies is ERC165 {
         _adjPremium = auctions[_tokenId].reservePrice;
       }
       // msg.sender pays (adjusted) premium
-      bool success = attemptPaymentTransfer(
+      (bool success, bytes memory result) = attemptPaymentTransfer(
         piggies[_tokenId].addresses.collateralERC,
         msg.sender,
         piggies[_tokenId].addresses.holder,
         _adjPremium
       );
-      if (!success) {
+      bytes32 txCheck = abi.decode(result, (bytes32));
+      if (!success || txCheck != TX_SUCCESS) {
         auctions[_tokenId].satisfyInProgress = false;
         return false;
       }
@@ -699,14 +713,15 @@ contract SmartPiggies is ERC165 {
     require(_amount <= ERC20balances[msg.sender][_paymentToken], "ERC20 balance is less than requested amount");
     ERC20balances[msg.sender][_paymentToken] = ERC20balances[msg.sender][_paymentToken].sub(_amount);
     //require(token(_stableToken).transfer(msg.sender, balanceOf(msg.sender))), "Unable to transfer");
-    (bool success, ) = address(PaymentToken(_paymentToken)).call(
+    (bool success, bytes memory result) = address(PaymentToken(_paymentToken)).call(
       abi.encodeWithSignature(
         "transfer(address,uint256)",
         msg.sender,
         _amount
       )
     );
-    require(success, "ERC20 token transfer failed");
+    bytes32 txCheck = abi.decode(result, (bytes32));
+    require(success && txCheck == TX_SUCCESS, "ERC20 token transfer failed");
 
     emit ClaimPayout(
       msg.sender,
@@ -947,9 +962,11 @@ contract SmartPiggies is ERC165 {
   // abstract ERC-20 TransferFrom attepmts
   function attemptPaymentTransfer(address _ERC20, address _from, address _to, uint256 _amount)
     private
-    returns (bool)
+    returns (bool, bytes memory)
   {
-    (bool success, ) = address(PaymentToken(_ERC20)).call(
+    // check the return data because compound violated the ERC20 standard for
+    // token transfers :9
+    (bool success, bytes memory result) = address(PaymentToken(_ERC20)).call(
       abi.encodeWithSignature(
         "transferFrom(address,address,uint256)",
         _from,
@@ -957,7 +974,7 @@ contract SmartPiggies is ERC165 {
         _amount
       )
     );
-    return success;
+    return (success, result);
   }
 
   function _addTokenToOwnedPiggies(address _to, uint256 _tokenId)

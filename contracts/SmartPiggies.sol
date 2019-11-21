@@ -721,7 +721,7 @@ contract SmartPiggies is ERC165 {
       )
     );
     bytes32 txCheck = abi.decode(result, (bytes32));
-    require(success && txCheck != TX_SUCCESS, "ERC20 token transfer failed");
+    require(success && txCheck == TX_SUCCESS, "ERC20 token transfer failed");
 
     emit ClaimPayout(
       msg.sender,

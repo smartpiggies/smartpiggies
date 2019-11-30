@@ -411,10 +411,6 @@ contract SmartPiggies is ERC165 {
     if (!piggies[_tokenId].flags.isRequest) {
       require(msg.sender == piggies[_tokenId].addresses.writer, "you must own the collateral to reclaim it");
       // return the collateral to sender
-      // require(
-      //   PaymentToken(piggies[_tokenId].addresses.collateralERC).transfer(msg.sender, piggies[_tokenId].uintDetails.collateral),
-      //   "transfer did not return true"
-      // );
       (bool success, bytes memory result) = address(PaymentToken(piggies[_tokenId].addresses.collateralERC)).call(
         abi.encodeWithSignature(
           "transfer(address,uint256)",
@@ -493,10 +489,6 @@ contract SmartPiggies is ERC165 {
     if (piggies[_tokenId].flags.isRequest) {
       // refund the _reservePrice premium
       uint256 _premiumToReturn = auctions[_tokenId].reservePrice;
-      // require(
-      //     PaymentToken(piggies[_tokenId].addresses.collateralERC).transfer(msg.sender, _premiumToReturn),
-      //     "transfer did not return true"
-      // );
       (bool success, bytes memory result) = address(PaymentToken(piggies[_tokenId].addresses.collateralERC)).call(
         abi.encodeWithSignature(
           "transfer(address,uint256)",
@@ -553,10 +545,6 @@ contract SmartPiggies is ERC165 {
         _change = auctions[_tokenId].reservePrice.sub(_adjPremium);
       }
       // current holder pays premium (via amount already delegated to this contract in startAuction)
-      // require(
-      //     PaymentToken(piggies[_tokenId].addresses.collateralERC).transfer(msg.sender, _adjPremium),
-      //     "tansfer did not return true"
-      // );
       (bool success02, bytes memory result02) = address(PaymentToken(piggies[_tokenId].addresses.collateralERC)).call(
         abi.encodeWithSignature(
           "transfer(address,uint256)",
@@ -569,7 +557,6 @@ contract SmartPiggies is ERC165 {
 
       // current holder receives any change due
       if (_change > 0) {
-        //PaymentToken(piggies[_tokenId].addresses.collateralERC).transfer(piggies[_tokenId].addresses.holder, _change);
         (bool success03, bytes memory result03) = address(PaymentToken(piggies[_tokenId].addresses.collateralERC)).call(
           abi.encodeWithSignature(
             "transfer(address,uint256)",

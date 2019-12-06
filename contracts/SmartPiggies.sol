@@ -860,9 +860,10 @@ contract SmartPiggies is ERC165 {
 
     _addTokenToOwnedPiggies(msg.sender, tokenId);
 
-    address[] memory a = new address[](2);
+    address[] memory a = new address[](3);
     a[0] = msg.sender;
-    a[1] = _dataResolver;
+    a[1] = _collateralERC;
+    a[2] = _dataResolver;
 
     uint256[] memory i = new uint256[](5);
     i[0] = tokenId;

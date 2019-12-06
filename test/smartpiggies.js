@@ -175,7 +175,8 @@ contract ('SmartPiggies', function(accounts) {
 
         assert.strictEqual(result.logs[0].event, "CreatePiggy", "Event log from create didn't return correct event name")
         assert.strictEqual(result.logs[0].args.addresses[0], owner, "Event log from create didn't return correct sender")
-        assert.strictEqual(result.logs[0].args.addresses[1], dataResolver, "Event log from create didn't return correct sender")
+        assert.strictEqual(result.logs[0].args.addresses[1], collateralERC, "Event log from create didn't return collateral address")
+        assert.strictEqual(result.logs[0].args.addresses[2], dataResolver, "Event log from create didn't return correct sender")
 
         assert.strictEqual(result.logs[0].args.ints[0].toString(), "1", "Event log from create didn't return correct tokenId")
         assert.strictEqual(result.logs[0].args.ints[1].toString(), collateral.toString(), "Event log from create didn't return correct collateral")
@@ -413,7 +414,8 @@ contract ('SmartPiggies', function(accounts) {
         assert.isTrue(result.receipt.status, "create did not return true")
         assert.strictEqual(result.logs[0].event, "CreatePiggy", "Event log from create didn't return correct event name")
         assert.strictEqual(result.logs[0].args.addresses[0], owner, "Event log from create didn't return correct sender")
-        assert.strictEqual(result.logs[0].args.addresses[1], dataResolver, "Event log from create didn't return correct resolver")
+        assert.strictEqual(result.logs[0].args.addresses[1], collateralERC, "Event log from create didn't return collateral address")
+        assert.strictEqual(result.logs[0].args.addresses[2], dataResolver, "Event log from create didn't return correct resolver")
         assert.strictEqual(result.logs[0].args.ints[0].toString(), "2", "Event log from create didn't return correct tokenId")
         assert.strictEqual(result.logs[0].args.ints[1].toString(), collateral.sub(collateral.div(web3.utils.toBN(2))).toString(), "Event log from create didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.ints[2].toString(), lotSize.toString(), "Event log from create didn't return correct lotSize")
@@ -425,7 +427,8 @@ contract ('SmartPiggies', function(accounts) {
         //test second create event
         assert.strictEqual(result.logs[1].event, "CreatePiggy", "Event log from create didn't return correct event name")
         assert.strictEqual(result.logs[1].args.addresses[0], owner, "Event log from create didn't return correct sender")
-        assert.strictEqual(result.logs[0].args.addresses[1], dataResolver, "Event log from create didn't return correct resolver")
+        assert.strictEqual(result.logs[0].args.addresses[1], collateralERC, "Event log from create didn't return collateral address")
+        assert.strictEqual(result.logs[0].args.addresses[2], dataResolver, "Event log from create didn't return correct resolver")
         assert.strictEqual(result.logs[1].args.ints[0].toString(), "3", "Event log from create didn't return correct tokenId")
         assert.strictEqual(result.logs[1].args.ints[1].toString(), collateral.div(web3.utils.toBN(2)).toString(), "Event log from create didn't return correct collateral")
         assert.strictEqual(result.logs[1].args.ints[2].toString(), lotSize.toString(), "Event log from create didn't return correct lotSize")
@@ -555,7 +558,8 @@ contract ('SmartPiggies', function(accounts) {
         assert.isTrue(result.receipt.status, "create did not return true")
         assert.strictEqual(result.logs[0].event, "CreatePiggy", "Event log from create didn't return correct event name")
         assert.strictEqual(result.logs[0].args.addresses[0], owner, "Event log from create didn't return correct sender")
-        assert.strictEqual(result.logs[0].args.addresses[1], dataResolver, "Event log from create didn't return correct resolver")
+        assert.strictEqual(result.logs[0].args.addresses[1], collateralERC, "Event log from create didn't return collateral address")
+        assert.strictEqual(result.logs[0].args.addresses[2], dataResolver, "Event log from create didn't return correct resolver")
         assert.strictEqual(result.logs[0].args.ints[0].toString(), "2", "Event log from create didn't return correct tokenId")
         assert.strictEqual(result.logs[0].args.ints[1].toString(), collateral.sub(collateral.div(web3.utils.toBN(2))).toString(), "Event log from create didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.ints[2].toString(), lotSize.toString(), "Event log from create didn't return correct lotSize")
@@ -567,7 +571,8 @@ contract ('SmartPiggies', function(accounts) {
         //test second create event
         assert.strictEqual(result.logs[1].event, "CreatePiggy", "Event log from create didn't return correct event name")
         assert.strictEqual(result.logs[1].args.addresses[0], owner, "Event log from create didn't return correct sender")
-        assert.strictEqual(result.logs[0].args.addresses[1], dataResolver, "Event log from create didn't return correct resolver")
+        assert.strictEqual(result.logs[0].args.addresses[1], collateralERC, "Event log from create didn't return collateral address")
+        assert.strictEqual(result.logs[0].args.addresses[2], dataResolver, "Event log from create didn't return correct resolver")
         assert.strictEqual(result.logs[1].args.ints[0].toString(), "3", "Event log from create didn't return correct tokenId")
         assert.strictEqual(result.logs[1].args.ints[1].toString(), collateral.div(web3.utils.toBN(2)).toString(), "Event log from create didn't return correct collateral")
         assert.strictEqual(result.logs[1].args.ints[2].toString(), lotSize.toString(), "Event log from create didn't return correct lotSize")
@@ -965,7 +970,8 @@ contract ('SmartPiggies', function(accounts) {
       .then(result => {
         assert.strictEqual(result.logs[0].event, "CreatePiggy", "Event log from create didn't return correct event name")
         assert.strictEqual(result.logs[0].args.addresses[0], owner, "Event log from create didn't return correct sender")
-        assert.strictEqual(result.logs[0].args.addresses[1], dataResolver, "Event log from create didn't return correct resolver")
+        assert.strictEqual(result.logs[0].args.addresses[1], collateralERC, "Event log from create didn't return correct collateral address")
+        assert.strictEqual(result.logs[0].args.addresses[2], dataResolver, "Event log from create didn't return correct resolver")
         assert.strictEqual(result.logs[0].args.ints[0].toString(), "1", "Event log from create didn't return correct tokenId")
         assert.isTrue(result.logs[0].args.bools[2], "Event log from create didn't return true for RFP")
 

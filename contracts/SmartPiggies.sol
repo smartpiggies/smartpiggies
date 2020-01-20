@@ -67,6 +67,8 @@ contract SmartPiggies is ERC165 {
     uint256 settlementPrice;
     uint256 reqCollateral;
     uint8 collateralDecimals;  // to store decimals from ERC-20 contract
+    uint256 writerProposedShare;  // for resolution game on-chain
+    uint256 holderProposedShare;  // for resolution game on-chain
   }
 
   struct BoolFlags {
@@ -74,6 +76,8 @@ contract SmartPiggies is ERC165 {
     bool isEuro;
     bool isPut;
     bool hasBeenCleared;  // to flag whether the oracle returned a callback w/ price
+    bool writerHasProposedShare;  // for resolution game on-chain
+    bool holderHasProposedShare;  // for resolution game on-chain
   }
 
   struct DetailAuction {
@@ -183,6 +187,12 @@ contract SmartPiggies is ERC165 {
     uint256 indexed amount,
     address indexed paymentToken
   );
+
+  event EmergencySettled(
+    address indexed settledBy,
+    uint256 indexed holderShare,
+    uint256 indexed writerShare
+    )
 
   /**
     constructor should throw if various things aren't properly set
@@ -1044,6 +1054,57 @@ contract SmartPiggies is ERC165 {
     piggies[_tokenId].flags.isPut = false;
     piggies[_tokenId].flags.hasBeenCleared = false;
   }
+
+  /** Emergency resolution game function
+         msg.sender must be token writer or token holder
+         token must be past expiry
+         share must be <= collateral
+         (?) should this only work if you have already attempted an oracle call ? do we track this ?
+   */
+   function proposeHolderShare(uint256 _tokenId, uint256 _proposedShare)
+     public
+     returns (bool)
+   {
+     // convenience references for function execution
+     address _writer = piggies[_tokenId].addresses.writer;
+     address _holder = piggies[_tokenId].addresses.holder;
+     require(msg.sender == _writer || msg.sender == _holder, 'only writer or holder can propose a split of the collateral');
+     require(piggies[_tokenId].uintDetails.expiry < block.number, 'token must be expired to propose a collateral split');
+     require(_proposedShare <= piggies[_tokenId].uintDetails.collateral, 'proposed holder share must be less than total collateral');
+     // set the value proposed + mark the fact that a proposal was made by the counterparty
+     if (msg.sender == _writer) {
+       piggies[_tokenId].uintDetails.writerProposedShare = _proposedShare;
+       piggies[_tokenId].flags.writerHasProposedShare = true;
+     } else {
+       // set for holder instead
+       piggies[_tokenId].uintDetails.holderProposedShare = _proposedShare;
+       piggies[_tokenId].flags.holderHasProposedShare = true;
+     }
+     // check the proposed values against each other if both counterparties have proposed a value
+     if (piggies[_tokenId].flags.writerHasProposedShare && piggies[_tokenId].flags.holderHasProposedShare) {
+       // see if writer is at least as willing as holder to give holder some amount of collateral
+       if (piggies[_tokenId].uintDetails.writerProposedShare >= piggies[_tokenId].uintDetails.holderProposedShare) {
+         // average the price cross to determine the split
+         uint256 _holderShare = (piggies[_tokenId].uintDetails.writerProposedShare.add(piggies[_tokenId].uintDetails.holderProposedShare)).div(2);
+         uint256 _writerShare = piggies[_tokenId].uintDetails.collateral.sub(_holderShare);
+         // set the balances based on the agreed split
+         address _collateralERC = piggies[_tokenId].addresses.collateralERC;
+         ERC20balances[_holder][_collateralERC] = ERC20balances[_holder][_collateralERC].add(_holderShare);
+         ERC20balances[_writer][_collateralERC] = ERC20balances[_writer][_collateralERC].add(_writerShare);
+         // mark the piggy as cleared
+         piggies[_tokenId].flags.hasBeenCleared = true;
+         // emit settlement event
+         emit EmergencySettled(msg.sender, _holderShare, _writerShare);
+         return true;
+       } else {
+         // both holder and writer have proposed a share, but no cross
+         return false;
+       }
+     } else {
+       // one of holder, writer has not proposed a share
+       return false;
+     }
+   }
 
   function getOwner()
     public

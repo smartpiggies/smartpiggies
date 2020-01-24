@@ -1051,12 +1051,6 @@ contract SmartPiggies is ERC165 {
          ERC20balances[_holder][_collateralERC] = ERC20balances[_holder][_collateralERC].add(_holderShare);
          ERC20balances[_writer][_collateralERC] = ERC20balances[_writer][_collateralERC].add(_writerShare);
 
-         // mark the piggy as cleared
-         //piggies[_tokenId].flags.hasBeenCleared = true;
-
-         // emit settlement event
-         //emit EmergencySettled(msg.sender, _holderShare, _writerShare);
-
          emit SettlePiggy(
            msg.sender,
            _tokenId,

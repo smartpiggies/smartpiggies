@@ -192,7 +192,7 @@ contract SmartPiggies is ERC165 {
     address indexed settledBy,
     uint256 indexed holderShare,
     uint256 indexed writerShare
-    )
+  );
 
   /**
     constructor should throw if various things aren't properly set
@@ -1079,7 +1079,7 @@ contract SmartPiggies is ERC165 {
        return false;
      }
    }
-   
+
   function _addTokenToOwnedPiggies(address _to, uint256 _tokenId)
     private
   {

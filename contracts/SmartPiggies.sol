@@ -95,10 +95,14 @@ contract SmartPiggies is ERC165 {
   // if we use this form, maybe change the on-chain resolution game as well to its own struct (I think I prefer to do this, tbh)
   struct DetailArbitration {
     address arbiter;
+    address writerProposedNewArbiter;
+    address holderProposedNewArbiter;
     uint256 arbiterProposedShare;
     uint256 writerProposedShare;
     uint256 holderProposedShare;
     bool arbiterHasBeenSet;
+    bool writerHasProposedNewArbiter;
+    bool holderHasProposedNewArbiter;
     bool arbiterHasProposedShare;
     bool writerHasProposedShare;
     bool holderHasProposedShare;
@@ -1063,6 +1067,7 @@ contract SmartPiggies is ERC165 {
     ownedPiggies[_from].length--;
   }
 
+  // this needs to be updated to clear the DetailAuction and DetailArbitration structs probably
   function _resetPiggy(uint256 _tokenId)
     private
   {
@@ -1147,6 +1152,7 @@ contract SmartPiggies is ERC165 {
      require(piggies[_tokenId].addresses.holder == msg.sender, "you must currently control the token to set an arbiter");
      require(auctions[_tokenId][auctionActive] == false, "token cannot be on auction");
      require(_arbiter != 0, "arbiter address must not be zero address");
+     require(arbitration[_tokenId][arbiterHasBeenSet] == false, "arbiter has already been set");
      // update struct values
      arbitration[_tokenId][arbiter] = _arbiter;
      arbitration[_tokenId][arbiterHasBeenSet] = true;
@@ -1154,6 +1160,39 @@ contract SmartPiggies is ERC165 {
      emit ArbiterSet(_tokenId, _arbiter);
      // return true
      return true;
+   }
+
+   // function for writer and holder to mutually agree to change the arbiter after it has been set
+   function updateArbiter(uint256 _tokenId, address _newArbiter)
+    public
+    returns (bool)
+   {
+     //require(arbitration[_tokenId][arbiterHasBeenSet == true], "cannot update if arbiter was never set"); // if we want to go this route; could allow this in any case though
+     // set internal address references for convenience
+     address _holder = piggies[_tokenId].addresses.holder;
+     address _writer = piggies[_tokenId].addresses.writer;
+     require(msg.sender == _holder || msg.sender == _writer, "only the writer or holder can propose an updated arbiter");
+     if (msg.sender == _holder) {
+       arbitration[_tokenId][holderHasProposedNewArbiter] = true;
+       arbitration[_tokenId][holderProposedNewArbiter] = _newArbiter;
+     } else {
+       arbitration[_tokenId][writerHasProposedNewArbiter] = true;
+       arbitration[_tokenId][writerProposedNewArbiter] = _newArbiter;
+     }
+     if (arbitration[_tokenId][holderHasProposedNewArbiter] && arbitration[_tokenId][writerHasProposedNewArbiter]) {
+       // update the arbiter if both counterparties proposed the same new address
+       if (arbitration[_tokenId][holderProposedNewArbiter] == arbitration[_tokenId][writerProposedNewArbiter]) {
+         arbitration[_tokenId][arbiter] = _newArbiter;
+         emit ArbiterSet(_tokenId, _newArbiter);
+         return true;
+       } else {
+         // both proposed a new arbiter, but addresses do not match
+         return false;
+       }
+     } else {
+       // missing a proposed new arbiter from one side
+       return false;
+     }
    }
 
    function thirdPartyArbitrationSettlement(uint256 _tokenId, uint256 _proposedShare)

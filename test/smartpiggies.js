@@ -159,16 +159,12 @@ contract ('SmartPiggies', function(accounts) {
       zeroParam = 0
       currentBlock = web3.utils.toBN(0)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -389,16 +385,12 @@ contract ('SmartPiggies', function(accounts) {
       origExpiry = web3.utils.toBN(0)
       let origToken, tokenSplit1, tokenSplit2
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -533,16 +525,12 @@ contract ('SmartPiggies', function(accounts) {
       origExpiry = web3.utils.toBN(0)
       let origToken, tokenSplit1, tokenSplit2
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -680,16 +668,13 @@ contract ('SmartPiggies', function(accounts) {
     })
 
     it("Should fail to split a token if tokenId is 0", function() {
+
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -717,16 +702,12 @@ contract ('SmartPiggies', function(accounts) {
 
       isRequest = true //create RFP
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -749,16 +730,13 @@ contract ('SmartPiggies', function(accounts) {
     });
 
     it("Should fail to split a token if sender is not the holder", function() {
+
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -783,16 +761,12 @@ contract ('SmartPiggies', function(accounts) {
       expiry = 5 //create a soon to be expired token
       currentBlock = web3.utils.toBN(0)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -845,16 +819,12 @@ contract ('SmartPiggies', function(accounts) {
       balanceBefore = web3.utils.toBN(0)
       auctionPrice = web3.utils.toBN(0)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -871,12 +841,8 @@ contract ('SmartPiggies', function(accounts) {
         })
 
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -900,16 +866,12 @@ contract ('SmartPiggies', function(accounts) {
       ownerBalanceBefore = web3.utils.toBN('0')
       userBalanceBefore = web3.utils.toBN('0')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -955,16 +917,12 @@ contract ('SmartPiggies', function(accounts) {
       isPut = true
       isRequest = true //create RFP
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -1010,16 +968,12 @@ contract ('SmartPiggies', function(accounts) {
       updatedCollateralERC = "0x1230000000000000000000000000000000000000"
       paramZero = 0
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -1088,16 +1042,12 @@ contract ('SmartPiggies', function(accounts) {
       updatedDataResolver = "0x1230000000000000000000000000000000000000"
       paramZero = 0
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -1166,16 +1116,12 @@ contract ('SmartPiggies', function(accounts) {
       updatedCollateral = web3.utils.toBN(200 * decimals)
       paramZero = 0
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -1245,16 +1191,12 @@ contract ('SmartPiggies', function(accounts) {
       updatedLotSize = 100
       paramZero = 0
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -1320,16 +1262,12 @@ contract ('SmartPiggies', function(accounts) {
       updatedStrikePrice = 29000
       paramZero = 0
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -1394,16 +1332,12 @@ contract ('SmartPiggies', function(accounts) {
       paramZero = 0
       currentBlock = web3.utils.toBN(0)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -1481,16 +1415,12 @@ contract ('SmartPiggies', function(accounts) {
       updatedIsEuro = true
       paramZero = 0
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -1555,16 +1485,12 @@ contract ('SmartPiggies', function(accounts) {
       updatedIsPut = false
       paramZero = 0
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -1647,16 +1573,12 @@ contract ('SmartPiggies', function(accounts) {
       ownerBalanceBefore = web3.utils.toBN('0')
       userBalanceBefore = web3.utils.toBN('0')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -1746,16 +1668,12 @@ contract ('SmartPiggies', function(accounts) {
       ownerBalanceBefore = web3.utils.toBN('0')
       userBalanceBefore = web3.utils.toBN('0')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -1842,16 +1760,12 @@ contract ('SmartPiggies', function(accounts) {
       ownerBalanceBefore = web3.utils.toBN('0')
       userBalanceBefore = web3.utils.toBN('0')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -1921,16 +1835,12 @@ contract ('SmartPiggies', function(accounts) {
       ownerBalanceBefore = web3.utils.toBN('0')
       userBalanceBefore = web3.utils.toBN('0')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -1975,16 +1885,12 @@ contract ('SmartPiggies', function(accounts) {
       ownerBalanceBefore = web3.utils.toBN('0')
       userBalanceBefore = web3.utils.toBN('0')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -2040,16 +1946,12 @@ contract ('SmartPiggies', function(accounts) {
       ownerBalanceBefore = web3.utils.toBN('0')
       userBalanceBefore = web3.utils.toBN('0')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -2098,16 +2000,12 @@ contract ('SmartPiggies', function(accounts) {
       balanceBefore = web3.utils.toBN(0)
       auctionPrice = web3.utils.toBN(0)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -2124,12 +2022,8 @@ contract ('SmartPiggies', function(accounts) {
         })
 
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -2214,16 +2108,12 @@ contract ('SmartPiggies', function(accounts) {
       balanceBefore = web3.utils.toBN(0)
       auctionPrice = web3.utils.toBN(0)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -2234,12 +2124,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -2323,16 +2209,12 @@ contract ('SmartPiggies', function(accounts) {
 
       balanceBefore = web3.utils.toBN(0)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -2353,12 +2235,8 @@ contract ('SmartPiggies', function(accounts) {
         })
 
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -2439,16 +2317,12 @@ contract ('SmartPiggies', function(accounts) {
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -2459,12 +2333,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -2523,16 +2393,12 @@ contract ('SmartPiggies', function(accounts) {
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -2544,12 +2410,8 @@ contract ('SmartPiggies', function(accounts) {
         tokenId = result
         return expectedExceptionPromise(
             () => piggyInstance.startAuction(
-              tokenId,
-              startPrice,
-              reservePrice,
-              auctionLength,
-              timeStep,
-              priceStep,
+              tokenId,startPrice,reservePrice,
+              auctionLength,timeStep,priceStep,
               {from: user01, gas: 8000000 }), //transaction from user01 rather than owner
             3000000);
       })
@@ -2573,16 +2435,12 @@ contract ('SmartPiggies', function(accounts) {
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -2594,12 +2452,8 @@ contract ('SmartPiggies', function(accounts) {
         tokenId = result
         return expectedExceptionPromise(
             () => piggyInstance.startAuction(
-              tokenId,
-              startPrice,
-              reservePrice,
-              auctionLength,
-              timeStep,
-              priceStep,
+              tokenId,startPrice,reservePrice,
+              auctionLength,timeStep,priceStep,
               {from: owner, gas: 8000000 }),
             3000000);
       })
@@ -2623,16 +2477,12 @@ contract ('SmartPiggies', function(accounts) {
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -2644,12 +2494,8 @@ contract ('SmartPiggies', function(accounts) {
         tokenId = result
         return expectedExceptionPromise(
             () => piggyInstance.startAuction(
-              tokenId,
-              startPrice,
-              reservePrice,
-              auctionLength,
-              timeStep,
-              priceStep,
+              tokenId,startPrice,reservePrice,
+              auctionLength,timeStep,priceStep,
               {from: owner, gas: 8000000 }),
             3000000);
       })
@@ -2675,16 +2521,12 @@ contract ('SmartPiggies', function(accounts) {
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -2706,12 +2548,8 @@ contract ('SmartPiggies', function(accounts) {
 
         return expectedExceptionPromise(
             () => piggyInstance.startAuction(
-              tokenId,
-              startPrice,
-              reservePrice,
-              auctionLength,
-              timeStep,
-              priceStep,
+              tokenId,startPrice,reservePrice,
+              auctionLength,timeStep,priceStep,
               {from: owner, gas: 8000000 }),
             3000000);
       })
@@ -2735,16 +2573,12 @@ contract ('SmartPiggies', function(accounts) {
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -2755,12 +2589,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -2773,12 +2603,8 @@ contract ('SmartPiggies', function(accounts) {
 
         return expectedExceptionPromise(
             () => piggyInstance.startAuction(
-              tokenId,
-              startPrice,
-              reservePrice,
-              auctionLength,
-              timeStep,
-              priceStep,
+              tokenId,startPrice,reservePrice,
+              auctionLength,timeStep,priceStep,
               {from: owner, gas: 8000000 }),
             3000000);
       })
@@ -2802,16 +2628,12 @@ contract ('SmartPiggies', function(accounts) {
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -2835,12 +2657,8 @@ contract ('SmartPiggies', function(accounts) {
 
         return expectedExceptionPromise(
             () => piggyInstance.startAuction(
-              tokenId,
-              startPrice,
-              reservePrice,
-              auctionLength,
-              timeStep,
-              priceStep,
+              tokenId,startPrice,reservePrice,
+              auctionLength,timeStep,priceStep,
               {from: owner, gas: 8000000 }),
             3000000);
       })
@@ -2869,16 +2687,12 @@ contract ('SmartPiggies', function(accounts) {
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -2889,12 +2703,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -2948,16 +2758,12 @@ contract ('SmartPiggies', function(accounts) {
 
       balanceBefore = web3.utils.toBN(0)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -2968,12 +2774,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -3024,16 +2826,12 @@ contract ('SmartPiggies', function(accounts) {
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -3044,12 +2842,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -3082,16 +2876,12 @@ contract ('SmartPiggies', function(accounts) {
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -3139,16 +2929,12 @@ contract ('SmartPiggies', function(accounts) {
       ownerBalanceBefore = web3.utils.toBN(0)
       userBalanceBefore = web3.utils.toBN(0)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -3159,12 +2945,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -3276,16 +3058,12 @@ contract ('SmartPiggies', function(accounts) {
       ownerBalanceBefore = web3.utils.toBN(0)
       userBalanceBefore = web3.utils.toBN(0)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -3296,12 +3074,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -3411,16 +3185,12 @@ contract ('SmartPiggies', function(accounts) {
       startBlock = web3.utils.toBN(0)
       auctionPrice = web3.utils.toBN(0)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -3437,12 +3207,8 @@ contract ('SmartPiggies', function(accounts) {
          })
 
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -3526,16 +3292,12 @@ contract ('SmartPiggies', function(accounts) {
 
       ownerBalanceBefore = web3.utils.toBN(0)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -3546,12 +3308,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -3607,16 +3365,12 @@ contract ('SmartPiggies', function(accounts) {
       ownerBalanceBefore = web3.utils.toBN(0)
       userBalanceBefore = web3.utils.toBN(0)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -3627,12 +3381,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -3703,16 +3453,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -3723,12 +3469,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -3794,16 +3536,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -3814,12 +3552,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -3878,16 +3612,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -3898,12 +3628,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -3950,16 +3676,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -3970,12 +3692,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -4042,16 +3760,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -4062,12 +3776,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -4123,16 +3833,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -4143,12 +3849,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -4204,16 +3906,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -4224,12 +3922,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -4285,16 +3979,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -4305,12 +3995,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -4366,16 +4052,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -4386,12 +4068,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -4453,16 +4131,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -4473,12 +4147,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -4542,16 +4212,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -4562,12 +4228,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -4632,18 +4294,14 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       emptyArray = []
 
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -4654,12 +4312,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -4711,7 +4365,6 @@ contract ('SmartPiggies', function(accounts) {
       })
       .then(result => {
         //Note returning result without .toString() will return an empty array
-        //assert.deepEqual(result, emptyArray, "getOwnedPiggies did not return correctly")
         assert.strictEqual(result.toString(), '', "getOwnedPiggies did not return correctly")
         return sequentialPromise([
           () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
@@ -4761,16 +4414,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -4781,12 +4430,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -4851,16 +4496,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -4871,12 +4512,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -4941,16 +4578,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -4961,12 +4594,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -5031,16 +4660,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -5051,12 +4676,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -5120,16 +4741,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -5140,12 +4757,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -5209,16 +4822,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -5229,12 +4838,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -5298,16 +4903,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -5318,12 +4919,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -5387,16 +4984,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -5407,12 +5000,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -5476,16 +5065,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -5496,12 +5081,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -5550,16 +5131,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -5570,12 +5147,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -5626,16 +5199,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -5646,12 +5215,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -5715,16 +5280,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -5735,12 +5296,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -5804,16 +5361,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -5824,12 +5377,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -5893,16 +5442,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -5913,12 +5458,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -5982,16 +5523,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -6002,12 +5539,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -6071,16 +5604,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -6091,12 +5620,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -6160,16 +5685,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -6180,12 +5701,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -6234,16 +5751,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -6254,12 +5767,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -6314,16 +5823,12 @@ contract ('SmartPiggies', function(accounts) {
       ownerBalance = web3.utils.toBN(0)
       userBalance = web3.utils.toBN(0)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -6334,12 +5839,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -6415,16 +5916,12 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -6435,12 +5932,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -6499,16 +5992,12 @@ contract ('SmartPiggies', function(accounts) {
       ownerBalance = web3.utils.toBN(0)
       userBalance = web3.utils.toBN(0)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -6519,12 +6008,8 @@ contract ('SmartPiggies', function(accounts) {
         //use last tokenId created
         tokenId = result
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -6589,18 +6074,14 @@ contract ('SmartPiggies', function(accounts) {
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       emptyArray = []
 
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -6616,12 +6097,8 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.toString(), "1", "getOwnedPiggies did not return correctly")
 
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -6666,18 +6143,14 @@ contract ('SmartPiggies', function(accounts) {
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       emptyArray = []
 
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -6706,12 +6179,8 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[5].toString(), '', "getOwnedPiggies did not return correctly for user02")
 
         return piggyInstance.startAuction(
-          tokenId,
-          startPrice,
-          reservePrice,
-          auctionLength,
-          timeStep,
-          priceStep,
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
           {from: owner}
         )
       })
@@ -6756,21 +6225,24 @@ contract ('SmartPiggies', function(accounts) {
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       emptyArray = []
 
       return sequentialPromise([
         () => Promise.resolve(tokenInstance.approve(piggyInstance.address, supply, {from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(
-          collateralERC,dataResolver,collateral,
-          lotSize,strikePrice,expiry,isEuro,isPut,isRequest,
+          params[0],params[1],params[2],params[3],
+          params[4],params[5],params[6],params[7],params[8],
           {from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(
-          collateralERC,dataResolver,collateral,
-          lotSize,strikePrice,expiry,isEuro,isPut,isRequest,
+          params[0],params[1],params[2],params[3],
+          params[4],params[5],params[6],params[7],params[8],
           {from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(
-          collateralERC,dataResolver,collateral,
-          lotSize,strikePrice,expiry,isEuro,isPut,isRequest,
+          params[0],params[1],params[2],params[3],
+          params[4],params[5],params[6],params[7],params[8],
           {from: owner})),
         () => Promise.resolve(piggyInstance.getOwnedPiggies(owner, {from: owner})),
       ])
@@ -6815,16 +6287,12 @@ contract ('SmartPiggies', function(accounts) {
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {
@@ -6871,16 +6339,12 @@ contract ('SmartPiggies', function(accounts) {
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
 
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
       return piggyInstance.createPiggy(
-        collateralERC,
-        dataResolver,
-        collateral,
-        lotSize,
-        strikePrice,
-        expiry,
-        isEuro,
-        isPut,
-        isRequest,
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
         {from: owner}
       )
       .then(result => {

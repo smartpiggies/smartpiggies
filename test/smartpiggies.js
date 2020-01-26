@@ -2292,10 +2292,6 @@ contract ('SmartPiggies', function(accounts) {
         return tokenInstance.balanceOf(user01, {from: user01})
       })
       .then(balanceNow => {
-        //console.log("balance now: ", balanceNow.toString())
-        //console.log("balance before: ", balanceBefore.toString())
-        //console.log("diff: ", balanceBefore.sub(auctionPrice).toString())
-        //console.log("price: ", auctionPrice.toString())
         assert.strictEqual(balanceNow.toString(), balanceBefore.sub(auctionPrice).toString(), "User balance did not return correctly")
       })
       //end test block
@@ -3376,15 +3372,6 @@ contract ('SmartPiggies', function(accounts) {
         ])
       })
       .then(result => {
-        //console.log("price: ", auctionPrice.toString())
-        //console.log("Owner bal before: ", ownerBalanceBefore.toString())
-        //console.log("Owner bal now:    ", result[0].toString())
-        //console.log("Owner bal diff:   ", ownerBalanceBefore.add(reservePrice).sub(auctionPrice).toString())
-
-        //console.log("User bal before: ", userBalanceBefore.toString())
-        //console.log("User bal:        ", result[1].toString())
-        //console.log("User bal diff:   ", userBalanceBefore.sub(collateral).add(auctionPrice).toString())
-
         assert.strictEqual(result[0].toString(), ownerBalanceBefore.add(reservePrice).sub(auctionPrice).toString(), "Owner balance did not return correctly")
         assert.strictEqual(result[1].toString(), userBalanceBefore.sub(collateral).add(auctionPrice).toString(), "User balance did not return correctly")
       })
@@ -3471,17 +3458,6 @@ contract ('SmartPiggies', function(accounts) {
         return piggyInstance.satisfyAuction(tokenId, {from: user01})
       })
       .then(result => {
-
-        //console.log("expiry: ", expiryBlock.toString())
-        //web3.eth.getBlockNumberPromise()
-        //.then(block => {
-        //  console.log("current: ", block)
-        //})
-        //console.log("tx status: ", result.receipt.status)
-
-        //Why does this return true when the solidity clause returns false???
-        //test against emitted events
-        //assert.isNotTrue(result.receipt.status, "satisfyAuction did not return false")
         assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
 
         return piggyInstance.getDetails(tokenId, {from: owner})
@@ -4700,11 +4676,15 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[1].settlementPrice, "0", "Details should have returned settlementPrice amount of 0.");
         assert.strictEqual(result[1].reqCollateral, "0", "Details should have returned reqCollateral amount of 0.");
         assert.strictEqual(result[1].collateralDecimals, "0", "Details should have returned collateralDecimals amount of 18.");
+        assert.strictEqual(result[1].writerProposedShare, "0", "Details should have returned collateralDecimals amount of 18.");
+        assert.strictEqual(result[1].holderProposedShare, "0", "Details should have returned collateralDecimals amount of 18.");
         //check BoolFlags
         assert.isNotTrue(result[2].isRequest, "Details should have returned false for isRequest.");
         assert.isNotTrue(result[2].isEuro, "Details should have returned false for isEuro.");
         assert.isNotTrue(result[2].isPut, "Details should have returned false for isPut.");
         assert.isNotTrue(result[2].hasBeenCleared, "Details should have returned false for hasBeenCleared.");
+        assert.isNotTrue(result[2].writerHasProposedShare, "Details should have returned false for hasBeenCleared.");
+        assert.isNotTrue(result[2].holderHasProposedShare, "Details should have returned false for hasBeenCleared.");
 
         return piggyInstance.getOwnedPiggies(owner, {from: owner})
 

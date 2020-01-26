@@ -188,10 +188,10 @@ contract SmartPiggies is ERC165 {
     address indexed paymentToken
   );
 
-  event EmergencySettled(
-    address indexed settledBy,
-    uint256 indexed holderShare,
-    uint256 indexed writerShare
+  event ProposalRequest(
+    address indexed from,
+    uint256 indexed tokenId,
+    uint256 indexed proposalAmount
   );
 
   /**
@@ -1034,10 +1034,12 @@ contract SmartPiggies is ERC165 {
      if (msg.sender == _writer) {
        piggies[_tokenId].uintDetails.writerProposedShare = _proposedShare;
        piggies[_tokenId].flags.writerHasProposedShare = true;
+       emit ProposalRequest(msg.sender, _tokenId, _proposedShare);
      } else {
        // set for holder instead
        piggies[_tokenId].uintDetails.holderProposedShare = _proposedShare;
        piggies[_tokenId].flags.holderHasProposedShare = true;
+       emit ProposalRequest(msg.sender, _tokenId, _proposedShare);
      }
      // check the proposed values against each other if both counterparties have proposed a value
      if (piggies[_tokenId].flags.writerHasProposedShare && piggies[_tokenId].flags.holderHasProposedShare) {
@@ -1109,10 +1111,14 @@ contract SmartPiggies is ERC165 {
     piggies[_tokenId].uintDetails.settlementPrice = 0;
     piggies[_tokenId].uintDetails.reqCollateral = 0;
     piggies[_tokenId].uintDetails.collateralDecimals = 0;
+    piggies[_tokenId].uintDetails.writerProposedShare = 0;
+    piggies[_tokenId].uintDetails.holderProposedShare = 0;
     piggies[_tokenId].flags.isRequest = false;
     piggies[_tokenId].flags.isEuro = false;
     piggies[_tokenId].flags.isPut = false;
     piggies[_tokenId].flags.hasBeenCleared = false;
+    piggies[_tokenId].flags.writerHasProposedShare = false;  
+    piggies[_tokenId].flags.holderHasProposedShare = false;
   }
 
   function getOwner()

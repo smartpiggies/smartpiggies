@@ -40,13 +40,14 @@ contract SmartPiggies is ERC165 {
   using SafeMath for uint256;
 
   // Supported Interfaces
-  // 0xb99bd9b2 == this.createPiggy.selector ^
+  // 0xeb8dacfa == this.createPiggy.selector ^
   //  this.splitPiggy.selector ^ this.transferFrom.selector ^
   //  this.updateRFP.selector ^ this.reclaimAndBurn.selector ^
   //  this.startAuction.selector ^ this.endAuction.selector ^
   //  this.satisfyAuction.selector ^ this.requestSettlementPrice.selector ^
-  //  this.settlePiggy.selector ^ this.claimPayout.selector;
-  bytes4 constant SMARTPIGGIES_INTERFACE = 0xb99bd9b2;
+  //  this.settlePiggy.selector ^ this.claimPayout.selector ^
+  //  this.proposeHolderShare.selector;
+  bytes4 constant SMARTPIGGIES_INTERFACE = 0xeb8dacfa;
 
   bytes32 constant TX_SUCCESS = bytes32(0x0000000000000000000000000000000000000000000000000000000000000001);
   address payable owner;
@@ -1117,7 +1118,7 @@ contract SmartPiggies is ERC165 {
     piggies[_tokenId].flags.isEuro = false;
     piggies[_tokenId].flags.isPut = false;
     piggies[_tokenId].flags.hasBeenCleared = false;
-    piggies[_tokenId].flags.writerHasProposedShare = false;  
+    piggies[_tokenId].flags.writerHasProposedShare = false;
     piggies[_tokenId].flags.holderHasProposedShare = false;
   }
 

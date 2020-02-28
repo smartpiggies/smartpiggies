@@ -20,10 +20,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 pragma solidity >=0.4.24 <0.6.0;
 pragma experimental ABIEncoderV2;
 
-// massive thanks to ERC-721 spec for this D:
 
-// references to "oracles" could use a different / more general term
-// so that the spec could use signed data directly from "source" w/ same interface
+import "./ERC165.sol";
+import "./SafeMath.sol";
 
 interface PaymentToken {
   function transferFrom(address from, address to, uint256 value) external returns (bool);
@@ -31,12 +30,68 @@ interface PaymentToken {
   function decimals() external returns (uint8);
 }
 
-import "./ERC165.sol";
-import "./SafeMath.sol";
+contract Owned {
+  address payable owner;
+  constructor()
+    public
+  {
+    owner = msg.sender;
+  }
+
+  event ChangedOwner(address indexed _oldOwner, address indexed _newOwner);
+
+  modifier onlyOwner()
+  {
+    require(msg.sender == owner);
+    _;
+  }
+
+  function changeOwner(address _newOwner)
+    public
+    onlyOwner
+  {
+    owner = _newOwner;
+    emit ChangedOwner(msg.sender, _newOwner);
+  }
+}
+
+contract Administered is Owned {
+  mapping(address => bool) private administrators;
+  constructor(address _admin)
+    public
+  {
+    administrators[_admin] = true;
+  }
+
+  event AddedAdmin(address indexed _sender, address indexed _newAdmin);
+  event DeletedAdmin(address indexed _sender, address indexed _oldAdmin);
+
+  modifier onlyAdmin {
+    require(administrators[msg.sender]);
+    _;
+  }
+
+  function addAdministrator(address _newAdmin)
+    public
+    onlyAdmin
+  {
+    administrators[_newAdmin] = true;
+    emit AddedAdmin(msg.sender, _newAdmin);
+  }
+
+  function deleteAdministrator(address _oldAdmin)
+    public
+    onlyAdmin
+  {
+    administrators[_oldAdmin] = false;
+    emit DeletedAdmin(msg.sender, _oldAdmin);
+  }
+
+}
 
 /** @title SmartPiggies: A Smart Option Standard
 */
-contract SmartPiggies is ERC165 {
+contract SmartPiggies is ERC165, Administered {
   using SafeMath for uint256;
 
   // Supported Interfaces
@@ -50,7 +105,6 @@ contract SmartPiggies is ERC165 {
   bytes4 constant SMARTPIGGIES_INTERFACE = 0xeb8dacfa;
 
   bytes32 constant TX_SUCCESS = bytes32(0x0000000000000000000000000000000000000000000000000000000000000001);
-  address payable owner;
   uint256 public tokenId;
 
   struct DetailAddresses {
@@ -99,7 +153,7 @@ contract SmartPiggies is ERC165 {
   }
 
   mapping (address => mapping(address => uint256)) private ERC20balances;
-  mapping (address => uint256[]) private ownedPiggies; //again, public?
+  mapping (address => uint256[]) private ownedPiggies;
   mapping (uint256 => uint256) private ownedPiggiesIndex;
   mapping (uint256 => Piggy) private piggies;
   mapping (uint256 => DetailAuction) private auctions;
@@ -202,9 +256,9 @@ contract SmartPiggies is ERC165 {
   */
   constructor()
     public
+    Administered(msg.sender)
   {
     //declarations here
-    owner = msg.sender;
     _registerInterface(SMARTPIGGIES_INTERFACE);
   }
 
@@ -277,7 +331,6 @@ contract SmartPiggies is ERC165 {
       ),
       "failed to create piggy"
     );
-
 
     return true;
   }

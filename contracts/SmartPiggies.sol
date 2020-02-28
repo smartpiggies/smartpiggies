@@ -40,13 +40,14 @@ contract SmartPiggies is ERC165 {
   using SafeMath for uint256;
 
   // Supported Interfaces
-  // 0xb99bd9b2 == this.createPiggy.selector ^
+  // 0xeb8dacfa == this.createPiggy.selector ^
   //  this.splitPiggy.selector ^ this.transferFrom.selector ^
   //  this.updateRFP.selector ^ this.reclaimAndBurn.selector ^
   //  this.startAuction.selector ^ this.endAuction.selector ^
   //  this.satisfyAuction.selector ^ this.requestSettlementPrice.selector ^
-  //  this.settlePiggy.selector ^ this.claimPayout.selector;
-  bytes4 constant SMARTPIGGIES_INTERFACE = 0xb99bd9b2;
+  //  this.settlePiggy.selector ^ this.claimPayout.selector ^
+  //  this.proposeHolderShare.selector;
+  bytes4 constant SMARTPIGGIES_INTERFACE = 0xeb8dacfa;
 
   bytes32 constant TX_SUCCESS = bytes32(0x0000000000000000000000000000000000000000000000000000000000000001);
   address payable owner;
@@ -67,6 +68,8 @@ contract SmartPiggies is ERC165 {
     uint256 settlementPrice;
     uint256 reqCollateral;
     uint8 collateralDecimals;  // to store decimals from ERC-20 contract
+    uint256 writerProposedShare;  // for resolution game on-chain
+    uint256 holderProposedShare;  // for resolution game on-chain
   }
 
   struct BoolFlags {
@@ -74,6 +77,8 @@ contract SmartPiggies is ERC165 {
     bool isEuro;
     bool isPut;
     bool hasBeenCleared;  // to flag whether the oracle returned a callback w/ price
+    bool writerHasProposedShare;  // for resolution game on-chain
+    bool holderHasProposedShare;  // for resolution game on-chain
   }
 
   struct DetailAuction {
@@ -182,6 +187,12 @@ contract SmartPiggies is ERC165 {
     address indexed from,
     uint256 indexed amount,
     address indexed paymentToken
+  );
+
+  event ProposalRequest(
+    address indexed from,
+    uint256 indexed tokenId,
+    uint256 indexed proposalAmount
   );
 
   /**
@@ -1004,6 +1015,68 @@ contract SmartPiggies is ERC165 {
     return (success, result);
   }
 
+  /** Emergency resolution game function
+         msg.sender must be token writer or token holder
+         token must be past expiry
+         share must be <= collateral
+         (?) should this only work if you have already attempted an oracle call ? do we track this ?
+   */
+   function proposeHolderShare(uint256 _tokenId, uint256 _proposedShare)
+     public
+     returns (bool)
+   {
+     // convenience references for function execution
+     address _writer = piggies[_tokenId].addresses.writer;
+     address _holder = piggies[_tokenId].addresses.holder;
+     require(msg.sender == _writer || msg.sender == _holder, 'only writer or holder can propose a split of the collateral');
+     require(piggies[_tokenId].uintDetails.expiry < block.number, 'token must be expired to propose a collateral split');
+     require(_proposedShare <= piggies[_tokenId].uintDetails.collateral, 'proposed holder share must be less than total collateral');
+     // set the value proposed + mark the fact that a proposal was made by the counterparty
+     if (msg.sender == _writer) {
+       piggies[_tokenId].uintDetails.writerProposedShare = _proposedShare;
+       piggies[_tokenId].flags.writerHasProposedShare = true;
+       emit ProposalRequest(msg.sender, _tokenId, _proposedShare);
+     } else {
+       // set for holder instead
+       piggies[_tokenId].uintDetails.holderProposedShare = _proposedShare;
+       piggies[_tokenId].flags.holderHasProposedShare = true;
+       emit ProposalRequest(msg.sender, _tokenId, _proposedShare);
+     }
+     // check the proposed values against each other if both counterparties have proposed a value
+     if (piggies[_tokenId].flags.writerHasProposedShare && piggies[_tokenId].flags.holderHasProposedShare) {
+       // see if writer is at least as willing as holder to give holder some amount of collateral
+       if (piggies[_tokenId].uintDetails.writerProposedShare >= piggies[_tokenId].uintDetails.holderProposedShare) {
+         // average the price cross to determine the split
+         uint256 _holderShare = (piggies[_tokenId].uintDetails.writerProposedShare.add(piggies[_tokenId].uintDetails.holderProposedShare)).div(2);
+         uint256 _writerShare = piggies[_tokenId].uintDetails.collateral.sub(_holderShare);
+         // set the balances based on the agreed split
+         address _collateralERC = piggies[_tokenId].addresses.collateralERC;
+         ERC20balances[_holder][_collateralERC] = ERC20balances[_holder][_collateralERC].add(_holderShare);
+         ERC20balances[_writer][_collateralERC] = ERC20balances[_writer][_collateralERC].add(_writerShare);
+
+         emit SettlePiggy(
+           msg.sender,
+           _tokenId,
+           _holderShare,
+           _writerShare
+         );
+
+         _removeTokenFromOwnedPiggies(_holder, _tokenId);
+         //clean up piggyId
+         _resetPiggy(_tokenId);
+
+         return true;
+
+       } else {
+         // both holder and writer have proposed a share, but no cross
+         return false;
+       }
+     } else {
+       // one of holder, writer has not proposed a share
+       return false;
+     }
+   }
+
   function _addTokenToOwnedPiggies(address _to, uint256 _tokenId)
     private
   {
@@ -1039,10 +1112,14 @@ contract SmartPiggies is ERC165 {
     piggies[_tokenId].uintDetails.settlementPrice = 0;
     piggies[_tokenId].uintDetails.reqCollateral = 0;
     piggies[_tokenId].uintDetails.collateralDecimals = 0;
+    piggies[_tokenId].uintDetails.writerProposedShare = 0;
+    piggies[_tokenId].uintDetails.holderProposedShare = 0;
     piggies[_tokenId].flags.isRequest = false;
     piggies[_tokenId].flags.isEuro = false;
     piggies[_tokenId].flags.isPut = false;
     piggies[_tokenId].flags.hasBeenCleared = false;
+    piggies[_tokenId].flags.writerHasProposedShare = false;
+    piggies[_tokenId].flags.holderHasProposedShare = false;
   }
 
   function getOwner()

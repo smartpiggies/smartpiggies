@@ -32,25 +32,18 @@ interface PaymentToken {
 
 contract Owned {
   address payable owner;
-  constructor()
-    public
-  {
+  constructor() public {
     owner = msg.sender;
   }
 
   event ChangedOwner(address indexed _oldOwner, address indexed _newOwner);
 
-  modifier onlyOwner()
-  {
+  modifier onlyOwner() {
     require(msg.sender == owner);
     _;
   }
 
-  function getOwner()
-    public
-    view
-    returns (address)
-  {
+  function getOwner() public view returns (address) {
     return owner;
   }
 
@@ -73,19 +66,17 @@ contract Owned {
   }
 }
 
+
 contract Administered is Owned {
   mapping(address => bool) private administrators;
-  constructor(address _admin)
-    public
-  {
+  constructor(address _admin) public {
     administrators[_admin] = true;
   }
 
   event AddedAdmin(address indexed _sender, address indexed _newAdmin);
   event DeletedAdmin(address indexed _sender, address indexed _oldAdmin);
 
-  modifier onlyAdmin
-  {
+  modifier onlyAdmin() {
     // admin is an admin or owner
     require(administrators[msg.sender] || msg.sender == owner);
     _;
@@ -118,23 +109,20 @@ contract Administered is Owned {
     emit DeletedAdmin(msg.sender, _admin);
     return true;
   }
-
 }
+
 
 contract Freezeable is Administered
 {
   bool public notFrozen;
-  constructor()
-    public
-  {
+  constructor() public {
     notFrozen = true;
   }
 
   event Frozen(address indexed _sender);
   event Unfrozen(address indexed _sender);
 
-  modifier whenNotFrozen()
-  {
+  modifier whenNotFrozen() {
     require(notFrozen);
     _;
   }
@@ -159,6 +147,7 @@ contract Freezeable is Administered
     returns true;
   }
 }
+
 
 /** @title SmartPiggies: A Smart Option Standard
 */

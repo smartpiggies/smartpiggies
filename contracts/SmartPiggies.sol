@@ -46,12 +46,30 @@ contract Owned {
     _;
   }
 
-  function changeOwner(address _newOwner)
+  function getOwner()
+    public
+    view
+    returns (address)
+  {
+    return owner;
+  }
+
+  function changeOwner(address payable _newOwner)
     public
     onlyOwner
+    returns (bool)
   {
     owner = _newOwner;
     emit ChangedOwner(msg.sender, _newOwner);
+    returns true;
+  }
+
+  function kill()
+    public
+    onlyOwner
+  {
+    require(msg.sender != address(0));
+    selfdestruct(owner);
   }
 }
 
@@ -66,32 +84,85 @@ contract Administered is Owned {
   event AddedAdmin(address indexed _sender, address indexed _newAdmin);
   event DeletedAdmin(address indexed _sender, address indexed _oldAdmin);
 
-  modifier onlyAdmin {
-    require(administrators[msg.sender]);
+  modifier onlyAdmin
+  {
+    // admin is an admin or owner
+    require(administrators[msg.sender] || msg.sender == owner);
     _;
+  }
+
+  function isAdministrator(address _admin)
+    public
+    returns (bool)
+  {
+    return administrators[_admin];
   }
 
   function addAdministrator(address _newAdmin)
     public
     onlyAdmin
+    returns (bool)
   {
+    require(msg.sender != address(0));
     administrators[_newAdmin] = true;
     emit AddedAdmin(msg.sender, _newAdmin);
+    return true;
   }
 
-  function deleteAdministrator(address _oldAdmin)
+  function deleteAdministrator(address _admin)
     public
     onlyAdmin
+    returns (bool)
   {
-    administrators[_oldAdmin] = false;
-    emit DeletedAdmin(msg.sender, _oldAdmin);
+    administrators[_admin] = false;
+    emit DeletedAdmin(msg.sender, _admin);
+    return true;
   }
 
 }
 
+contract Freezeable is Administered
+{
+  bool public notFrozen;
+  constructor()
+    public
+  {
+    notFrozen = true;
+  }
+
+  event Frozen(address indexed _sender);
+  event Unfrozen(address indexed _sender);
+
+  modifier whenNotFrozen()
+  {
+    require(notFrozen);
+    _;
+  }
+
+  function freeze()
+    public
+    onlyAdmin
+    returns (bool)
+  {
+    notFrozen = false;
+    emit Frozen(msg.sender);
+    return true;
+  }
+
+  function unfreeze()
+    public
+    onlyAdmin
+    returns (bool)
+  {
+    notFrozen = true;
+    emit Unfrozen(msg.sender);
+    returns true;
+  }
+}
+
 /** @title SmartPiggies: A Smart Option Standard
 */
-contract SmartPiggies is ERC165, Administered {
+contract SmartPiggies is ERC165, Freezable {
   using SafeMath for uint256;
 
   // Supported Interfaces
@@ -121,7 +192,7 @@ contract SmartPiggies is ERC165, Administered {
     uint256 expiry;
     uint256 settlementPrice;
     uint256 reqCollateral;
-    uint8 collateralDecimals;  // to store decimals from ERC-20 contract
+    uint8 collateralDecimals;  // store decimals from ERC-20 contract
     uint256 writerProposedShare;  // for resolution game on-chain
     uint256 holderProposedShare;  // for resolution game on-chain
   }
@@ -130,7 +201,7 @@ contract SmartPiggies is ERC165, Administered {
     bool isRequest;
     bool isEuro;
     bool isPut;
-    bool hasBeenCleared;  // to flag whether the oracle returned a callback w/ price
+    bool hasBeenCleared;  // flag whether the oracle returned a callback w/ price
     bool writerHasProposedShare;  // for resolution game on-chain
     bool holderHasProposedShare;  // for resolution game on-chain
   }
@@ -158,8 +229,7 @@ contract SmartPiggies is ERC165, Administered {
   mapping (uint256 => Piggy) private piggies;
   mapping (uint256 => DetailAuction) private auctions;
 
-  /*
-  add events
+  /** Events
   */
 
   event CreatePiggy(
@@ -288,6 +358,7 @@ contract SmartPiggies is ERC165, Administered {
     bool _isRequest
   )
     public
+    whenNotFrozen
     returns (bool)
   {
     require(
@@ -339,6 +410,7 @@ contract SmartPiggies is ERC165, Administered {
     uint256 _tokenId
   )
     public
+    whenNotFrozen
     returns (bool)
   {
     require(_tokenId != 0, "token ID cannot be zero");
@@ -420,6 +492,7 @@ contract SmartPiggies is ERC165, Administered {
     bool _isPut    // MUST be specified
   )
     public
+    whenNotFrozen
     returns (bool)
   {
     require(piggies[_tokenId].addresses.holder == msg.sender, "you must own the RFP to update it");
@@ -465,7 +538,9 @@ contract SmartPiggies is ERC165, Administered {
     return true;
   }
 
-  // this function can be used to burn any token; if it is an option, will return collateral before burning
+  /** this function can be used to burn any token;
+      if it is an option, will return collateral before burning
+  */
   function reclaimAndBurn(uint256 _tokenId)
     public
     returns (bool)
@@ -502,6 +577,7 @@ contract SmartPiggies is ERC165, Administered {
     uint256 _priceStep
   )
     external
+    whenNotFrozen
     returns (bool)
   {
     uint256 _auctionExpiry = block.number.add(_auctionLength);
@@ -568,9 +644,9 @@ contract SmartPiggies is ERC165, Administered {
     return true;
   }
 
-  // consider possible attacks and refactor if needed
   function satisfyAuction(uint256 _tokenId)
     public
+    whenNotFrozen
     returns (bool)
   {
     require(!auctions[_tokenId].satisfyInProgress, "cannot reenter this function while it is in progress");
@@ -1175,24 +1251,4 @@ contract SmartPiggies is ERC165, Administered {
     piggies[_tokenId].flags.holderHasProposedShare = false;
   }
 
-  function getOwner()
-    public
-    view
-    returns (address)
-  {
-    return owner;
-  }
-  function changeOwner(address payable _newAddress)
-    public
-    returns (bool)
-  {
-    require(msg.sender == owner);
-    owner = _newAddress;
-  }
-  function kill()
-    public
-  {
-    require(msg.sender == owner);
-    selfdestruct(owner);
-  }
 }

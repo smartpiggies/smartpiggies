@@ -36,7 +36,7 @@ contract Owned {
     owner = msg.sender;
   }
 
-  event ChangedOwner(address indexed _oldOwner, address indexed _newOwner);
+  event ChangedOwner(address indexed from, address indexed newOwner);
 
   modifier onlyOwner() {
     require(msg.sender == owner);
@@ -54,7 +54,7 @@ contract Owned {
   {
     owner = _newOwner;
     emit ChangedOwner(msg.sender, _newOwner);
-    returns true;
+    return true;
   }
 
   function kill()
@@ -73,8 +73,8 @@ contract Administered is Owned {
     administrators[_admin] = true;
   }
 
-  event AddedAdmin(address indexed _sender, address indexed _newAdmin);
-  event DeletedAdmin(address indexed _sender, address indexed _oldAdmin);
+  event AddedAdmin(address indexed from, address indexed newAdmin);
+  event DeletedAdmin(address indexed from, address indexed oldAdmin);
 
   modifier onlyAdmin() {
     // admin is an admin or owner
@@ -84,6 +84,7 @@ contract Administered is Owned {
 
   function isAdministrator(address _admin)
     public
+    view
     returns (bool)
   {
     return administrators[_admin];
@@ -114,17 +115,25 @@ contract Administered is Owned {
 
 contract Freezeable is Administered
 {
-  bool public notFrozen;
+  bool private notFrozen;
   constructor() public {
     notFrozen = true;
   }
 
-  event Frozen(address indexed _sender);
-  event Unfrozen(address indexed _sender);
+  event Frozen(address indexed from);
+  event Unfrozen(address indexed from);
 
   modifier whenNotFrozen() {
-    require(notFrozen);
+    require(notFrozen, "Contract is frozen");
     _;
+  }
+
+  function isNotFrozen()
+    public
+    view
+    returns (bool)
+  {
+    return notFrozen;
   }
 
   function freeze()
@@ -144,14 +153,14 @@ contract Freezeable is Administered
   {
     notFrozen = true;
     emit Unfrozen(msg.sender);
-    returns true;
+    return true;
   }
 }
 
 
 /** @title SmartPiggies: A Smart Option Standard
 */
-contract SmartPiggies is ERC165, Freezable {
+contract SmartPiggies is ERC165, Freezeable {
   using SafeMath for uint256;
 
   // Supported Interfaces

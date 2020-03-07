@@ -39,6 +39,7 @@ contract Owned {
   event ChangedOwner(address indexed from, address indexed newOwner);
 
   modifier onlyOwner() {
+    require(msg.sender != address(0));
     require(msg.sender == owner);
     _;
   }
@@ -52,6 +53,7 @@ contract Owned {
     onlyOwner
     returns (bool)
   {
+    require(msg.sender != address(0));
     owner = _newOwner;
     emit ChangedOwner(msg.sender, _newOwner);
     return true;

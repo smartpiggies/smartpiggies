@@ -220,6 +220,7 @@ contract Serviced is Freezeable {
 
   function _getFee(uint256 _value)
     internal
+    view
     returns (uint256)
   {
     uint256 fee = _value.mul(feePercent).div(feeResolution);
@@ -930,7 +931,7 @@ contract SmartPiggies is ERC165, Serviced {
      emit SettlePiggy(
        msg.sender,
        _tokenId,
-       payout,
+       payout.sub(fee),
        piggies[_tokenId].uintDetails.collateral.sub(payout)
      );
 

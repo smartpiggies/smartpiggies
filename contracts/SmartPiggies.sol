@@ -161,13 +161,17 @@ contract Freezeable is Administered
 
 
 contract Serviced is Freezeable {
+  using SafeMath for uint256;
+
   address payable feeAddress;
   uint8   public feePercent;
   uint16  public feeResolution;
 
   event FeeAddressSet(address indexed from, address indexed newAddress);
+  event FeeSet(address indexed from, uint8 indexed newFee);
+  event ResolutionSet(address indexed from, uint16 newResolution);
 
-  constructor(address _feeAddress)
+  constructor(address payable _feeAddress)
     public
   {
     feeAddress = _feeAddress;
@@ -183,7 +187,7 @@ contract Serviced is Freezeable {
     return feeAddress;
   }
 
-  function setFeeAddress(address _newAddress)
+  function setFeeAddress(address payable _newAddress)
     public
     onlyAdmin
     returns (bool)
@@ -199,6 +203,7 @@ contract Serviced is Freezeable {
     returns (bool)
   {
     feePercent = _newFee;
+    emit FeeSet(msg.sender, _newFee);
     return true;
   }
 
@@ -207,7 +212,9 @@ contract Serviced is Freezeable {
     onlyAdmin
     returns (bool)
   {
+    require(_newResolution != 0);
     feeResolution = _newResolution;
+    emit ResolutionSet(msg.sender, _newResolution);
     return true;
   }
 
@@ -216,7 +223,7 @@ contract Serviced is Freezeable {
     returns (uint256)
   {
     uint256 fee = _value.mul(feePercent).div(feeResolution);
-    return _value - fee;
+    return fee;
   }
 }
 

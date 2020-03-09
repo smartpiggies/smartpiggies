@@ -31,6 +31,7 @@ contract ('SmartPiggies', function(accounts) {
   var owner = accounts[0];
   var user01 = accounts[1];
   var user02 = accounts[2];
+  var feeAddress = accounts[3];
   var addr00 = "0x0000000000000000000000000000000000000000";
   var decimal = 18;
   //multiply a BN
@@ -73,16 +74,19 @@ contract ('SmartPiggies', function(accounts) {
     })
     .then(instance => {
       piggyInstance = instance;
-      return tokenInstance.mint(owner, supply, {from: owner});
-    })
-    .then(() => {
-      return linkInstance.mint(owner, supply, {from: owner});
-    })
-    .then(() => {
-      return tokenInstance.approve(piggyInstance.address, approveAmount, {from: owner});
-    })
-    .then(() => {
-      return linkInstance.approve(resolverInstance.address, approveAmount, {from: owner});
+
+      /* setup housekeeping */
+      return sequentialPromise([
+        () => Promise.resolve(tokenInstance.mint(owner, supply, {from: owner})),
+        () => Promise.resolve(tokenInstance.mint(user01, supply, {from: owner})),
+        () => Promise.resolve(tokenInstance.mint(user02, supply, {from: owner})),
+        () => Promise.resolve(linkInstance.mint(owner, supply, {from: owner})),
+        () => Promise.resolve(tokenInstance.approve(piggyInstance.address, approveAmount, {from: owner})),
+        () => Promise.resolve(tokenInstance.approve(piggyInstance.address, approveAmount, {from: user01})),
+        () => Promise.resolve(tokenInstance.approve(piggyInstance.address, approveAmount, {from: user02})),
+        () => Promise.resolve(linkInstance.approve(resolverInstance.address, approveAmount, {from: owner})),
+        () => Promise.resolve(piggyInstance.setFeeAddress(feeAddress, {from: owner}))
+      ])
     });
   });
 
@@ -182,11 +186,13 @@ contract ('SmartPiggies', function(accounts) {
         assert.isTrue(result.logs[0].args.bools[1], isPut, "Event log from create didn't return correct isPut")
         assert.isNotTrue(result.logs[0].args.bools[2], "Event log from create didn't return false for RFP")
 
+        /* syncronous promise */
         web3.eth.getBlockNumberPromise()
         .then(block => {
           currentBlock = web3.utils.toBN(block)
           assert.strictEqual(result.logs[0].args.ints[4].toString(), expiry.add(currentBlock).toString(), "Event log from create didn't return correct expiry block")
-        })
+        }); // end syncronous call
+
         let thisToken = result.logs[0].args.ints[0]
 
         return piggyInstance.getDetails(thisToken, {from: owner});
@@ -216,12 +222,10 @@ contract ('SmartPiggies', function(accounts) {
       })
       .then(result => {
         assert.strictEqual(result.toString(), '1', "getOwnedPiggies did not return correct piggies")
-      })
-      //end test block
-    });
+      });
 
-    //end describe Create block
-  });
+    }); //end test block
+  }); //end describe Create block
 
   //Test Create SmartPiggies fail cases
   describe("Testing Failure cases for Creating SmartPiggies tokens", function() {
@@ -235,6 +239,7 @@ contract ('SmartPiggies', function(accounts) {
       isEuro = false
       isPut = true
       isRequest = false
+      zeroParam = 0
     })
 
     it("Should fail to create a token if collateralERC is address(0)", function() {
@@ -1547,11 +1552,9 @@ contract ('SmartPiggies', function(accounts) {
         assert.isNotTrue(result[2].isPut, "Details should have returned false for isPut.")
         assert.isNotTrue(result[2].hasBeenCleared, "Details should have returned false for hasBeenCleared.")
       })
-      //end test block
-    });
 
-  //end describe RFP block
-  });
+    }); //end test block
+  }); //end describe RFP block
 
   //Test American Put
   describe("Testing American Put functionality", function() {
@@ -1570,8 +1573,13 @@ contract ('SmartPiggies', function(accounts) {
       oracleFee = web3.utils.toBN('1000000000000000000')
       strikePriceBN = web3.utils.toBN(strikePrice)
       settlementPriceBN = web3.utils.toBN('0')
-      ownerBalanceBefore = web3.utils.toBN('0')
-      userBalanceBefore = web3.utils.toBN('0')
+      user01BalanceBefore = web3.utils.toBN('0')
+      user02BalanceBefore = web3.utils.toBN('0')
+      feeBalanceBefore = web3.utils.toBN('0')
+
+      feePercent = web3.utils.toBN('0')
+      resolution = web3.utils.toBN('0')
+      fee = web3.utils.toBN('0')
 
       params = [collateralERC,dataResolver,collateral,lotSize,
               strikePrice,expiry,isEuro,isPut,isRequest]
@@ -1579,32 +1587,31 @@ contract ('SmartPiggies', function(accounts) {
       return piggyInstance.createPiggy(
         params[0],params[1],params[2],params[3],
         params[4],params[5],params[6],params[7],params[8],
-        {from: owner}
+        {from: user01}
       )
       .then(result => {
-        //console.log(JSON.stringify(result.receipt.status, null, 4));
         assert.isTrue(result.receipt.status, "create did not return true")
         return piggyInstance.tokenId({from: owner});
       })
       .then(result => {
         //use last tokenId created
         tokenId = result
-        return piggyInstance.transferFrom(owner, user01, tokenId, {from: owner});
+        return piggyInstance.transferFrom(user01, user02, tokenId, {from: user01});
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "transfer function did not return true")
         //mint link tokens for user01
-        return linkInstance.mint(user01, supply, {from: owner})
+        return linkInstance.mint(user02, supply, {from: owner})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "mint function did not return true")
         //approve LINK transfer on behalf of the new holder (user01)
-        return linkInstance.approve(resolverInstance.address, approveAmount, {from: user01})
+        return linkInstance.approve(resolverInstance.address, approveAmount, {from: user02})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "approve function did not return true")
         //clear piggy (request the price from the oracle)
-        return piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})
+        return piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user02})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "requestSettlementPrice function did not return true")
@@ -1613,40 +1620,51 @@ contract ('SmartPiggies', function(accounts) {
       .then(result => {
         settlementPriceBN = web3.utils.toBN(result[1].settlementPrice)
         assert.strictEqual(result[1].settlementPrice, '27000', "settlementPrice did not return correctly")
-        //get the ERC20 balance for the owner
-        return piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})
+        //get the ERC20 balance for the writer
+        return piggyInstance.getERC20balance(user01, tokenInstance.address, {from: user01})
       })
       .then(result => {
-        ownerBalanceBefore = result
-        //get the ERC20 balance for user01
-        return piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})
+        user01BalanceBefore = result
+        //get the ERC20 balance for the holder
+        return piggyInstance.getERC20balance(user02, tokenInstance.address, {from: user02})
       })
       .then(result => {
-        userBalanceBefore = result
+        user02BalanceBefore = result
         return piggyInstance.settlePiggy(tokenId, {from: owner})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "settlePiggy function did not return true")
-        return piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})
+        /* get fee percent */
+        return piggyInstance.feePercent.call({from: owner})
       })
-      .then(balance => {
-        lotSizeBN = web3.utils.toBN(lotSize)
-        //console.log(JSON.stringify(strikePriceBN.sub(settlementPriceBN).mul(lotSizeBN).mul(decimals).toString(), null, 4))
-        //console.log(payout.idivn(100).toString())
-        //we are 100x off because of the cents inclusion in the price
-        payout = strikePriceBN.sub(settlementPriceBN).mul(lotSizeBN).mul(decimals).idivn(100)
-        //console.log(collateral.sub(payout).toString())
-        assert.strictEqual(balance.toString(), collateral.sub(payout).toString(), "owner balance did not return 0")
+      .then(result => {
+        feePercent = web3.utils.toBN(result)
+        return piggyInstance.feeResolution.call({from: owner})
+      })
+      .then(result => {
+        resolution = web3.utils.toBN(result)
         return piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})
       })
       .then(balance => {
-        assert.strictEqual(balance.toString(), payout.toString(), "owner balance did not return 0")
-      });
-      //end test block
-    });
+        lotSizeBN = web3.utils.toBN(lotSize)
 
-  //end describe American Put block
-  });
+        //we are 100x off because of the cents inclusion in the price
+        payout = strikePriceBN.sub(settlementPriceBN).mul(lotSizeBN).mul(decimals).idivn(100)
+        fee = payout.mul(feePercent).div(resolution)
+
+        assert.strictEqual(balance.toString(), user01BalanceBefore.add(collateral).sub(payout).toString(), "writer balance did not return 0")
+        return piggyInstance.getERC20balance(user02, tokenInstance.address, {from: owner})
+      })
+      .then(balance => {
+        assert.strictEqual(balance.toString(), user02BalanceBefore.add(payout).sub(fee).toString(), "holder balance did not return correctly")
+        return piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner})
+      })
+      .then(balance => {
+        assert.strictEqual(balance.toString(), feeBalanceBefore.add(fee).toString(), "fee address didn't return correct balance")
+      });
+
+    }); //end test block
+  }); //end describe American Put block
 
   //Test American Put with split payout
   describe("Test an American Put piggy with split payout", function() {
@@ -1665,8 +1683,13 @@ contract ('SmartPiggies', function(accounts) {
       oracleFee = web3.utils.toBN('1000000000000000000')
       strikePriceBN = web3.utils.toBN(strikePrice)
       settlementPriceBN = web3.utils.toBN('0')
-      ownerBalanceBefore = web3.utils.toBN('0')
-      userBalanceBefore = web3.utils.toBN('0')
+      user01BalanceBefore = web3.utils.toBN('0')
+      user02BalanceBefore = web3.utils.toBN('0')
+      feeBalanceBefore = web3.utils.toBN('0')
+
+      feePercent = web3.utils.toBN('0')
+      resolution = web3.utils.toBN('0')
+      fee = web3.utils.toBN('0')
 
       params = [collateralERC,dataResolver,collateral,lotSize,
               strikePrice,expiry,isEuro,isPut,isRequest]
@@ -1674,71 +1697,68 @@ contract ('SmartPiggies', function(accounts) {
       return piggyInstance.createPiggy(
         params[0],params[1],params[2],params[3],
         params[4],params[5],params[6],params[7],params[8],
-        {from: owner}
+        {from: user01}
       )
       .then(result => {
-        //console.log(JSON.stringify(result.receipt.status, null, 4));
         assert.isTrue(result.receipt.status, "create did not return true")
-        return piggyInstance.tokenId({from: owner});
+        return piggyInstance.tokenId({from: owner})
       })
       .then(result => {
         //use last tokenId created
         tokenId = result
-        return piggyInstance.transferFrom(owner, user01, tokenId, {from: owner});
+
+        return sequentialPromise([
+          () => Promise.resolve(piggyInstance.transferFrom(user01, user02, tokenId, {from: user01})), // [0]
+          () => Promise.resolve(linkInstance.mint(user02, supply, {from: owner})), // [1]
+          () => Promise.resolve(linkInstance.approve(resolverInstance.address, approveAmount, {from: user02})), // [2]
+          () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user02})), // [3]
+          () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: user01})), // 4
+          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, collateralERC, {from: owner})), // [5]
+          () => Promise.resolve(piggyInstance.getERC20balance(user01, collateralERC, {from: owner})), // [6]
+          () => Promise.resolve(piggyInstance.getERC20balance(user02, collateralERC, {from: owner})), // [7]
+          () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})), // [8]
+          () => Promise.resolve(piggyInstance.feePercent.call({from: owner})), // [9]
+          () => Promise.resolve(piggyInstance.feeResolution.call({from: owner})), // [10]
+        ])
       })
       .then(result => {
-        assert.isTrue(result.receipt.status, "transfer function did not return true")
-        //mint link tokens for user01
-        return linkInstance.mint(user01, supply, {from: owner})
-      })
-      .then(result => {
-        assert.isTrue(result.receipt.status, "mint function did not return true")
-        //approve LINK transfer on behalf of the new holder (user01)
-        return linkInstance.approve(resolverInstance.address, approveAmount, {from: user01})
-      })
-      .then(result => {
-        assert.isTrue(result.receipt.status, "approve function did not return true")
-        //clear piggy (request the price from the oracle)
-        return piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})
-      })
-      .then(result => {
-        assert.isTrue(result.receipt.status, "requestSettlementPrice function did not return true")
-        return piggyInstance.getDetails(tokenId, {from: user01})
-      })
-      .then(result => {
-        settlementPriceBN = web3.utils.toBN(result[1].settlementPrice)
-        assert.strictEqual(result[1].settlementPrice, '27000', "settlementPrice did not return correctly")
-        //get the ERC20 balance for the owner
-        return piggyInstance.getERC20balance(owner, collateralERC, {from: owner})
-      })
-      .then(result => {
-        ownerBalanceBefore = result
-        //get the ERC20 balance for user01
+
+        assert.isTrue(result[0].receipt.status, "transfer function did not return true")
+        assert.isTrue(result[1].receipt.status, "mint function did not return true")
+        assert.isTrue(result[2].receipt.status, "approve function did not return true")
+        assert.isTrue(result[3].receipt.status, "requestSettlementPrice function did not return true")
+        settlementPriceBN = web3.utils.toBN(result[4][1].settlementPrice)
+        assert.strictEqual(result[4][1].settlementPrice, '27000', "settlementPrice did not return correctly")
+
+        feeBalanceBefore = result[5]
+        user01BalanceBefore = result[6]
+        user02BalanceBefore = result[7]
+
+        assert.isTrue(result[8].receipt.status, "settlePiggy function did not return true")
+
+        feePercent = result[9]
+        feeResolution = result[10]
+
         return piggyInstance.getERC20balance(user01, collateralERC, {from: owner})
-      })
-      .then(result => {
-        userBalanceBefore = result
-        return piggyInstance.settlePiggy(tokenId, {from: owner})
-      })
-      .then(result => {
-        assert.isTrue(result.receipt.status, "settlePiggy function did not return true")
-        return piggyInstance.getERC20balance(owner, collateralERC, {from: owner})
       })
       .then(balance => {
         lotSizeBN = web3.utils.toBN(lotSize)
         //console.log(JSON.stringify(strikePriceBN.sub(settlementPriceBN).mul(lotSizeBN).mul(decimals).toString(), null, 4))
         payout = strikePriceBN.sub(settlementPriceBN).mul(lotSizeBN).mul(decimals).idivn(100)
-        assert.strictEqual(balance.toString(), collateral.sub(payout).toString(), "owner balance did not return 0")
-        return piggyInstance.getERC20balance(user01, collateralERC, {from: owner})
+        fee = payout.mul(feePercent).div(feeResolution)
+        assert.strictEqual(balance.toString(), user01BalanceBefore.add(collateral).sub(payout).toString(), "owner balance did not return 0")
+        return piggyInstance.getERC20balance(user02, collateralERC, {from: owner})
       })
       .then(balance => {
-        assert.strictEqual(balance.toString(), payout.toString(), "owner balance did not return 0")
-      });
-      //end test block
-    });
+        assert.strictEqual(balance.toString(), user02BalanceBefore.add(payout).sub(fee).toString(), "owner balance did not return 0")
+        return piggyInstance.getERC20balance(feeAddress, collateralERC, {from: owner})
+      })
+      .then(balance => {
+        assert.strictEqual(balance.toString(), feeBalanceBefore.add(fee).toString(), "feeAddress balance did not return correctly")
+      })
 
-    //end describe block
-  });
+    }); //end test block
+  }); //end describe block
 
   //Test transferFrom function
   describe("Testing Transfer functionality, Create an American Put piggy and transfer it", function() {
@@ -4076,12 +4096,12 @@ contract ('SmartPiggies', function(accounts) {
               {from: owner, gas: 8000000 }), //transaction should fail
             3000000);
 
-      })
+      });
       //end test block
     });
 
   //end describe Clearing block
-  })
+});
 
   describe("Testing Settle functionality for American style piggies", function() {
 
@@ -4107,6 +4127,10 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      serviceFee = web3.utils.toBN('0')
+      const FEE_PERCENT = web3.utils.toBN(50)
+      const FEE_RESOLUTION = web3.utils.toBN(10000)
+
       params = [collateralERC,dataResolver,collateral,lotSize,
               strikePrice,expiry,isEuro,isPut,isRequest]
 
@@ -4125,8 +4149,7 @@ contract ('SmartPiggies', function(accounts) {
         return piggyInstance.startAuction(
           tokenId,startPrice,reservePrice,
           auctionLength,timeStep,priceStep,
-          {from: owner}
-        )
+          {from: owner})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "startAuction did not return true")
@@ -4139,32 +4162,34 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})), //[7]
+          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})), //[8]
+          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner})) //[9]
         ])
       })
       .then(result => {
         assert.isTrue(result[6].receipt.status, "settlePiggy did not return true")
 
         // Put payout:
-          // if strike > settlement price | payout = strike - settlement price * lot size
-          payout = web3.utils.toBN(0)
-          if (strikePrice.gt(oraclePrice)) {
-            delta = strikePrice.sub(oraclePrice)
-            payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
-          }
-          if (payout.gt(collateral)) {
-            payout = collateral
-          }
+        // if strike > settlement price | payout = strike - settlement price * lot size
+        payout = web3.utils.toBN(0)
+        if (strikePrice.gt(oraclePrice)) {
+          delta = strikePrice.sub(oraclePrice)
+          payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
+        }
+        if (payout.gt(collateral)) {
+          payout = collateral
+        }
+        serviceFee = payout.mul(FEE_PERCENT).div(FEE_RESOLUTION)
         //put calculation for writer Collaterial - payout
         assert.strictEqual(result[7].toString(), collateral.sub(payout).toString(), "Owner balance did not update correctly")
         assert.strictEqual(result[7].toString(), "100000000000000000000", "Owner balance did not return 100*10^18")
         //put calculation for holder = payout
         assert.strictEqual(result[8].toString(), payout.toString(), "User balance did not update correctly")
         assert.strictEqual(result[8].toString(), "0", "Owner balance did not return 0")
-      })
-      //end test block
-    });
+        assert.strictEqual(result[9].toString(), serviceFee.toString(), "feeAddress balance did not return 0")
+      });
+    }); //end test block
 
     it("Should emit correct Settle Event when writer is paid full", function() {
       collateralERC = tokenInstance.address
@@ -4242,6 +4267,7 @@ contract ('SmartPiggies', function(accounts) {
             payout = collateral
           }
 
+        /* no fee paid */
         assert.strictEqual(result.logs[0].args.holderPayout.toString(), payout.toString(), "Event log from settlement didn't return correct holder payout")
         assert.strictEqual(result.logs[0].args.writerPayout.toString(), collateral.sub(payout).toString(), "Event log from settlement didn't return correct writer payout")
       })
@@ -4270,6 +4296,10 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      serviceFee = web3.utils.toBN('0')
+      const FEE_PERCENT = web3.utils.toBN(50)
+      const FEE_RESOLUTION = web3.utils.toBN(10000)
+
       params = [collateralERC,dataResolver,collateral,lotSize,
               strikePrice,expiry,isEuro,isPut,isRequest]
 
@@ -4290,8 +4320,7 @@ contract ('SmartPiggies', function(accounts) {
         return piggyInstance.startAuction(
           tokenId,startPrice,reservePrice,
           auctionLength,timeStep,priceStep,
-          {from: owner}
-        )
+          {from: owner})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "startAuction did not return true")
@@ -4302,19 +4331,15 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01}))
+          () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
+          () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: owner})), //[6]
+          () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})) //[7]
         ])
       })
       .then(result => {
         assert.isTrue(result[5].receipt.status, "requestSettlementPrice did not return true")
-        return piggyInstance.getDetails(tokenId, {from: owner})
-      })
-      .then(result => {
-        assert.strictEqual(result[1].settlementPrice, oraclePrice.toString(), "settlementPrice did not return correctly")
-        return piggyInstance.settlePiggy(tokenId, {from: owner})
-      })
-      .then(result => {
-        assert.isTrue(result.receipt.status, "settlePiggy did not return true")
+        assert.strictEqual(result[6][1].settlementPrice, oraclePrice.toString(), "settlementPrice did not return correctly")
+        assert.isTrue(result[7].receipt.status, "settlePiggy did not return true")
         return piggyInstance.getDetails(tokenId, {from: owner})
       })
       .then(result => {
@@ -4341,36 +4366,35 @@ contract ('SmartPiggies', function(accounts) {
         assert.isNotTrue(result[2].holderHasProposedShare, "Details should have returned false for hasBeenCleared.");
 
         return piggyInstance.getOwnedPiggies(owner, {from: owner})
-
       })
       .then(result => {
         //Note returning result without .toString() will return an empty array
         assert.strictEqual(result.toString(), '', "getOwnedPiggies did not return correctly")
         return sequentialPromise([
           () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
         // Put payout:
-          // if strike > settlement price | payout = strike - settlement price * lot size
-          payout = web3.utils.toBN(0)
-          if (strikePrice.gt(oraclePrice)) {
-            delta = strikePrice.sub(oraclePrice)
-            payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
-          }
-          if (payout.gt(collateral)) {
-            payout = collateral
-          }
+        // if strike > settlement price | payout = strike - settlement price * lot size
+        payout = web3.utils.toBN(0)
+        if (strikePrice.gt(oraclePrice)) {
+          delta = strikePrice.sub(oraclePrice)
+          payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
+        }
+        if (payout.gt(collateral)) {
+          payout = collateral
+        }
+        serviceFee = payout.mul(FEE_PERCENT).div(FEE_RESOLUTION)
         //put calculation for writer Collaterial - payout
         assert.strictEqual(result[0].toString(), collateral.sub(payout).toString(), "Owner balance did not update correctly")
-        assert.strictEqual(result[0].toString(), "0", "Owner balance did not return 0")
         //put calculation for holder = payout
-        assert.strictEqual(result[1].toString(), payout.toString(), "User balance did not update correctly")
-        assert.strictEqual(result[1].toString(), "100000000000000000000", "Owner balance did not return 100*10^18")
-      })
-      //end test block
-    });
+        assert.strictEqual(result[1].toString(), payout.sub(serviceFee).toString(), "User balance did not update correctly")
+        assert.strictEqual(result[2].toString(), serviceFee.toString(), "feeAddress balance did not return correctly")
+      });
+    }); //end test block
 
     it("Should emit correct Settle Event when holder is paid full", function() {
       collateralERC = tokenInstance.address
@@ -4394,6 +4418,10 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      serviceFee = web3.utils.toBN('0')
+      const FEE_PERCENT = web3.utils.toBN(50)
+      const FEE_RESOLUTION = web3.utils.toBN(10000)
+
       params = [collateralERC,dataResolver,collateral,lotSize,
               strikePrice,expiry,isEuro,isPut,isRequest]
 
@@ -4412,8 +4440,7 @@ contract ('SmartPiggies', function(accounts) {
         return piggyInstance.startAuction(
           tokenId,startPrice,reservePrice,
           auctionLength,timeStep,priceStep,
-          {from: owner}
-        )
+          {from: owner})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "startAuction did not return true")
@@ -4425,17 +4452,15 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
+          () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})) //[6]
         ])
       })
-      .then(() => {
-        return piggyInstance.settlePiggy(tokenId, {from: owner})
-      })
       .then(result => {
-        assert.isTrue(result.receipt.status, "settlePiggy did not return true")
+        assert.isTrue(result[6].receipt.status, "settlePiggy did not return true")
         //Settle Event
-        assert.strictEqual(result.logs[0].event, "SettlePiggy", "Event log from settlement didn't return correct event name")
-        assert.strictEqual(result.logs[0].args.from, owner, "Event log from settlement didn't return correct sender")
-        assert.strictEqual(result.logs[0].args.tokenId.toString(), tokenId.toString(), "Event log from settlement didn't return correct tokenId")
+        assert.strictEqual(result[6].logs[0].event, "SettlePiggy", "Event log from settlement didn't return correct event name")
+        assert.strictEqual(result[6].logs[0].args.from, owner, "Event log from settlement didn't return correct sender")
+        assert.strictEqual(result[6].logs[0].args.tokenId.toString(), tokenId.toString(), "Event log from settlement didn't return correct tokenId")
 
         // Put payout:
         // if strike > settlement price | payout = strike - settlement price * lot size
@@ -4447,12 +4472,11 @@ contract ('SmartPiggies', function(accounts) {
         if (payout.gt(collateral)) {
           payout = collateral
         }
-
-        assert.strictEqual(result.logs[0].args.holderPayout.toString(), payout.toString(), "Event log from settlement didn't return correct holder payout")
-        assert.strictEqual(result.logs[0].args.writerPayout.toString(), collateral.sub(payout).toString(), "Event log from settlement didn't return correct writer payout")
-      })
-      //end test block
-    });
+        serviceFee = payout.mul(FEE_PERCENT).div(FEE_RESOLUTION)
+        assert.strictEqual(result[6].logs[0].args.holderPayout.toString(), payout.sub(serviceFee).toString(), "Event log from settlement didn't return correct holder payout")
+        assert.strictEqual(result[6].logs[0].args.writerPayout.toString(), collateral.sub(payout).toString(), "Event log from settlement didn't return correct writer payout")
+      });
+    }); //end test block
 
     it("Should settle an American Put piggy with split payout", function() {
       collateralERC = tokenInstance.address
@@ -4476,6 +4500,10 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      serviceFee = web3.utils.toBN('0')
+      const FEE_PERCENT = web3.utils.toBN(50)
+      const FEE_RESOLUTION = web3.utils.toBN(10000)
+
       params = [collateralERC,dataResolver,collateral,lotSize,
               strikePrice,expiry,isEuro,isPut,isRequest]
 
@@ -4509,32 +4537,32 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
           () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
         assert.isTrue(result[6].receipt.status, "settlePiggy did not return true")
 
         // Put payout:
-          // if strike > settlement price | payout = strike - settlement price * lot size
-          payout = web3.utils.toBN(0)
-          if (strikePrice.gt(oraclePrice)) {
-            delta = strikePrice.sub(oraclePrice)
-            payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
-          }
-          if (payout.gt(collateral)) {
-            payout = collateral
-          }
+        // if strike > settlement price | payout = strike - settlement price * lot size
+        payout = web3.utils.toBN(0)
+        if (strikePrice.gt(oraclePrice)) {
+          delta = strikePrice.sub(oraclePrice)
+          payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
+        }
+        if (payout.gt(collateral)) {
+          payout = collateral
+        }
+        serviceFee = payout.mul(FEE_PERCENT).div(FEE_RESOLUTION)
         //put calculation for writer Collaterial - payout
         assert.strictEqual(result[7].toString(), collateral.sub(payout).toString(), "Owner balance did not update correctly")
         assert.strictEqual(result[7].toString(), "95000000000000000000", "Owner balance did not return 95*10^18")
         //put calculation for holder = payout
-        assert.strictEqual(result[8].toString(), payout.toString(), "User balance did not update correctly")
-        assert.strictEqual(result[8].toString(), "5000000000000000000", "Owner balance did not return 5*10^18")
-
-      })
-      //end test block
-    });
+        assert.strictEqual(result[8].toString(), payout.sub(serviceFee).toString(), "User balance did not update correctly")
+        assert.strictEqual(result[9].toString(), serviceFee.toString(), "feeAddress balance did not update correctly")
+      });
+    }); //end test block
 
     it("Should emit correct Settle Event when holder with split payout", function() {
       collateralERC = tokenInstance.address
@@ -4557,6 +4585,10 @@ contract ('SmartPiggies', function(accounts) {
       auctionPrice = web3.utils.toBN(0)
 
       oracleFee = web3.utils.toBN('1000000000000000000')
+
+      serviceFee = web3.utils.toBN('0')
+      const FEE_PERCENT = web3.utils.toBN(50)
+      const FEE_RESOLUTION = web3.utils.toBN(10000)
 
       params = [collateralERC,dataResolver,collateral,lotSize,
               strikePrice,expiry,isEuro,isPut,isRequest]
@@ -4611,12 +4643,11 @@ contract ('SmartPiggies', function(accounts) {
         if (payout.gt(collateral)) {
           payout = collateral
         }
-
-        assert.strictEqual(result.logs[0].args.holderPayout.toString(), payout.toString(), "Event log from settlement didn't return correct holder payout")
+        serviceFee = payout.mul(FEE_PERCENT).div(FEE_RESOLUTION)
+        assert.strictEqual(result.logs[0].args.holderPayout.toString(), payout.sub(serviceFee).toString(), "Event log from settlement didn't return correct holder payout")
         assert.strictEqual(result.logs[0].args.writerPayout.toString(), collateral.sub(payout).toString(), "Event log from settlement didn't return correct writer payout")
-      })
-      //end test block
-    });
+      });
+    }); //end test block
 
     it("Should settle an American Put piggy with no payout, strike = settlement", function() {
       collateralERC = tokenInstance.address
@@ -4640,6 +4671,10 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      serviceFee = web3.utils.toBN('0')
+      const FEE_PERCENT = web3.utils.toBN(50)
+      const FEE_RESOLUTION = web3.utils.toBN(10000)
+
       params = [collateralERC,dataResolver,collateral,lotSize,
               strikePrice,expiry,isEuro,isPut,isRequest]
 
@@ -4658,8 +4693,7 @@ contract ('SmartPiggies', function(accounts) {
         return piggyInstance.startAuction(
           tokenId,startPrice,reservePrice,
           auctionLength,timeStep,priceStep,
-          {from: owner}
-        )
+          {from: owner})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "startAuction did not return true")
@@ -4673,31 +4707,33 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
           () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner})) //[9]
         ])
       })
       .then(result => {
         assert.isTrue(result[6].receipt.status, "settlePiggy did not return true")
 
         // Put payout:
-          // if strike > settlement price | payout = strike - settlement price * lot size
-          payout = web3.utils.toBN(0)
-          if (strikePrice.gt(oraclePrice)) {
-            delta = strikePrice.sub(oraclePrice)
-            payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
-          }
-          if (payout.gt(collateral)) {
-            payout = collateral
-          }
+        // if strike > settlement price | payout = strike - settlement price * lot size
+        payout = web3.utils.toBN(0)
+        if (strikePrice.gt(oraclePrice)) {
+          delta = strikePrice.sub(oraclePrice)
+          payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
+        }
+        if (payout.gt(collateral)) {
+          payout = collateral
+        }
+        serviceFee = payout.mul(FEE_PERCENT).div(FEE_RESOLUTION)
         //put calculation for writer Collaterial - payout
         assert.strictEqual(result[7].toString(), collateral.sub(payout).toString(), "Owner balance did not update correctly")
         assert.strictEqual(result[7].toString(), "100000000000000000000", "Owner balance did not return 100*10^18")
         //put calculation for holder = payout
-        assert.strictEqual(result[8].toString(), payout.toString(), "User balance did not update correctly")
-        assert.strictEqual(result[8].toString(), "0", "Owner balance did not return 0")
-      })
-      //end test block
-    });
+        assert.strictEqual(result[8].toString(), payout.sub(serviceFee).toString(), "User01 balance did not update correctly")
+        assert.strictEqual(result[8].toString(), "0", "User01 balance did not return 0")
+        assert.strictEqual(result[9].toString(), "0", "feeAddress balance did not return 0")
+      });
+    }); //end test block
 
     it("Should settle an American Call piggy with payout to writer", function() {
       collateralERC = tokenInstance.address
@@ -4802,6 +4838,10 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      serviceFee = web3.utils.toBN('0')
+      const FEE_PERCENT = web3.utils.toBN(50)
+      const FEE_RESOLUTION = web3.utils.toBN(10000)
+
       params = [collateralERC,dataResolver,collateral,lotSize,
               strikePrice,expiry,isEuro,isPut,isRequest]
 
@@ -4820,8 +4860,7 @@ contract ('SmartPiggies', function(accounts) {
         return piggyInstance.startAuction(
           tokenId,startPrice,reservePrice,
           auctionLength,timeStep,priceStep,
-          {from: owner}
-        )
+          {from: owner})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "startAuction did not return true")
@@ -4835,31 +4874,32 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
           () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
         assert.isTrue(result[6].receipt.status, "settlePiggy did not return true")
 
         // Call payout:
-          // if settlement price > strike | payout = settlement price - strike * lot size
-          payout = web3.utils.toBN(0)
-          if (oraclePrice.gt(strikePrice)) {
-            delta = oraclePrice.sub(strikePrice)
-            payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
-          }
-          if (payout.gt(collateral)) {
-            payout = collateral
-          }
+        // if settlement price > strike | payout = settlement price - strike * lot size
+        payout = web3.utils.toBN(0)
+        if (oraclePrice.gt(strikePrice)) {
+          delta = oraclePrice.sub(strikePrice)
+          payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
+        }
+        if (payout.gt(collateral)) {
+          payout = collateral
+        }
+        serviceFee = payout.mul(FEE_PERCENT).div(FEE_RESOLUTION)
         //put calculation for writer Collaterial - payout
         assert.strictEqual(result[7].toString(), collateral.sub(payout).toString(), "Owner balance did not update correctly")
         assert.strictEqual(result[7].toString(), "0", "Owner balance did not return 0")
         //put calculation for holder = payout
-        assert.strictEqual(result[8].toString(), payout.toString(), "User balance did not update correctly")
-        assert.strictEqual(result[8].toString(), "100000000000000000000", "Owner balance did not return 100*10^18")
-      })
-      //end test block
-    });
+        assert.strictEqual(result[8].toString(), payout.sub(serviceFee).toString(), "User balance did not update correctly")
+        assert.strictEqual(result[9].toString(), serviceFee.toString(), "feeAddress balance did not update correctly")
+      });
+    }); //end test block
 
     it("Should settle an American Call piggy with split payout", function() {
       collateralERC = tokenInstance.address
@@ -4883,6 +4923,10 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      serviceFee = web3.utils.toBN('0')
+      const FEE_PERCENT = web3.utils.toBN(50)
+      const FEE_RESOLUTION = web3.utils.toBN(10000)
+
       params = [collateralERC,dataResolver,collateral,lotSize,
               strikePrice,expiry,isEuro,isPut,isRequest]
 
@@ -4916,31 +4960,32 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
           () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
         assert.isTrue(result[6].receipt.status, "settlePiggy did not return true")
 
         // Call payout:
-          // if settlement price > strike | payout = settlement price - strike * lot size
-          payout = web3.utils.toBN(0)
-          if (oraclePrice.gt(strikePrice)) {
-            delta = oraclePrice.sub(strikePrice)
-            payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
-          }
-          if (payout.gt(collateral)) {
-            payout = collateral
-          }
+        // if settlement price > strike | payout = settlement price - strike * lot size
+        payout = web3.utils.toBN(0)
+        if (oraclePrice.gt(strikePrice)) {
+          delta = oraclePrice.sub(strikePrice)
+          payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
+        }
+        if (payout.gt(collateral)) {
+          payout = collateral
+        }
+        serviceFee = payout.mul(FEE_PERCENT).div(FEE_RESOLUTION)
         //put calculation for writer Collaterial - payout
         assert.strictEqual(result[7].toString(), collateral.sub(payout).toString(), "Owner balance did not update correctly")
         assert.strictEqual(result[7].toString(), "75000000000000000000", "Owner balance did not return 75*10^18")
         //put calculation for holder = payout
-        assert.strictEqual(result[8].toString(), payout.toString(), "User balance did not update correctly")
-        assert.strictEqual(result[8].toString(), "25000000000000000000", "Owner balance did not return 25*10^18")
-      })
-      //end test block
-    });
+        assert.strictEqual(result[8].toString(), payout.sub(serviceFee).toString(), "User balance did not update correctly")
+        assert.strictEqual(result[9].toString(), serviceFee.toString(), "Owner balance did not return 25*10^18")
+      });
+    }); //end test block
 
     it("Should settle an American Call piggy with no payout, strike = settlement", function() {
       collateralERC = tokenInstance.address
@@ -4982,8 +5027,7 @@ contract ('SmartPiggies', function(accounts) {
         return piggyInstance.startAuction(
           tokenId,startPrice,reservePrice,
           auctionLength,timeStep,priceStep,
-          {from: owner}
-        )
+          {from: owner})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "startAuction did not return true")
@@ -5019,9 +5063,8 @@ contract ('SmartPiggies', function(accounts) {
         //put calculation for holder = payout
         assert.strictEqual(result[8].toString(), payout.toString(), "User balance did not update correctly")
         assert.strictEqual(result[8].toString(), "0", "Owner balance did not return 0")
-      })
-      //end test block
-    });
+      });
+    }); //end test block
 
     it("Should fail to settle a piggy for tokenId zero", function() {
       collateralERC = tokenInstance.address
@@ -5129,8 +5172,7 @@ contract ('SmartPiggies', function(accounts) {
         return piggyInstance.startAuction(
           tokenId,startPrice,reservePrice,
           auctionLength,timeStep,priceStep,
-          {from: owner}
-        )
+          {from: owner})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "startAuction did not return true")
@@ -5149,7 +5191,7 @@ contract ('SmartPiggies', function(accounts) {
               0,
               {from: owner, gas: 8000000 }), //transaction should fail from owner
             3000000);
-      })
+      });
       //end test block
     });
   //end describe Settle block
@@ -5260,6 +5302,10 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      serviceFee = web3.utils.toBN('0')
+      const FEE_PERCENT = web3.utils.toBN(50)
+      const FEE_RESOLUTION = web3.utils.toBN(10000)
+
       params = [collateralERC,dataResolver,collateral,lotSize,
               strikePrice,expiry,isEuro,isPut,isRequest]
 
@@ -5278,8 +5324,7 @@ contract ('SmartPiggies', function(accounts) {
         return piggyInstance.startAuction(
           tokenId,startPrice,reservePrice,
           auctionLength,timeStep,priceStep,
-          {from: owner}
-        )
+          {from: owner})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "startAuction did not return true")
@@ -5293,31 +5338,32 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
           () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
         assert.isTrue(result[6].receipt.status, "settlePiggy did not return true")
 
         // Put payout:
-          // if strike > settlement price | payout = strike - settlement price * lot size
-          payout = web3.utils.toBN(0)
-          if (strikePrice.gt(oraclePrice)) {
-            delta = strikePrice.sub(oraclePrice)
-            payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
-          }
-          if (payout.gt(collateral)) {
-            payout = collateral
-          }
+        // if strike > settlement price | payout = strike - settlement price * lot size
+        payout = web3.utils.toBN(0)
+        if (strikePrice.gt(oraclePrice)) {
+          delta = strikePrice.sub(oraclePrice)
+          payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
+        }
+        if (payout.gt(collateral)) {
+          payout = collateral
+        }
+        serviceFee = payout.mul(FEE_PERCENT).div(FEE_RESOLUTION)
         //put calculation for writer Collaterial - payout
         assert.strictEqual(result[7].toString(), collateral.sub(payout).toString(), "Owner balance did not update correctly")
         assert.strictEqual(result[7].toString(), "0", "Owner balance did not return 0")
         //put calculation for holder = payout
-        assert.strictEqual(result[8].toString(), payout.toString(), "User balance did not update correctly")
-        assert.strictEqual(result[8].toString(), "100000000000000000000", "Owner balance did not return 100*10^18")
-      })
-      //end test block
-    });
+        assert.strictEqual(result[8].toString(), payout.sub(serviceFee).toString(), "User balance did not update correctly")
+        assert.strictEqual(result[9].toString(), serviceFee.toString(), "feeAddress balance did not return correctly")
+      });
+    }); //end test block
 
     it("Should settle a European Put piggy with split payout", function() {
       collateralERC = tokenInstance.address
@@ -5341,6 +5387,10 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      serviceFee = web3.utils.toBN('0')
+      const FEE_PERCENT = web3.utils.toBN(50)
+      const FEE_RESOLUTION = web3.utils.toBN(10000)
+
       params = [collateralERC,dataResolver,collateral,lotSize,
               strikePrice,expiry,isEuro,isPut,isRequest]
 
@@ -5359,8 +5409,7 @@ contract ('SmartPiggies', function(accounts) {
         return piggyInstance.startAuction(
           tokenId,startPrice,reservePrice,
           auctionLength,timeStep,priceStep,
-          {from: owner}
-        )
+          {from: owner})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "startAuction did not return true")
@@ -5374,31 +5423,32 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
           () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
         assert.isTrue(result[6].receipt.status, "settlePiggy did not return true")
 
         // Put payout:
-          // if strike > settlement price | payout = strike - settlement price * lot size
-          payout = web3.utils.toBN(0)
-          if (strikePrice.gt(oraclePrice)) {
-            delta = strikePrice.sub(oraclePrice)
-            payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
-          }
-          if (payout.gt(collateral)) {
-            payout = collateral
-          }
+        // if strike > settlement price | payout = strike - settlement price * lot size
+        payout = web3.utils.toBN(0)
+        if (strikePrice.gt(oraclePrice)) {
+          delta = strikePrice.sub(oraclePrice)
+          payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
+        }
+        if (payout.gt(collateral)) {
+          payout = collateral
+        }
+        serviceFee = payout.mul(FEE_PERCENT).div(FEE_RESOLUTION)
         //put calculation for writer Collaterial - payout
         assert.strictEqual(result[7].toString(), collateral.sub(payout).toString(), "Owner balance did not update correctly")
         assert.strictEqual(result[7].toString(), "95000000000000000000", "Owner balance did not return 95*10^18")
         //put calculation for holder = payout
-        assert.strictEqual(result[8].toString(), payout.toString(), "User balance did not update correctly")
-        assert.strictEqual(result[8].toString(), "5000000000000000000", "Owner balance did not return 5*10^18")
-      })
-      //end test block
-    });
+        assert.strictEqual(result[8].toString(), payout.sub(serviceFee).toString(), "User balance did not update correctly")
+        assert.strictEqual(result[9].toString(), serviceFee.toString(), "feeAddress balance did not return correctly")
+      });
+    }); //end test block
 
     it("Should settle a European Call piggy with payout to writer", function() {
       collateralERC = tokenInstance.address
@@ -5503,6 +5553,10 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      serviceFee = web3.utils.toBN('0')
+      const FEE_PERCENT = web3.utils.toBN(50)
+      const FEE_RESOLUTION = web3.utils.toBN(10000)
+
       params = [collateralERC,dataResolver,collateral,lotSize,
               strikePrice,expiry,isEuro,isPut,isRequest]
 
@@ -5521,8 +5575,7 @@ contract ('SmartPiggies', function(accounts) {
         return piggyInstance.startAuction(
           tokenId,startPrice,reservePrice,
           auctionLength,timeStep,priceStep,
-          {from: owner}
-        )
+          {from: owner})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "startAuction did not return true")
@@ -5536,31 +5589,32 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
           () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
         assert.isTrue(result[6].receipt.status, "settlePiggy did not return true")
 
         // Call payout:
-          // if settlement price > strike | payout = settlement price - strike * lot size
-          payout = web3.utils.toBN(0)
-          if (oraclePrice.gt(strikePrice)) {
-            delta = oraclePrice.sub(strikePrice)
-            payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
-          }
-          if (payout.gt(collateral)) {
-            payout = collateral
-          }
+        // if settlement price > strike | payout = settlement price - strike * lot size
+        payout = web3.utils.toBN(0)
+        if (oraclePrice.gt(strikePrice)) {
+          delta = oraclePrice.sub(strikePrice)
+          payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
+        }
+        if (payout.gt(collateral)) {
+          payout = collateral
+        }
+        serviceFee = payout.mul(FEE_PERCENT).div(FEE_RESOLUTION)
         //put calculation for writer Collaterial - payout
         assert.strictEqual(result[7].toString(), collateral.sub(payout).toString(), "Owner balance did not update correctly")
         assert.strictEqual(result[7].toString(), "0", "Owner balance did not return 0")
         //put calculation for holder = payout
-        assert.strictEqual(result[8].toString(), payout.toString(), "User balance did not update correctly")
-        assert.strictEqual(result[8].toString(), "100000000000000000000", "Owner balance did not return 100*10^18")
-      })
-      //end test block
-    });
+        assert.strictEqual(result[8].toString(), payout.sub(serviceFee).toString(), "User balance did not update correctly")
+        assert.strictEqual(result[9].toString(), serviceFee.toString(), "feeAddress balance did not return correctly")
+      });
+    }); //end test block
 
     it("Should settle a European Call piggy with split payout", function() {
       collateralERC = tokenInstance.address
@@ -5584,6 +5638,10 @@ contract ('SmartPiggies', function(accounts) {
 
       oracleFee = web3.utils.toBN('1000000000000000000')
 
+      serviceFee = web3.utils.toBN('0')
+      const FEE_PERCENT = web3.utils.toBN(50)
+      const FEE_RESOLUTION = web3.utils.toBN(10000)
+
       params = [collateralERC,dataResolver,collateral,lotSize,
               strikePrice,expiry,isEuro,isPut,isRequest]
 
@@ -5602,8 +5660,7 @@ contract ('SmartPiggies', function(accounts) {
         return piggyInstance.startAuction(
           tokenId,startPrice,reservePrice,
           auctionLength,timeStep,priceStep,
-          {from: owner}
-        )
+          {from: owner})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "startAuction did not return true")
@@ -5617,31 +5674,32 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
           () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
         assert.isTrue(result[6].receipt.status, "settlePiggy did not return true")
 
         // Call payout:
-          // if settlement price > strike | payout = settlement price - strike * lot size
-          payout = web3.utils.toBN(0)
-          if (oraclePrice.gt(strikePrice)) {
-            delta = oraclePrice.sub(strikePrice)
-            payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
-          }
-          if (payout.gt(collateral)) {
-            payout = collateral
-          }
+        // if settlement price > strike | payout = settlement price - strike * lot size
+        payout = web3.utils.toBN(0)
+        if (oraclePrice.gt(strikePrice)) {
+          delta = oraclePrice.sub(strikePrice)
+          payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
+        }
+        if (payout.gt(collateral)) {
+          payout = collateral
+        }
+        serviceFee = payout.mul(FEE_PERCENT).div(FEE_RESOLUTION)
         //put calculation for writer Collaterial - payout
         assert.strictEqual(result[7].toString(), collateral.sub(payout).toString(), "Owner balance did not update correctly")
         assert.strictEqual(result[7].toString(), "95000000000000000000", "Owner balance did not return 95*10^18")
         //put calculation for holder = payout
-        assert.strictEqual(result[8].toString(), payout.toString(), "User balance did not update correctly")
-        assert.strictEqual(result[8].toString(), "5000000000000000000", "Owner balance did not return 5*10^18")
-      })
-      //end test block
-    });
+        assert.strictEqual(result[8].toString(), payout.sub(serviceFee).toString(), "User balance did not update correctly")
+        assert.strictEqual(result[9].toString(), serviceFee.toString(), "feeAddress balance did not return correctly")
+      });
+    }); //end test block
 
     it("Should fail to settle a piggy for tokenId zero", function() {
       collateralERC = tokenInstance.address
@@ -6346,17 +6404,14 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.from, owner, "Event log from reclaim didn't return correct sender")
         assert.strictEqual(result.logs[0].args.tokenId.toString(), tokenId.toString(), "Event log from reclaim didn't return correct tokenId")
         assert.isNotTrue(result.logs[0].args.RFP, "Event log from reclaim did not return false for RFP")
-      })
-      //end test block
-    });
+      });
 
-  //end describe Reclaim block
-  })
+    }); //end test block
+  }); //end describe Reclaim block
 
   describe.skip("Testing Zero Address on all functions", function() {
     // Ganache fails when a zero address is supplied
   //end describe Zero Address block
-  })
+  });
 
-
-});
+}); //end uint test

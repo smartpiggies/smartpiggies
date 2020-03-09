@@ -160,9 +160,78 @@ contract Freezeable is Administered
 }
 
 
+contract Serviced is Freezeable {
+  using SafeMath for uint256;
+
+  address payable feeAddress;
+  uint8   public feePercent;
+  uint16  public feeResolution;
+
+  event FeeAddressSet(address indexed from, address indexed newAddress);
+  event FeeSet(address indexed from, uint8 indexed newFee);
+  event ResolutionSet(address indexed from, uint16 newResolution);
+
+  constructor(address payable _feeAddress)
+    public
+  {
+    feeAddress = _feeAddress;
+    feePercent = 50;
+    feeResolution = 10**4;
+  }
+
+  function getFeeAddress()
+    public
+    view
+    returns (address)
+  {
+    return feeAddress;
+  }
+
+  function setFeeAddress(address payable _newAddress)
+    public
+    onlyAdmin
+    returns (bool)
+  {
+    feeAddress = _newAddress;
+    emit FeeAddressSet(msg.sender, _newAddress);
+    return true;
+  }
+
+  function setFeePercent(uint8 _newFee)
+    public
+    onlyAdmin
+    returns (bool)
+  {
+    feePercent = _newFee;
+    emit FeeSet(msg.sender, _newFee);
+    return true;
+  }
+
+  function setFeeResolution(uint16 _newResolution)
+    public
+    onlyAdmin
+    returns (bool)
+  {
+    require(_newResolution != 0);
+    feeResolution = _newResolution;
+    emit ResolutionSet(msg.sender, _newResolution);
+    return true;
+  }
+
+  function _getFee(uint256 _value)
+    internal
+    view
+    returns (uint256)
+  {
+    uint256 fee = _value.mul(feePercent).div(feeResolution);
+    return fee;
+  }
+}
+
+
 /** @title SmartPiggies: A Smart Option Standard
 */
-contract SmartPiggies is ERC165, Freezeable {
+contract SmartPiggies is ERC165, Serviced {
   using SafeMath for uint256;
 
   // Supported Interfaces
@@ -327,6 +396,7 @@ contract SmartPiggies is ERC165, Freezeable {
   constructor()
     public
     Administered(msg.sender)
+    Serviced(msg.sender)
   {
     //declarations here
     _registerInterface(SMARTPIGGIES_INTERFACE);
@@ -852,13 +922,16 @@ contract SmartPiggies is ERC165, Freezeable {
      if (payout > piggies[_tokenId].uintDetails.collateral) {
        payout = piggies[_tokenId].uintDetails.collateral;
      }
-     ERC20balances[_holder][_collateralERC] = ERC20balances[_holder][_collateralERC].add(payout);
+     // extract the service fee
+     uint256 fee = _getFee(payout);
+     ERC20balances[feeAddress][_collateralERC] = ERC20balances[feeAddress][_collateralERC].add(fee);
+     ERC20balances[_holder][_collateralERC] = ERC20balances[_holder][_collateralERC].add(payout).sub(fee);
      ERC20balances[_writer][_collateralERC] = piggies[_tokenId].uintDetails.collateral.sub(payout);
 
      emit SettlePiggy(
        msg.sender,
        _tokenId,
-       payout,
+       payout.sub(fee),
        piggies[_tokenId].uintDetails.collateral.sub(payout)
      );
 

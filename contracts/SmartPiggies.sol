@@ -79,6 +79,7 @@ contract Administered is Owned {
   event DeletedAdmin(address indexed from, address indexed oldAdmin);
 
   modifier onlyAdmin() {
+    require(msg.sender != address(0));
     // admin is an admin or owner
     require(administrators[msg.sender] || msg.sender == owner);
     _;
@@ -108,6 +109,7 @@ contract Administered is Owned {
     onlyAdmin
     returns (bool)
   {
+    require(msg.sender != address(0));
     administrators[_admin] = false;
     emit DeletedAdmin(msg.sender, _admin);
     return true;

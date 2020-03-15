@@ -1341,11 +1341,9 @@ contract SmartPiggies is ERC165, HasCooldown {
    public
    returns (bool)
   {
-    // require arbiter set:
-    //require(piggies[_tokenId].flags.arbiterHasBeenSet, "you must have an arbiter set");
+    require(msg.sender != address(0), "address zero cannot call this function");
     //require that piggy is expired or after cooldown
     require(piggies[_tokenId].uintDetails.expiry < block.number || piggies[_tokenId].uintDetails.arbitrationLock < block.number);
-
     // require valid share proposal
     require(_proposedShare <= piggies[_tokenId].uintDetails.collateral, "cannot propose to split more collateral than exists");
 

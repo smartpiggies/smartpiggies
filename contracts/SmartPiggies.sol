@@ -285,8 +285,8 @@ contract SmartPiggies is ERC165, HasCooldown {
     address collateralERC;
     address dataResolver;
     address arbiter;
-    address writerProposedArbiter;
-    address holderProposedArbiter;
+    address writerProposedNewArbiter;
+    address holderProposedNewArbiter;
   }
 
   struct DetailUints {
@@ -1316,14 +1316,14 @@ contract SmartPiggies is ERC165, HasCooldown {
     require(msg.sender == _holder || msg.sender == _writer, "only the writer or holder can propose a new arbiter");
     if (msg.sender == _holder) {
       piggies[_tokenId].flags.holderHasProposedNewArbiter = true;
-      piggies[_tokenId].addresses.holderProposedArbiter = _newArbiter;
+      piggies[_tokenId].addresses.holderProposedNewArbiter = _newArbiter;
     }
     if (msg.sender == _writer) {
       piggies[_tokenId].flags.writerHasProposedNewArbiter = true;
-      piggies[_tokenId].addresses.writerProposedArbiter = _newArbiter;
+      piggies[_tokenId].addresses.writerProposedNewArbiter = _newArbiter;
     }
     if (piggies[_tokenId].flags.holderHasProposedNewArbiter && piggies[_tokenId].flags.writerHasProposedNewArbiter) {
-      if (piggies[_tokenId].addresses.holderProposedArbiter == piggies[_tokenId].addresses.writerProposedArbiter) {
+      if (piggies[_tokenId].addresses.holderProposedNewArbiter == piggies[_tokenId].addresses.writerProposedNewArbiter) {
         piggies[_tokenId].addresses.arbiter = _newArbiter;
         emit ArbiterSet(msg.sender, _newArbiter, _tokenId);
         return true;
@@ -1447,8 +1447,8 @@ contract SmartPiggies is ERC165, HasCooldown {
     piggies[_tokenId].addresses.arbiter = address(0);
     piggies[_tokenId].addresses.collateralERC = address(0);
     piggies[_tokenId].addresses.dataResolver = address(0);
-    piggies[_tokenId].addresses.writerProposedArbiter = address(0);
-    piggies[_tokenId].addresses.holderProposedArbiter = address(0);
+    piggies[_tokenId].addresses.writerProposedNewArbiter = address(0);
+    piggies[_tokenId].addresses.holderProposedNewArbiter = address(0);
     piggies[_tokenId].uintDetails.collateral = 0;
     piggies[_tokenId].uintDetails.lotSize = 0;
     piggies[_tokenId].uintDetails.strikePrice = 0;

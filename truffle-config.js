@@ -8,7 +8,7 @@ module.exports = {
       host: "localhost",
       port: 8545,
       gas: 8000000,
-      gasPrice: 1100000000,
+      gasPrice: 2000000000,
       network_id: "*" // Match any network id
     },
     ropsten: {
@@ -28,7 +28,7 @@ module.exports = {
   },
   compilers: {
     solc: {
-      version: "0.5.2",
+      version: "0.5.16",
       settings: {
         optimizer: {
           enabled: true,

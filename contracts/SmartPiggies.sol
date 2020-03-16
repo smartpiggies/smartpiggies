@@ -115,8 +115,7 @@ contract Administered is Owned {
 }
 
 
-contract Freezeable is Administered
-{
+contract Freezeable is Administered {
   bool private notFrozen;
   constructor() public {
     notFrozen = true;
@@ -126,8 +125,8 @@ contract Freezeable is Administered
   event Unfrozen(address indexed from);
 
   modifier whenNotFrozen() {
-    require(notFrozen, "Contract is frozen");
-    _;
+  require(notFrozen, "Contract is frozen");
+  _;
   }
 
   function isNotFrozen()
@@ -237,8 +236,8 @@ contract HasCooldown is Serviced {
   constructor()
     public
   {
-    // 4blks/min * 60 min/hr * 24hrs/day * 7 days/week
-    cooldown = 40320; // default 1 week
+    // 4blks/min * 60 min/hr * 24hrs/day * 3 days
+    cooldown = 17280; // default 3 days
   }
 
   function getCooldown()
@@ -266,14 +265,15 @@ contract HasCooldown is Serviced {
 contract SmartPiggies is ERC165, HasCooldown {
   using SafeMath for uint256;
 
-  // Supported Interfaces
-  // 0xeb8dacfa == this.createPiggy.selector ^
-  //  this.splitPiggy.selector ^ this.transferFrom.selector ^
-  //  this.updateRFP.selector ^ this.reclaimAndBurn.selector ^
-  //  this.startAuction.selector ^ this.endAuction.selector ^
-  //  this.satisfyAuction.selector ^ this.requestSettlementPrice.selector ^
-  //  this.settlePiggy.selector ^ this.claimPayout.selector ^
-  //  this.proposeHolderShare.selector;
+  /* Supported Interfaces
+  ** 0xeb8dacfa == this.createPiggy.selector ^
+  **  this.splitPiggy.selector ^ this.transferFrom.selector ^
+  **  this.updateRFP.selector ^ this.reclaimAndBurn.selector ^
+  **  this.startAuction.selector ^ this.endAuction.selector ^
+  **  this.satisfyAuction.selector ^ this.requestSettlementPrice.selector ^
+  **  this.settlePiggy.selector ^ this.claimPayout.selector ^
+  **  this.proposeHolderShare.selector;
+  */
   bytes4 constant SMARTPIGGIES_INTERFACE = 0xeb8dacfa;
 
   bytes32 constant TX_SUCCESS = bytes32(0x0000000000000000000000000000000000000000000000000000000000000001);
@@ -298,8 +298,8 @@ contract SmartPiggies is ERC165, HasCooldown {
     uint256 reqCollateral;
     uint8 collateralDecimals;  // store decimals from ERC-20 contract
     uint256 arbitrationLock;
-    uint256 writerProposedShare;  // for resolution game on-chain
-    uint256 holderProposedShare;  // for resolution game on-chain
+    uint256 writerProposedShare;
+    uint256 holderProposedShare;
     uint256 arbiterProposedShare;
   }
 
@@ -310,8 +310,8 @@ contract SmartPiggies is ERC165, HasCooldown {
     bool hasBeenCleared;  // flag whether the oracle returned a callback w/ price
     bool writerHasProposedNewArbiter;
     bool holderHasProposedNewArbiter;
-    bool writerHasProposedShare;  // for resolution game on-chain
-    bool holderHasProposedShare;  // for resolution game on-chain
+    bool writerHasProposedShare;
+    bool holderHasProposedShare;
     bool arbiterHasProposedShare;
     bool arbiterHasBeenSet;
   }
@@ -1040,6 +1040,142 @@ contract SmartPiggies is ERC165, HasCooldown {
     return true;
   }
 
+  /** Arbitration mechanisms
+  */
+
+  function setArbiter(uint256 _tokenId, address _arbiter)
+    public
+    returns (bool)
+  {
+    // require valid token, valid non-zero address, that arbiter has not been set, that token is not on auction, that msg.sender is writer
+    require(piggies[_tokenId].addresses.writer == msg.sender, "you must be the writer to set an arbiter");
+    require(piggies[_tokenId].addresses.holder == msg.sender, "you must currently control the token to set an arbiter");
+    require(!auctions[_tokenId].auctionActive, "token cannot be on auction");
+    require(_arbiter != address(0), "arbiter address must not be zero address");
+    require(piggies[_tokenId].addresses.arbiter == address(0), "arbiter has already been set");
+
+    // update struct values
+    piggies[_tokenId].addresses.arbiter = _arbiter;
+    piggies[_tokenId].flags.arbiterHasBeenSet = true;
+
+    emit ArbiterSet(msg.sender, _arbiter, _tokenId);
+
+    return true;
+  }
+
+  function updateArbiter(uint256 _tokenId, address _newArbiter)
+    public
+    returns (bool)
+  {
+    address _holder = piggies[_tokenId].addresses.holder;
+    address _writer = piggies[_tokenId].addresses.writer;
+    require(msg.sender == _holder || msg.sender == _writer, "only the writer or holder can propose a new arbiter");
+    if (msg.sender == _holder) {
+      piggies[_tokenId].flags.holderHasProposedNewArbiter = true;
+      piggies[_tokenId].addresses.holderProposedNewArbiter = _newArbiter;
+    }
+    if (msg.sender == _writer) {
+      piggies[_tokenId].flags.writerHasProposedNewArbiter = true;
+      piggies[_tokenId].addresses.writerProposedNewArbiter = _newArbiter;
+    }
+    if (piggies[_tokenId].flags.holderHasProposedNewArbiter && piggies[_tokenId].flags.writerHasProposedNewArbiter) {
+      if (piggies[_tokenId].addresses.holderProposedNewArbiter == piggies[_tokenId].addresses.writerProposedNewArbiter) {
+        piggies[_tokenId].addresses.arbiter = _newArbiter;
+        emit ArbiterSet(msg.sender, _newArbiter, _tokenId);
+        return true;
+      } else {
+        // new arbiter address did not match
+        return false;
+      }
+    } else {
+      // missing a proposal from one side
+      return false;
+    }
+  }
+
+  function thirdPartyArbitrationSettlement(uint256 _tokenId, uint256 _proposedShare)
+    public
+    returns (bool)
+  {
+    require(msg.sender != address(0), "address zero cannot call this function");
+    //require that piggy is expired to settle via arbitration
+    require(piggies[_tokenId].uintDetails.expiry < block.number);
+    // require valid share proposal
+    require(_proposedShare <= piggies[_tokenId].uintDetails.collateral, "cannot propose to split more collateral than exists");
+
+    // set internal address references for convenience
+    address _holder = piggies[_tokenId].addresses.holder;
+    address _writer = piggies[_tokenId].addresses.writer;
+    address _arbiter = piggies[_tokenId].addresses.arbiter;
+
+    // check which party sender is (of the 3 valid ones, else fail)
+    require(msg.sender == _holder || msg.sender == _writer || msg.sender == _arbiter, "you can only settle via arbitration if you are the holder, writer, or arbiter");
+
+    // set flag for proposed share for that party
+    if (msg.sender == _holder) {
+      piggies[_tokenId].uintDetails.holderProposedShare = _proposedShare;
+      piggies[_tokenId].flags.holderHasProposedShare = true;
+      emit ShareProposed(msg.sender, _tokenId, _proposedShare);
+    }
+    if (msg.sender == _writer) {
+      piggies[_tokenId].uintDetails.writerProposedShare = _proposedShare;
+      piggies[_tokenId].flags.writerHasProposedShare = true;
+      emit ShareProposed(msg.sender, _tokenId, _proposedShare);
+    }
+    if (msg.sender == _arbiter) {
+      piggies[_tokenId].uintDetails.arbiterProposedShare = _proposedShare;
+      piggies[_tokenId].flags.arbiterHasProposedShare = true;
+      emit ShareProposed(msg.sender, _tokenId, _proposedShare);
+    }
+
+    // see if 2 of 3 parties have proposed a share
+    if (piggies[_tokenId].flags.holderHasProposedShare && piggies[_tokenId].flags.writerHasProposedShare ||
+      piggies[_tokenId].flags.holderHasProposedShare && piggies[_tokenId].flags.arbiterHasProposedShare ||
+      piggies[_tokenId].flags.writerHasProposedShare && piggies[_tokenId].flags.arbiterHasProposedShare)
+    {
+      // if so, see if 2 of 3 parties have proposed the same amount
+      uint256 _holderShare = 0;
+      bool _agreement = false;
+      // check if holder has gotten agreement with either other party
+      if (piggies[_tokenId].uintDetails.holderProposedShare == piggies[_tokenId].uintDetails.writerProposedShare ||
+        piggies[_tokenId].uintDetails.holderProposedShare == piggies[_tokenId].uintDetails.arbiterProposedShare)
+      {
+        _holderShare = piggies[_tokenId].uintDetails.holderProposedShare;
+        _agreement = true;
+      }
+
+      // check if the two non-holder parties agree
+      if (piggies[_tokenId].uintDetails.writerProposedShare == piggies[_tokenId].uintDetails.arbiterProposedShare)
+      {
+        _holderShare = piggies[_tokenId].uintDetails.writerProposedShare;
+        _agreement = true;
+      }
+
+      if (_agreement) {
+        // set the share, update the collateral balances, mark as settled, emit event, return true
+        uint256 _writerShare = piggies[_tokenId].uintDetails.collateral.sub(_holderShare);
+        address _collateralERC = piggies[_tokenId].addresses.collateralERC;
+        ERC20balances[_holder][_collateralERC] = ERC20balances[_holder][_collateralERC].add(_holderShare);
+        ERC20balances[_writer][_collateralERC] = ERC20balances[_writer][_collateralERC].add(_writerShare);
+
+        // emit settlement event
+        emit ArbiterSettled(msg.sender, _arbiter, _tokenId, _holderShare, _writerShare);
+
+        //clean up piggyId
+        _removeTokenFromOwnedPiggies(_holder, _tokenId);
+        _resetPiggy(_tokenId);
+
+        return (true);
+      } else {
+        // no agreement
+        return false;
+      }
+    } else {
+      // 2 of 3 have not proposed
+      return false;
+    }
+  }
+
   /** Helper functions
   */
   // helper function to view info from about the piggy outside of the contract
@@ -1286,143 +1422,6 @@ contract SmartPiggies is ERC165, HasCooldown {
       )
     );
     return (success, result);
-  }
-
-  /** Arbitration mechanisms
-  */
-
-  // function for writer to set arbiter
-  // proposed modifier: neutralControl - holder == writer == msg.sender, not on auction
-  function setArbiter(uint256 _tokenId, address _arbiter)
-    public
-    returns (bool)
-  {
-    // require valid token, valid non-zero address, that arbiter has not been set, that token is not on auction, that msg.sender is writer
-    require(piggies[_tokenId].addresses.writer == msg.sender, "you must be the writer to set an arbiter");
-    require(piggies[_tokenId].addresses.holder == msg.sender, "you must currently control the token to set an arbiter");
-    require(!auctions[_tokenId].auctionActive, "token cannot be on auction");
-    require(_arbiter != address(0), "arbiter address must not be zero address");
-    require(piggies[_tokenId].addresses.arbiter == address(0), "arbiter has already been set");
-
-    // update struct values
-    piggies[_tokenId].addresses.arbiter = _arbiter;
-    piggies[_tokenId].flags.arbiterHasBeenSet = true;
-
-    emit ArbiterSet(msg.sender, _arbiter, _tokenId);
-
-    return true;
-  }
-
-  function updateArbiter(uint256 _tokenId, address _newArbiter)
-    public
-    returns (bool)
-  {
-    address _holder = piggies[_tokenId].addresses.holder;
-    address _writer = piggies[_tokenId].addresses.writer;
-    require(msg.sender == _holder || msg.sender == _writer, "only the writer or holder can propose a new arbiter");
-    if (msg.sender == _holder) {
-      piggies[_tokenId].flags.holderHasProposedNewArbiter = true;
-      piggies[_tokenId].addresses.holderProposedNewArbiter = _newArbiter;
-    }
-    if (msg.sender == _writer) {
-      piggies[_tokenId].flags.writerHasProposedNewArbiter = true;
-      piggies[_tokenId].addresses.writerProposedNewArbiter = _newArbiter;
-    }
-    if (piggies[_tokenId].flags.holderHasProposedNewArbiter && piggies[_tokenId].flags.writerHasProposedNewArbiter) {
-      if (piggies[_tokenId].addresses.holderProposedNewArbiter == piggies[_tokenId].addresses.writerProposedNewArbiter) {
-        piggies[_tokenId].addresses.arbiter = _newArbiter;
-        emit ArbiterSet(msg.sender, _newArbiter, _tokenId);
-        return true;
-      } else {
-        // new arbiter address did not match
-        return false;
-      }
-    } else {
-      // missing a proposal from one side
-      return false;
-    }
-  }
-
-  function thirdPartyArbitrationSettlement(uint256 _tokenId, uint256 _proposedShare)
-   public
-   returns (bool)
-  {
-    require(msg.sender != address(0), "address zero cannot call this function");
-    //require that piggy is expired to settle via arbitration
-    require(piggies[_tokenId].uintDetails.expiry < block.number);
-    // require valid share proposal
-    require(_proposedShare <= piggies[_tokenId].uintDetails.collateral, "cannot propose to split more collateral than exists");
-
-    // set internal address references for convenience
-    address _holder = piggies[_tokenId].addresses.holder;
-    address _writer = piggies[_tokenId].addresses.writer;
-    address _arbiter = piggies[_tokenId].addresses.arbiter;
-
-    // check which party sender is (of the 3 valid ones, else fail)
-    require(msg.sender == _holder || msg.sender == _writer || msg.sender == _arbiter, "you can only settle via arbitration if you are the holder, writer, or arbiter");
-
-    // set flag for proposed share for that party
-    if (msg.sender == _holder) {
-      piggies[_tokenId].uintDetails.holderProposedShare = _proposedShare;
-      piggies[_tokenId].flags.holderHasProposedShare = true;
-      emit ShareProposed(msg.sender, _tokenId, _proposedShare);
-    }
-    if (msg.sender == _writer) {
-      piggies[_tokenId].uintDetails.writerProposedShare = _proposedShare;
-      piggies[_tokenId].flags.writerHasProposedShare = true;
-      emit ShareProposed(msg.sender, _tokenId, _proposedShare);
-    }
-    if (msg.sender == _arbiter) {
-      piggies[_tokenId].uintDetails.arbiterProposedShare = _proposedShare;
-      piggies[_tokenId].flags.arbiterHasProposedShare = true;
-      emit ShareProposed(msg.sender, _tokenId, _proposedShare);
-    }
-
-    // see if 2 of 3 parties have proposed a share
-    if (piggies[_tokenId].flags.holderHasProposedShare && piggies[_tokenId].flags.writerHasProposedShare ||
-        piggies[_tokenId].flags.holderHasProposedShare && piggies[_tokenId].flags.arbiterHasProposedShare ||
-        piggies[_tokenId].flags.writerHasProposedShare && piggies[_tokenId].flags.arbiterHasProposedShare)
-    {
-
-      // if so, see if 2 of 3 parties have proposed the same amount
-      uint256 _holderShare = 0;
-      bool _agreement = false;
-      // check if holder has gotten agreement with either other party
-      if (piggies[_tokenId].uintDetails.holderProposedShare == piggies[_tokenId].uintDetails.writerProposedShare ||
-           piggies[_tokenId].uintDetails.holderProposedShare == piggies[_tokenId].uintDetails.arbiterProposedShare)
-      {
-        _holderShare = piggies[_tokenId].uintDetails.holderProposedShare;
-        _agreement = true;
-      }
-
-      // check if the two non-holder parties agree
-      if (piggies[_tokenId].uintDetails.writerProposedShare == piggies[_tokenId].uintDetails.arbiterProposedShare)
-      {
-        _holderShare = piggies[_tokenId].uintDetails.writerProposedShare;
-        _agreement = true;
-      }
-
-      if (_agreement) {
-        // set the share, update the collateral balances, mark as settled, emit event, return true
-        uint256 _writerShare = piggies[_tokenId].uintDetails.collateral.sub(_holderShare);
-        address _collateralERC = piggies[_tokenId].addresses.collateralERC;
-        ERC20balances[_holder][_collateralERC] = ERC20balances[_holder][_collateralERC].add(_holderShare);
-        ERC20balances[_writer][_collateralERC] = ERC20balances[_writer][_collateralERC].add(_writerShare);
-
-        // emit settlement event
-        emit ArbiterSettled(msg.sender, _arbiter, _tokenId, _holderShare, _writerShare);
-
-        //clean up piggyId
-        _removeTokenFromOwnedPiggies(_holder, _tokenId);
-        _resetPiggy(_tokenId);
-
-        return (true);
-       } else {
-        return false;
-       }
-     } else {
-      return false;
-    }
   }
 
   function _addTokenToOwnedPiggies(address _to, uint256 _tokenId)

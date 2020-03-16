@@ -266,15 +266,16 @@ contract SmartPiggies is ERC165, HasCooldown {
   using SafeMath for uint256;
 
   /* Supported Interfaces
-  ** 0xeb8dacfa == this.createPiggy.selector ^
+  ** 0xc3c6c899 == this.createPiggy.selector ^
   **  this.splitPiggy.selector ^ this.transferFrom.selector ^
   **  this.updateRFP.selector ^ this.reclaimAndBurn.selector ^
   **  this.startAuction.selector ^ this.endAuction.selector ^
   **  this.satisfyAuction.selector ^ this.requestSettlementPrice.selector ^
   **  this.settlePiggy.selector ^ this.claimPayout.selector ^
-  **  this.proposeHolderShare.selector;
+  **  this.setArbiter.selector ^ this.updateArbiter.selector ^
+  **  this.thirdPartyArbitrationSettlement.selector;
   */
-  bytes4 constant SMARTPIGGIES_INTERFACE = 0xeb8dacfa;
+  bytes4 constant SMARTPIGGIES_INTERFACE = 0xc3c6c899;
 
   bytes32 constant TX_SUCCESS = bytes32(0x0000000000000000000000000000000000000000000000000000000000000001);
   uint256 public tokenId;

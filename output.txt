@@ -1,0 +1,36 @@
+> Warning: possible unsupported (undocumented in help) command line option: --all
+
+Compiling your contracts...
+===========================
+> Compiling ./contracts/BaconFaucet.sol
+> Compiling ./contracts/ERC165.sol
+> Compiling ./contracts/IERC165.sol
+> Compiling ./contracts/Migrations.sol
+> Compiling ./contracts/ResolverSelfReturn.sol
+> Compiling ./contracts/SafeMath.sol
+> Compiling ./contracts/SmartPiggies.sol
+> Compiling ./contracts/StableToken.sol
+> Compiling ./contracts/StableTokenFaucet.sol
+> Compiling ./contracts/TestnetLINK.sol
+> Compiling openzeppelin-solidity/contracts/access/Roles.sol
+> Compiling openzeppelin-solidity/contracts/access/roles/MinterRole.sol
+> Compiling openzeppelin-solidity/contracts/math/SafeMath.sol
+> Compiling openzeppelin-solidity/contracts/token/ERC20/ERC20.sol
+> Compiling openzeppelin-solidity/contracts/token/ERC20/ERC20Burnable.sol
+> Compiling openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol
+> Compiling openzeppelin-solidity/contracts/token/ERC20/ERC20Mintable.sol
+> Compiling openzeppelin-solidity/contracts/token/ERC20/IERC20.sol
+> Compilation warnings encountered:
+
+    /home/vagrant/DAPPS/smartpiggiesGithub/smartpiggies/contracts/SmartPiggies.sol:21:1: Warning: Experimental features are turned on. Do not use experimental features on live deployments.
+pragma experimental ABIEncoderV2;
+^-------------------------------^
+,/home/vagrant/DAPPS/smartpiggiesGithub/smartpiggies/contracts/StableTokenFaucet.sol:2:1: Warning: Experimental features are turned on. Do not use experimental features on live deployments.
+pragma experimental ABIEncoderV2;
+^-------------------------------^
+
+> Artifacts written to /home/vagrant/DAPPS/smartpiggiesGithub/smartpiggies/app/src/contracts
+> Compiled successfully using:
+   - solc: 0.5.16+commit.9c3226ce.Emscripten.clang
+
+Network up to date.

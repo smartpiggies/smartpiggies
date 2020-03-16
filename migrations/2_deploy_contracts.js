@@ -14,7 +14,7 @@ var oracleTokenAddress
 var oraclePrice = 27000
 
 module.exports = function(deployer) {
-  deployer.deploy(SmartPiggies, {gas: 8000000, gasPrice: 1100000000, overwrite: false});
+  deployer.deploy(SmartPiggies, {gas: 8000000, gasPrice: 1000000000, overwrite: false});
   deployer.deploy(StableToken, {gas: 3000000, gasPrice: 1100000000, overwrite: false});
   deployer.deploy(StableTokenFaucet, {gas: 3000000, gasPrice: 1100000000, overwrite: false});
   deployer.deploy(TestnetLINK, {gas: 3000000, gasPrice: 1100000000, overwrite: false})

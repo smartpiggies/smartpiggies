@@ -435,6 +435,12 @@ contract SmartPiggies is ERC165, HasCooldown {
     uint256 indexed tokenId
   );
 
+  event ShareProposed(
+    address indexed from,
+    uint256 indexed tokenId,
+    uint256 indexed proposedShare
+  );
+
   event ArbiterSettled(
     address indexed from,
     address arbiter,
@@ -1342,8 +1348,8 @@ contract SmartPiggies is ERC165, HasCooldown {
    returns (bool)
   {
     require(msg.sender != address(0), "address zero cannot call this function");
-    //require that piggy is expired or after cooldown
-    require(piggies[_tokenId].uintDetails.expiry < block.number || piggies[_tokenId].uintDetails.arbitrationLock < block.number);
+    //require that piggy is expired to settle via arbitration
+    require(piggies[_tokenId].uintDetails.expiry < block.number);
     // require valid share proposal
     require(_proposedShare <= piggies[_tokenId].uintDetails.collateral, "cannot propose to split more collateral than exists");
 
@@ -1359,14 +1365,17 @@ contract SmartPiggies is ERC165, HasCooldown {
     if (msg.sender == _holder) {
       piggies[_tokenId].uintDetails.holderProposedShare = _proposedShare;
       piggies[_tokenId].flags.holderHasProposedShare = true;
+      emit ShareProposed(msg.sender, _tokenId, _proposedShare);
     }
     if (msg.sender == _writer) {
       piggies[_tokenId].uintDetails.writerProposedShare = _proposedShare;
       piggies[_tokenId].flags.writerHasProposedShare = true;
+      emit ShareProposed(msg.sender, _tokenId, _proposedShare);
     }
     if (msg.sender == _arbiter) {
       piggies[_tokenId].uintDetails.arbiterProposedShare = _proposedShare;
       piggies[_tokenId].flags.arbiterHasProposedShare = true;
+      emit ShareProposed(msg.sender, _tokenId, _proposedShare);
     }
 
     // see if 2 of 3 parties have proposed a share

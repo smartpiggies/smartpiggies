@@ -22,6 +22,7 @@
   "homepage": "https://github.com/truffle-box/drizzle-box#readme",
   "dependencies": {
     "bluebird": "^3.5.3",
+    "ganache-cli": "^6.9.1",
     "openzeppelin-solidity": "^2.1.2"
   }
 }

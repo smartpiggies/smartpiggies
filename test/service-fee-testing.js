@@ -255,12 +255,12 @@ contract ('SmartPiggies', function(accounts) {
         settlementPriceBN = web3.utils.toBN(result[1].settlementPrice);
         assert.strictEqual(result[1].settlementPrice, '27000', "settlementPrice did not return correctly");
         //get the ERC20 balance for the writer
-        return piggyInstance.getERC20balance(user01, tokenInstance.address, {from: user01});
+        return piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: user01});
       })
       .then(result => {
         user01BalanceBefore = result;
         //get the ERC20 balance for the holder
-        return piggyInstance.getERC20balance(user02, tokenInstance.address, {from: user02});
+        return piggyInstance.getERC20Balance(user02, tokenInstance.address, {from: user02});
       })
       .then(result => {
         user02BalanceBefore = result;
@@ -277,7 +277,7 @@ contract ('SmartPiggies', function(accounts) {
       })
       .then(result => {
         resolution = web3.utils.toBN(result)
-        return piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})
+        return piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner})
       })
       .then(balance => {
         lotSizeBN = web3.utils.toBN(lotSize);
@@ -290,11 +290,11 @@ contract ('SmartPiggies', function(accounts) {
         }
         fee = payout.mul(feePercent).div(resolution);
         assert.strictEqual(balance.toString(), user01BalanceBefore.add(collateral).sub(payout).toString(), "writer balance did not return 0")
-        return piggyInstance.getERC20balance(user02, tokenInstance.address, {from: owner});
+        return piggyInstance.getERC20Balance(user02, tokenInstance.address, {from: owner});
       })
       .then(balance => {
         assert.strictEqual(balance.toString(), user02BalanceBefore.add(payout).sub(fee).toString(), "holder balance did not return correctly");
-        return piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner});
+        return piggyInstance.getERC20Balance(feeAddress, tokenInstance.address, {from: owner});
       })
       .then(balance => {
         /* service fee should equal the balance, i.e. .cmp() == 0 */
@@ -368,12 +368,12 @@ contract ('SmartPiggies', function(accounts) {
         settlementPriceBN = web3.utils.toBN(result[1].settlementPrice);
         assert.strictEqual(result[1].settlementPrice, '27000', "settlementPrice did not return correctly");
         //get the ERC20 balance for the writer
-        return piggyInstance.getERC20balance(user01, tokenInstance.address, {from: user01});
+        return piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: user01});
       })
       .then(result => {
         user01BalanceBefore = result;
         //get the ERC20 balance for the holder
-        return piggyInstance.getERC20balance(user02, tokenInstance.address, {from: user02});
+        return piggyInstance.getERC20Balance(user02, tokenInstance.address, {from: user02});
       })
       .then(result => {
         user02BalanceBefore = result;
@@ -390,7 +390,7 @@ contract ('SmartPiggies', function(accounts) {
       })
       .then(result => {
         resolution = web3.utils.toBN(result)
-        return piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})
+        return piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner})
       })
       .then(balance => {
         lotSizeBN = web3.utils.toBN(lotSize);
@@ -402,11 +402,11 @@ contract ('SmartPiggies', function(accounts) {
         }
         /* payout === collateral returned to writer */
         assert.strictEqual(balance.toString(), user01BalanceBefore.add(collateral).sub(payout).toString(), "writer balance did not return correctly")
-        return piggyInstance.getERC20balance(user02, tokenInstance.address, {from: owner});
+        return piggyInstance.getERC20Balance(user02, tokenInstance.address, {from: owner});
       })
       .then(balance => {
         assert.strictEqual(balance.toString(), user02BalanceBefore.add(payout).toString(), "holder balance did not return correctly");
-        return piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner});
+        return piggyInstance.getERC20Balance(feeAddress, tokenInstance.address, {from: owner});
       })
       .then(balance => {
         /* should not be a fee if there is no payout */
@@ -480,12 +480,12 @@ contract ('SmartPiggies', function(accounts) {
         settlementPriceBN = web3.utils.toBN(result[1].settlementPrice);
         assert.strictEqual(result[1].settlementPrice, '27000', "settlementPrice did not return correctly");
         //get the ERC20 balance for the writer
-        return piggyInstance.getERC20balance(user01, tokenInstance.address, {from: user01});
+        return piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: user01});
       })
       .then(result => {
         user01BalanceBefore = result;
         //get the ERC20 balance for the holder
-        return piggyInstance.getERC20balance(user02, tokenInstance.address, {from: user02});
+        return piggyInstance.getERC20Balance(user02, tokenInstance.address, {from: user02});
       })
       .then(result => {
         user02BalanceBefore = result;
@@ -502,7 +502,7 @@ contract ('SmartPiggies', function(accounts) {
       })
       .then(result => {
         resolution = web3.utils.toBN(result)
-        return piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})
+        return piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner})
       })
       .then(balance => {
         lotSizeBN = web3.utils.toBN(lotSize);
@@ -515,11 +515,11 @@ contract ('SmartPiggies', function(accounts) {
         }
         fee = payout.mul(feePercent).div(resolution);
         assert.strictEqual(balance.toString(), user01BalanceBefore.add(collateral).sub(payout).toString(), "writer balance did not return correctly")
-        return piggyInstance.getERC20balance(user02, tokenInstance.address, {from: owner});
+        return piggyInstance.getERC20Balance(user02, tokenInstance.address, {from: owner});
       })
       .then(balance => {
         assert.strictEqual(balance.toString(), user02BalanceBefore.add(payout).sub(fee).toString(), "holder balance did not return correctly");
-        return piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner});
+        return piggyInstance.getERC20Balance(feeAddress, tokenInstance.address, {from: owner});
       })
       .then(balance => {
         /* should not be a fee if there is no payout */

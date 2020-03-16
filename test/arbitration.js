@@ -375,11 +375,11 @@ contract ('SmartPiggies', function(accounts) {
         assert.isNotTrue(result.flags.writerHasProposedShare, "writerHasProposedShare did not return false");
         assert.isNotTrue(result.flags.holderHasProposedShare, "holderHasProposedShare did not return false");
 
-        return piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner});
+        return piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner});
       })
       .then(result => {
         assert.strictEqual(result.toString(), shareAmount.toString(), "owner's ERC20 balance did not return correctly");
-        return piggyInstance.getERC20balance(user01, tokenInstance.address, {from: user01});
+        return piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: user01});
       })
       .then(result => {
         assert.strictEqual(result.toString(), shareAmount.toString(), "user's ERC20 balance did not return correctly");
@@ -483,11 +483,11 @@ contract ('SmartPiggies', function(accounts) {
         assert.isNotTrue(result.flags.writerHasProposedShare, "writerHasProposedShare did not return false");
         assert.isNotTrue(result.flags.holderHasProposedShare, "holderHasProposedShare did not return false");
 
-        return piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner});
+        return piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner});
       })
       .then(result => {
         assert.strictEqual(result.toString(), shareAmount.toString(), "owner's ERC20 balance did not return correctly");
-        return piggyInstance.getERC20balance(user01, tokenInstance.address, {from: user01});
+        return piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: user01});
       })
       .then(result => {
         assert.strictEqual(result.toString(), shareAmount.toString(), "user's ERC20 balance did not return correctly");
@@ -591,11 +591,11 @@ contract ('SmartPiggies', function(accounts) {
         assert.isNotTrue(result[2].writerHasProposedShare, "writerHasProposedShare did not return false");
         assert.isNotTrue(result[2].holderHasProposedShare, "holderHasProposedShare did not return false");
 
-        return piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner});
+        return piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner});
       })
       .then(result => {
         assert.strictEqual(result.toString(), shareAmount.toString(), "owner's ERC20 balance did not return correctly");
-        return piggyInstance.getERC20balance(user01, tokenInstance.address, {from: user01});
+        return piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: user01});
       })
       .then(result => {
         assert.strictEqual(result.toString(), shareAmount.toString(), "user's ERC20 balance did not return correctly");

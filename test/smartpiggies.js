@@ -1621,12 +1621,12 @@ contract ('SmartPiggies', function(accounts) {
         settlementPriceBN = web3.utils.toBN(result[1].settlementPrice)
         assert.strictEqual(result[1].settlementPrice, '27000', "settlementPrice did not return correctly")
         //get the ERC20 balance for the writer
-        return piggyInstance.getERC20balance(user01, tokenInstance.address, {from: user01})
+        return piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: user01})
       })
       .then(result => {
         user01BalanceBefore = result
         //get the ERC20 balance for the holder
-        return piggyInstance.getERC20balance(user02, tokenInstance.address, {from: user02})
+        return piggyInstance.getERC20Balance(user02, tokenInstance.address, {from: user02})
       })
       .then(result => {
         user02BalanceBefore = result
@@ -1643,7 +1643,7 @@ contract ('SmartPiggies', function(accounts) {
       })
       .then(result => {
         resolution = web3.utils.toBN(result)
-        return piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})
+        return piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner})
       })
       .then(balance => {
         lotSizeBN = web3.utils.toBN(lotSize)
@@ -1653,11 +1653,11 @@ contract ('SmartPiggies', function(accounts) {
         fee = payout.mul(feePercent).div(resolution)
 
         assert.strictEqual(balance.toString(), user01BalanceBefore.add(collateral).sub(payout).toString(), "writer balance did not return 0")
-        return piggyInstance.getERC20balance(user02, tokenInstance.address, {from: owner})
+        return piggyInstance.getERC20Balance(user02, tokenInstance.address, {from: owner})
       })
       .then(balance => {
         assert.strictEqual(balance.toString(), user02BalanceBefore.add(payout).sub(fee).toString(), "holder balance did not return correctly")
-        return piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner})
+        return piggyInstance.getERC20Balance(feeAddress, tokenInstance.address, {from: owner})
       })
       .then(balance => {
         assert.strictEqual(balance.toString(), feeBalanceBefore.add(fee).toString(), "fee address didn't return correct balance")
@@ -1713,9 +1713,9 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, approveAmount, {from: user02})), // [2]
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user02})), // [3]
           () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: user01})), // 4
-          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, collateralERC, {from: owner})), // [5]
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, collateralERC, {from: owner})), // [6]
-          () => Promise.resolve(piggyInstance.getERC20balance(user02, collateralERC, {from: owner})), // [7]
+          () => Promise.resolve(piggyInstance.getERC20Balance(feeAddress, collateralERC, {from: owner})), // [5]
+          () => Promise.resolve(piggyInstance.getERC20Balance(user01, collateralERC, {from: owner})), // [6]
+          () => Promise.resolve(piggyInstance.getERC20Balance(user02, collateralERC, {from: owner})), // [7]
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})), // [8]
           () => Promise.resolve(piggyInstance.feePercent.call({from: owner})), // [9]
           () => Promise.resolve(piggyInstance.feeResolution.call({from: owner})), // [10]
@@ -1739,7 +1739,7 @@ contract ('SmartPiggies', function(accounts) {
         feePercent = result[9]
         feeResolution = result[10]
 
-        return piggyInstance.getERC20balance(user01, collateralERC, {from: owner})
+        return piggyInstance.getERC20Balance(user01, collateralERC, {from: owner})
       })
       .then(balance => {
         lotSizeBN = web3.utils.toBN(lotSize)
@@ -1747,11 +1747,11 @@ contract ('SmartPiggies', function(accounts) {
         payout = strikePriceBN.sub(settlementPriceBN).mul(lotSizeBN).mul(decimals).idivn(100)
         fee = payout.mul(feePercent).div(feeResolution)
         assert.strictEqual(balance.toString(), user01BalanceBefore.add(collateral).sub(payout).toString(), "owner balance did not return 0")
-        return piggyInstance.getERC20balance(user02, collateralERC, {from: owner})
+        return piggyInstance.getERC20Balance(user02, collateralERC, {from: owner})
       })
       .then(balance => {
         assert.strictEqual(balance.toString(), user02BalanceBefore.add(payout).sub(fee).toString(), "owner balance did not return 0")
-        return piggyInstance.getERC20balance(feeAddress, collateralERC, {from: owner})
+        return piggyInstance.getERC20Balance(feeAddress, collateralERC, {from: owner})
       })
       .then(balance => {
         assert.strictEqual(balance.toString(), feeBalanceBefore.add(fee).toString(), "feeAddress balance did not return correctly")
@@ -4162,9 +4162,9 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})), //[7]
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})), //[8]
-          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner})) //[9]
+          () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})), //[7]
+          () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner})), //[8]
+          () => Promise.resolve(piggyInstance.getERC20Balance(feeAddress, tokenInstance.address, {from: owner})) //[9]
         ])
       })
       .then(result => {
@@ -4371,9 +4371,9 @@ contract ('SmartPiggies', function(accounts) {
         //Note returning result without .toString() will return an empty array
         assert.strictEqual(result.toString(), '', "getOwnedPiggies did not return correctly")
         return sequentialPromise([
-          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(feeAddress, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
@@ -4536,9 +4536,9 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(feeAddress, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
@@ -4706,9 +4706,9 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner})) //[9]
+          () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(feeAddress, tokenInstance.address, {from: owner})) //[9]
         ])
       })
       .then(result => {
@@ -4789,8 +4789,8 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
@@ -4873,9 +4873,9 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(feeAddress, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
@@ -4959,9 +4959,9 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(feeAddress, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
@@ -5040,8 +5040,8 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
@@ -5253,8 +5253,8 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
@@ -5337,9 +5337,9 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(feeAddress, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
@@ -5422,9 +5422,9 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(feeAddress, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
@@ -5504,8 +5504,8 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
@@ -5588,9 +5588,9 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(feeAddress, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
@@ -5673,9 +5673,9 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(feeAddress, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
@@ -5893,8 +5893,8 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: user01})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: user01})),
           () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})),
           () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner}))
         ])
@@ -5912,8 +5912,8 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(piggyInstance.claimPayout(tokenInstance.address, userBalanceInContract, {from: user01})),
           () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})),
           () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner})),
         ])
       })
       .then(result => {
@@ -5921,8 +5921,8 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[3].toString(), userStableTokenBalance.add(userBalanceInContract).toString(), "user token balance didn't update correctly")
 
         return sequentialPromise([
-          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: owner}))
+          () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner}))
         ])
       })
       .then(result => {
@@ -5986,7 +5986,7 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})),
         ])
       })
       .then(result => {
@@ -6062,8 +6062,8 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(owner, tokenInstance.address, {from: owner})),
-          () => Promise.resolve(piggyInstance.getERC20balance(user01, tokenInstance.address, {from: user01})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: user01})),
           () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})),
           () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner}))
         ])

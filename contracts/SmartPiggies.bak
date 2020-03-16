@@ -1212,7 +1212,7 @@ contract SmartPiggies is ERC165, HasCooldown {
     return ownedPiggies[_owner];
   }
 
-  function getERC20balance(address _owner, address _erc20)
+  function getERC20Balance(address _owner, address _erc20)
     public
     view
     returns (uint256)

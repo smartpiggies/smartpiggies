@@ -179,8 +179,8 @@ contract ('SmartPiggies', function(accounts) {
           assert.strictEqual(result[1].settlementPrice, '27000', "settlementPrice did not return correctly")
 
           return sequentialPromise([
-            () => Promise.resolve(piggyInstance.getERC20balance(user01, collateralERC, {from: owner})),
-            () => Promise.resolve(piggyInstance.getERC20balance(user02, collateralERC, {from: owner})),
+            () => Promise.resolve(piggyInstance.getERC20Balance(user01, collateralERC, {from: owner})),
+            () => Promise.resolve(piggyInstance.getERC20Balance(user02, collateralERC, {from: owner})),
             () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner}))
           ])
         })
@@ -210,9 +210,9 @@ contract ('SmartPiggies', function(accounts) {
           assert.strictEqual(result[2].logs[0].args.writerPayout.toString(), collateral.sub(payout).toString(), "Event log from settlement didn't return correct writer payout")
 
           return sequentialPromise([
-            () => Promise.resolve(piggyInstance.getERC20balance(user01, collateralERC, {from: owner})),
-            () => Promise.resolve(piggyInstance.getERC20balance(user02, collateralERC, {from: owner})),
-            () => Promise.resolve(piggyInstance.getERC20balance(feeAddress, collateralERC, {from: owner}))
+            () => Promise.resolve(piggyInstance.getERC20Balance(user01, collateralERC, {from: owner})),
+            () => Promise.resolve(piggyInstance.getERC20Balance(user02, collateralERC, {from: owner})),
+            () => Promise.resolve(piggyInstance.getERC20Balance(feeAddress, collateralERC, {from: owner}))
           ])
         })
         .then(result => {

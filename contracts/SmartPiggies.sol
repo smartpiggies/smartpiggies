@@ -21,7 +21,6 @@ pragma solidity >=0.4.24 <0.6.0;
 pragma experimental ABIEncoderV2;
 
 
-import "./ERC165.sol";
 import "./SafeMath.sol";
 
 interface PaymentToken {
@@ -57,14 +56,6 @@ contract Owned {
     owner = _newOwner;
     emit ChangedOwner(msg.sender, _newOwner);
     return true;
-  }
-
-  function kill()
-    public
-    onlyOwner
-  {
-    require(msg.sender != address(0));
-    selfdestruct(owner);
   }
 }
 
@@ -116,7 +107,7 @@ contract Administered is Owned {
 
 
 contract Freezeable is Administered {
-  bool private notFrozen;
+  bool public notFrozen;
   constructor() public {
     notFrozen = true;
   }
@@ -228,7 +219,7 @@ contract Serviced is Freezeable {
 }
 
 
-contract HasCooldown is Serviced {
+contract UsingCooldown is Serviced {
   uint256 public cooldown;
 
   event CooldownSet(address indexed from, uint256 _newCooldown);
@@ -238,14 +229,6 @@ contract HasCooldown is Serviced {
   {
     // 4blks/min * 60 min/hr * 24hrs/day * 3 days
     cooldown = 17280; // default 3 days
-  }
-
-  function getCooldown()
-    public
-    view
-    returns (uint256)
-  {
-    return cooldown;
   }
 
   function setCooldown(uint256 _newCooldown)
@@ -262,20 +245,8 @@ contract HasCooldown is Serviced {
 
 /** @title SmartPiggies: A Smart Option Standard
 */
-contract SmartPiggies is ERC165, HasCooldown {
+contract SmartPiggies is UsingCooldown {
   using SafeMath for uint256;
-
-  /* Supported Interfaces
-  ** 0xc3c6c899 == this.createPiggy.selector ^
-  **  this.splitPiggy.selector ^ this.transferFrom.selector ^
-  **  this.updateRFP.selector ^ this.reclaimAndBurn.selector ^
-  **  this.startAuction.selector ^ this.endAuction.selector ^
-  **  this.satisfyAuction.selector ^ this.requestSettlementPrice.selector ^
-  **  this.settlePiggy.selector ^ this.claimPayout.selector ^
-  **  this.setArbiter.selector ^ this.updateArbiter.selector ^
-  **  this.thirdPartyArbitrationSettlement.selector;
-  */
-  bytes4 constant SMARTPIGGIES_INTERFACE = 0xc3c6c899;
 
   bytes32 constant TX_SUCCESS = bytes32(0x0000000000000000000000000000000000000000000000000000000000000001);
   uint256 public tokenId;
@@ -314,7 +285,6 @@ contract SmartPiggies is ERC165, HasCooldown {
     bool writerHasProposedShare;
     bool holderHasProposedShare;
     bool arbiterHasProposedShare;
-    bool arbiterHasBeenSet;
   }
 
   struct DetailAuction {
@@ -461,7 +431,7 @@ contract SmartPiggies is ERC165, HasCooldown {
     Serviced(msg.sender)
   {
     //declarations here
-    _registerInterface(SMARTPIGGIES_INTERFACE);
+
   }
 
   /** @notice Create a new token
@@ -943,7 +913,7 @@ contract SmartPiggies is ERC165, HasCooldown {
     piggies[_tokenId].flags.hasBeenCleared = true;
 
     // if abitration is set, lock piggy for cooldown period
-    if (piggies[_tokenId].flags.arbiterHasBeenSet) {
+    if (piggies[_tokenId].addresses.arbiter != address(0)) {
       piggies[_tokenId].uintDetails.arbitrationLock = block.number.add(cooldown);
     }
 
@@ -969,7 +939,7 @@ contract SmartPiggies is ERC165, HasCooldown {
      require(piggies[_tokenId].flags.hasBeenCleared, "piggy has not received an oracle price");
 
      // check if arbitratin is set, cooldown has passed
-     if (piggies[_tokenId].flags.arbiterHasBeenSet) {
+     if (piggies[_tokenId].addresses.arbiter != address(0)) {
        require(piggies[_tokenId].uintDetails.arbitrationLock <= block.number, "Arbitration set, locked for cooldown period");
      }
 
@@ -1057,7 +1027,6 @@ contract SmartPiggies is ERC165, HasCooldown {
 
     // update struct values
     piggies[_tokenId].addresses.arbiter = _arbiter;
-    piggies[_tokenId].flags.arbiterHasBeenSet = true;
 
     emit ArbiterSet(msg.sender, _arbiter, _tokenId);
 
@@ -1068,6 +1037,7 @@ contract SmartPiggies is ERC165, HasCooldown {
     public
     returns (bool)
   {
+    require(_newArbiter != address(0), "arbiter address must not be zero address");
     address _holder = piggies[_tokenId].addresses.holder;
     address _writer = piggies[_tokenId].addresses.writer;
     require(msg.sender == _holder || msg.sender == _writer, "only the writer or holder can propose a new arbiter");
@@ -1099,8 +1069,11 @@ contract SmartPiggies is ERC165, HasCooldown {
     returns (bool)
   {
     require(msg.sender != address(0), "address zero cannot call this function");
-    //require that piggy is expired to settle via arbitration
-    require(piggies[_tokenId].uintDetails.expiry < block.number);
+    // if piggy did not cleared a price, i.e. oracle didn't return
+    // require that piggy is expired to settle via arbitration
+    if(!piggies[_tokenId].flags.hasBeenCleared) {
+      require(piggies[_tokenId].uintDetails.expiry < block.number);
+    }
     // require valid share proposal
     require(_proposedShare <= piggies[_tokenId].uintDetails.collateral, "cannot propose to split more collateral than exists");
 
@@ -1156,7 +1129,12 @@ contract SmartPiggies is ERC165, HasCooldown {
         // set the share, update the collateral balances, mark as settled, emit event, return true
         uint256 _writerShare = piggies[_tokenId].uintDetails.collateral.sub(_holderShare);
         address _collateralERC = piggies[_tokenId].addresses.collateralERC;
-        ERC20balances[_holder][_collateralERC] = ERC20balances[_holder][_collateralERC].add(_holderShare);
+        uint256 fee = 0;
+        if(piggies[_tokenId].flags.hasBeenCleared) {
+          fee = _getFee(_holderShare);
+        }
+        ERC20balances[feeAddress][_collateralERC] = ERC20balances[feeAddress][_collateralERC].add(fee);
+        ERC20balances[_holder][_collateralERC] = ERC20balances[_holder][_collateralERC].add(_holderShare).sub(fee);
         ERC20balances[_writer][_collateralERC] = ERC20balances[_writer][_collateralERC].add(_writerShare);
 
         // emit settlement event
@@ -1476,6 +1454,5 @@ contract SmartPiggies is ERC165, HasCooldown {
     piggies[_tokenId].flags.writerHasProposedShare = false;
     piggies[_tokenId].flags.holderHasProposedShare = false;
     piggies[_tokenId].flags.arbiterHasProposedShare = false;
-    piggies[_tokenId].flags.arbiterHasBeenSet = false;
   }
 }

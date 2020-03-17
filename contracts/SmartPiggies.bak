@@ -80,6 +80,7 @@ contract Administered is Owned {
 
   modifier onlyAdmin() {
     // admin is an admin or owner
+    require(msg.sender != address(0));
     require(administrators[msg.sender] || msg.sender == owner);
     _;
   }
@@ -97,7 +98,6 @@ contract Administered is Owned {
     onlyAdmin
     returns (bool)
   {
-    require(msg.sender != address(0));
     administrators[_newAdmin] = true;
     emit AddedAdmin(msg.sender, _newAdmin);
     return true;

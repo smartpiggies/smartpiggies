@@ -483,10 +483,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        6405,
-                        6406
+                        6410,
+                        6411
                       ],
-                      "referencedDeclaration": 6405,
+                      "referencedDeclaration": 6410,
                       "src": "1055:7:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$returns$__$",
@@ -1097,10 +1097,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        6405,
-                        6406
+                        6410,
+                        6411
                       ],
-                      "referencedDeclaration": 6405,
+                      "referencedDeclaration": 6410,
                       "src": "1055:7:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$returns$__$",
@@ -1270,7 +1270,7 @@
   },
   "networks": {},
   "schemaVersion": "3.0.23",
-  "updatedAt": "2020-03-15T20:20:05.615Z",
+  "updatedAt": "2020-03-18T01:15:38.318Z",
   "devdoc": {
     "author": "Matt Condon (@shrugs)",
     "details": "Implements ERC165 using a lookup table.",

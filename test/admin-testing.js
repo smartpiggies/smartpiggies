@@ -112,14 +112,6 @@ contract ('SmartPiggies', function(accounts) {
 
     }); //end test block
 
-    it("Should fail to kill if sender is not owner", function() {
-      /* transaction should revert if sender is not owner */
-      return expectedExceptionPromise(
-        () => piggyInstance.kill(
-          {from: user01, gas: 8000000 }),
-          3000000);
-    }); //end test block
-
   }); //end describe block
 
   describe("Testing admin controls", function() {

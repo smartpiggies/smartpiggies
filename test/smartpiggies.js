@@ -4806,10 +4806,10 @@ contract ('SmartPiggies', function(accounts) {
           if (payout.gt(collateral)) {
             payout = collateral
           }
-        //put calculation for writer Collaterial - payout
+        //call calculation for writer Collaterial - payout
         assert.strictEqual(result[7].toString(), collateral.sub(payout).toString(), "Owner balance did not update correctly")
         assert.strictEqual(result[7].toString(), "100000000000000000000", "Owner balance did not return 100*10^18")
-        //put calculation for holder = payout
+        //call calculation for holder = payout
         assert.strictEqual(result[8].toString(), payout.toString(), "User balance did not update correctly")
         assert.strictEqual(result[8].toString(), "0", "Owner balance did not return 0")
       })
@@ -4892,10 +4892,10 @@ contract ('SmartPiggies', function(accounts) {
           payout = collateral
         }
         serviceFee = payout.mul(FEE_PERCENT).div(FEE_RESOLUTION)
-        //put calculation for writer Collaterial - payout
+        //call calculation for writer Collaterial - payout
         assert.strictEqual(result[7].toString(), collateral.sub(payout).toString(), "Owner balance did not update correctly")
         assert.strictEqual(result[7].toString(), "0", "Owner balance did not return 0")
-        //put calculation for holder = payout
+        //call calculation for holder = payout
         assert.strictEqual(result[8].toString(), payout.sub(serviceFee).toString(), "User balance did not update correctly")
         assert.strictEqual(result[9].toString(), serviceFee.toString(), "feeAddress balance did not update correctly")
       });
@@ -4978,10 +4978,10 @@ contract ('SmartPiggies', function(accounts) {
           payout = collateral
         }
         serviceFee = payout.mul(FEE_PERCENT).div(FEE_RESOLUTION)
-        //put calculation for writer Collaterial - payout
+        //call calculation for writer Collaterial - payout
         assert.strictEqual(result[7].toString(), collateral.sub(payout).toString(), "Owner balance did not update correctly")
         assert.strictEqual(result[7].toString(), "75000000000000000000", "Owner balance did not return 75*10^18")
-        //put calculation for holder = payout
+        //call calculation for holder = payout
         assert.strictEqual(result[8].toString(), payout.sub(serviceFee).toString(), "User balance did not update correctly")
         assert.strictEqual(result[9].toString(), serviceFee.toString(), "Owner balance did not return 25*10^18")
       });
@@ -5057,10 +5057,10 @@ contract ('SmartPiggies', function(accounts) {
           if (payout.gt(collateral)) {
             payout = collateral
           }
-        //put calculation for writer Collaterial - payout
+        //call calculation for writer Collaterial - payout
         assert.strictEqual(result[7].toString(), collateral.sub(payout).toString(), "Owner balance did not update correctly")
         assert.strictEqual(result[7].toString(), "100000000000000000000", "Owner balance did not return 100*10^18")
-        //put calculation for holder = payout
+        //call calculation for holder = payout
         assert.strictEqual(result[8].toString(), payout.toString(), "User balance did not update correctly")
         assert.strictEqual(result[8].toString(), "0", "Owner balance did not return 0")
       });

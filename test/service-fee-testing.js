@@ -188,7 +188,7 @@ contract ('SmartPiggies', function(accounts) {
   }); // end describe
 
   /* Test American Put fee payout */
-  describe.only("Testing service fee functionality", function() {
+  describe("Testing service fee functionality", function() {
 
     it("Should settle service fee with total payout to holder", function() {
       collateralERC = tokenInstance.address
@@ -299,9 +299,31 @@ contract ('SmartPiggies', function(accounts) {
       .then(balance => {
         /* service fee should equal the balance, i.e. .cmp() == 0 */
         assert.strictEqual(0, balance.cmp(fee), "service fee did not return correclty");
+
+        return sequentialPromise([
+          () => Promise.resolve(tokenInstance.balanceOf(feeAddress, {from: feeAddress})), //[0]
+          () => Promise.resolve(piggyInstance.claimPayout(tokenInstance.address, fee, {from: feeAddress})), //[1]
+          () => Promise.resolve(tokenInstance.balanceOf(feeAddress, {from: feeAddress})), //[2]
+        ]);
+      })
+      .then(result => {
+        let balanceBefore = web3.utils.toBN(result[0]);
+        let balanceAfter = web3.utils.toBN(result[2]);
+        assert.strictEqual(0, balanceAfter.cmp(balanceBefore.add(fee)), "balance after withdraw did not reconcile");
+
+        /* transfer fee forward */
+        return sequentialPromise([
+          () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})), //[0]
+          () => Promise.resolve(tokenInstance.transfer(owner, fee, {from: feeAddress})), //[1]
+          () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})), //[2]
+        ]);
+      })
+      .then(result => {
+        balanceBefore = web3.utils.toBN(result[0]);
+        balanceAfter = web3.utils.toBN(result[2]);
+        assert.strictEqual(0, balanceAfter.cmp(balanceBefore.add(fee)), "balance after withdraw did not reconcile");
       });
-      //end test block
-    });
+    }); //end test block
 
     it("Should settle service fee with total payout to writer", function() {
       collateralERC = tokenInstance.address

@@ -8,7 +8,7 @@ module.exports = {
       host: "localhost",
       port: 8545,
       gas: 8000000,
-      gasPrice: 1000000000,
+      gasPrice: 1100000000,
       network_id: "*" // Match any network id
     },
     ropsten: {
@@ -33,7 +33,7 @@ module.exports = {
       settings: {
         optimizer: {
           enabled: true,
-          runs: 500
+          runs: 5 //500
         },
         evmVersion: "istanbul"
       }

@@ -678,7 +678,7 @@ contract SmartPiggies is UsingCooldown {
     uint256 _timeStep,
     uint256 _priceStep
   )
-    external
+    public
     whenNotFrozen
     returns (bool)
   {

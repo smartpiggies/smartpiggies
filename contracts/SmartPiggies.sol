@@ -760,7 +760,7 @@ contract SmartPiggies is UsingCooldown {
       return false;
     }
     // get linear auction premium; reserve price should be a ceiling or floor depending on whether this is an RFP or an option, respectively
-    uint256 _auctionPremium = getAuctionPrice(_tokenId);
+    uint256 _auctionPremium = _getAuctionPrice(_tokenId);
     // lock mutex
     auctions[_tokenId].satisfyInProgress = true;
     if (piggies[_tokenId].flags.isRequest) {
@@ -1329,7 +1329,7 @@ contract SmartPiggies is UsingCooldown {
 
   // calculate the price for satisfaction of an auction
   // this is an interpolated linear price based on the supplied auction parameters at a resolution of 1 block
-  function getAuctionPrice(uint256 _tokenId)
+  function _getAuctionPrice(uint256 _tokenId)
     internal
     view
     returns (uint256)

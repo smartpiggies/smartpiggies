@@ -1068,6 +1068,7 @@ contract SmartPiggies is UsingCooldown {
     public
     returns (bool)
   {
+    // make sure address can't call as an unset arbiter
     require(msg.sender != address(0), "address zero cannot call this function");
     // if piggy did not cleared a price, i.e. oracle didn't return
     // require that piggy is expired to settle via arbitration

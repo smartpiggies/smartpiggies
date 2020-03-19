@@ -70,7 +70,7 @@ contract Administered is Owned {
   event DeletedAdmin(address indexed from, address indexed oldAdmin);
 
   modifier onlyAdmin() {
-    // admin is an admin or owner
+    // admin is an administrator or owner
     require(msg.sender != address(0));
     require(administrators[msg.sender] || msg.sender == owner);
     _;
@@ -227,7 +227,7 @@ contract UsingCooldown is Serviced {
   constructor()
     public
   {
-    // 4blks/min * 60 min/hr * 24hrs/day * 3 days
+    // 4blks/min * 60 min/hr * 24hrs/day * # days
     cooldown = 17280; // default 3 days
   }
 
@@ -299,9 +299,9 @@ contract SmartPiggies is UsingCooldown {
   }
 
   struct Piggy {
-    DetailAddresses addresses; //address details
-    DetailUints uintDetails; //number details
-    BoolFlags flags; //parameter switches
+    DetailAddresses addresses; // address details
+    DetailUints uintDetails; // number details
+    BoolFlags flags; // parameter switches
   }
 
   mapping (address => mapping(address => uint256)) private ERC20balances;
@@ -478,7 +478,7 @@ contract SmartPiggies is UsingCooldown {
     // if not an RFP, make sure the collateral can be transferred
     if (!_isRequest) {
       (bool success, bytes memory result) = attemptPaymentTransfer(
-        _collateralERC, //_collateralERC
+        _collateralERC,
         msg.sender,
         address(this),
         _collateral
@@ -486,7 +486,7 @@ contract SmartPiggies is UsingCooldown {
       bytes32 txCheck = abi.decode(result, (bytes32));
       require(success && txCheck == TX_SUCCESS, "token transfer did not complete");
     }
-    // any other checks that need to be performed specifically for RFPs ?
+    // RFP checks go here
 
     require(
       _constructPiggy(
@@ -529,25 +529,25 @@ contract SmartPiggies is UsingCooldown {
     //calculate collateral split
     uint256 splitCollateral = piggies[tokenId].uintDetails.collateral.div(2);
 
-    //remove current token ID
-    _removeTokenFromOwnedPiggies(msg.sender, _tokenId); //should this be piggies[_tokenId].holder
+    // remove current token ID
+    _removeTokenFromOwnedPiggies(msg.sender, _tokenId); // i.e. piggies[_tokenId].addresses.holder
 
     require(
       _constructPiggy(
         piggies[_tokenId].addresses.collateralERC,
         piggies[_tokenId].addresses.dataResolver,
-        piggies[tokenId].uintDetails.collateral.sub(splitCollateral), //accounting for interger division
+        piggies[tokenId].uintDetails.collateral.sub(splitCollateral), // accounting for interger division
         piggies[_tokenId].uintDetails.lotSize,
         piggies[_tokenId].uintDetails.strikePrice,
         piggies[_tokenId].uintDetails.expiry,
         _tokenId,
         piggies[_tokenId].flags.isEuro,
         piggies[_tokenId].flags.isPut,
-        false, //piggies[tokenId].isRequest
-        true //split piggy
+        false, // piggies[tokenId].flags.isRequest
+        true // split piggy
       ),
       "failed to create a new piggy"
-    ); //check to make sure this rolls back the reset if it fails
+    ); // require this to succeed or revert, i.e. do not reset
 
     require(
       _constructPiggy(
@@ -564,7 +564,7 @@ contract SmartPiggies is UsingCooldown {
         true //split piggy
       ),
       "failed to make a new piggy"
-    ); //check to make sure this rolls back the reset if it fails
+    ); // require this to succeed or revert, i.e. do not reset
 
     //clean up piggyId
     _resetPiggy(_tokenId);
@@ -575,13 +575,10 @@ contract SmartPiggies is UsingCooldown {
   function transferFrom(address _from, address _to, uint256 _tokenId)
     public
   {
-    require(msg.sender == piggies[_tokenId].addresses.holder, "msg.sender is not the owner"); //openzep doesn't do this
+    require(msg.sender == piggies[_tokenId].addresses.holder, "msg.sender is not the owner");
     _internalTransfer(_from, _to, _tokenId);
   }
 
-  // possibly add function to update reqCollateral if token is an RFP and hasn't been successfully fulfilled
-  // maybe allow all fields of an RFP to be updated ?
-  // this may be more trouble than it is worth. could allow this function to accept a struct, and check if any keys matching fields of Piggy are nonzero, if so, update those ones
   function updateRFP(
     uint256 _tokenId,
     address _collateralERC,
@@ -616,7 +613,7 @@ contract SmartPiggies is UsingCooldown {
       piggies[_tokenId].uintDetails.strikePrice = _strikePrice;
     }
     if (_expiry != 0) {
-      // should this redo the expiry calculation? to be consistent w/ how the creation function works ?
+      // recalculate expiry calculation
       expiryBlock = _expiry.add(block.number);
       piggies[_tokenId].uintDetails.expiry = expiryBlock;
     }
@@ -641,7 +638,7 @@ contract SmartPiggies is UsingCooldown {
   }
 
   /** this function can be used to burn any token;
-      if it is an option, will return collateral before burning
+      if it is not an RFP, will return collateral before burning
   */
   function reclaimAndBurn(uint256 _tokenId)
     public
@@ -663,7 +660,7 @@ contract SmartPiggies is UsingCooldown {
       require(success && txCheck == TX_SUCCESS, "ERC20 token transfer failed");
     }
     emit ReclaimAndBurn(msg.sender, _tokenId, piggies[_tokenId].flags.isRequest);
-    //remove id from index mapping
+    // remove id from index mapping
     _removeTokenFromOwnedPiggies(piggies[_tokenId].addresses.holder, _tokenId);
     // burn the token (zero out storage fields)
     _resetPiggy(_tokenId);
@@ -776,7 +773,7 @@ contract SmartPiggies is UsingCooldown {
         auctions[_tokenId].satisfyInProgress = false;
         return false;
       }
-      // if the collateral transfer succeeded, collateral gets set to reqCollateral
+      // if the collateral transfer succeeded, reqCollateral gets set to collateral
       piggies[_tokenId].uintDetails.collateral = piggies[_tokenId].uintDetails.reqCollateral;
       // calculate adjusted premium (based on reservePrice) + possible change due back to current holder
       uint256 _change = 0;
@@ -883,7 +880,6 @@ contract SmartPiggies is UsingCooldown {
     returns (bool)
   {
     require(msg.sender != address(0), "sender cannot be the zero address");
-    //what check should be done to check that piggy is active?
     require(!auctions[_tokenId].auctionActive, "cannot clear a token while auction is active");
     require(!piggies[_tokenId].flags.hasBeenCleared, "token has already been cleared");
     require(_tokenId != 0, "_tokenId cannot be zero");
@@ -897,7 +893,7 @@ contract SmartPiggies is UsingCooldown {
     {
       require(msg.sender == piggies[_tokenId].addresses.holder, "only the holder can settle an American style option before expiry");
     }
-    //fetch data from dataResolver contract
+    // fetch data from dataResolver contract
     require(_callResolver(piggies[_tokenId].addresses.dataResolver, msg.sender, _oracleFee, _tokenId), "call to resolver did not return true");
     return true;
   }
@@ -928,7 +924,7 @@ contract SmartPiggies is UsingCooldown {
   /** @notice Calculate the settlement of ownership of option collateral
       @dev Throws if `_tokenId` is not a valid ERC-59 token.
        Throws if msg.sender is not one of: seller, owner of `_tokenId`.
-       Throws if `hasSettlementPrice(_tokenId)` is false.
+       Throws if hasBeenCleared is true.
    */
    function settlePiggy(uint256 _tokenId)
      public
@@ -978,20 +974,20 @@ contract SmartPiggies is UsingCooldown {
      );
 
      _removeTokenFromOwnedPiggies(_holder, _tokenId);
-     //clean up piggyId
+     // clean up piggyId
      _resetPiggy(_tokenId);
      return true;
    }
 
   // claim payout - pull payment
-  // sends any reference ERC-20 which the _claimant is owed (as a result of an auction or settlement)
+  // sends any reference ERC-20 which the claimant is owed (as a result of an auction or settlement)
   function claimPayout(address _paymentToken, uint256 _amount)
     public
     returns (bool)
   {
     require(_amount <= ERC20balances[msg.sender][_paymentToken], "ERC20 balance is less than requested amount");
     ERC20balances[msg.sender][_paymentToken] = ERC20balances[msg.sender][_paymentToken].sub(_amount);
-    //require(token(_stableToken).transfer(msg.sender, balanceOf(msg.sender))), "Unable to transfer");
+
     (bool success, bytes memory result) = address(PaymentToken(_paymentToken)).call(
       abi.encodeWithSignature(
         "transfer(address,uint256)",
@@ -1059,7 +1055,7 @@ contract SmartPiggies is UsingCooldown {
         return false;
       }
     } else {
-      // missing a proposal from one side
+      // missing a proposal from one party
       return false;
     }
   }
@@ -1083,7 +1079,7 @@ contract SmartPiggies is UsingCooldown {
     address _writer = piggies[_tokenId].addresses.writer;
     address _arbiter = piggies[_tokenId].addresses.arbiter;
 
-    // check which party sender is (of the 3 valid ones, else fail)
+    // check which party the sender is (of the 3 valid ones, else fail)
     require(msg.sender == _holder || msg.sender == _writer || msg.sender == _arbiter, "you can only settle via arbitration if you are the holder, writer, or arbiter");
 
     // set flag for proposed share for that party
@@ -1158,7 +1154,7 @@ contract SmartPiggies is UsingCooldown {
 
   /** Helper functions
   */
-  // helper function to view info from about the piggy outside of the contract
+  // helper function to view piggy details
   function getDetails(uint256 _tokenId)
     public
     view
@@ -1167,7 +1163,7 @@ contract SmartPiggies is UsingCooldown {
     return piggies[_tokenId];
   }
 
-  // this is a helper function to allow view of auction details
+  // helper function to view auction details
   function getAuctionDetails(uint256 _tokenId)
     public
     view
@@ -1199,6 +1195,9 @@ contract SmartPiggies is UsingCooldown {
     require(_owner != address(0), "address cannot be zero");
     return ERC20balances[_owner][_erc20];
   }
+
+  /* Internal functions
+  */
 
   function _constructPiggy(
     address _collateralERC,

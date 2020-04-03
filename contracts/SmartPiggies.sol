@@ -270,9 +270,9 @@ contract SmartPiggies is UsingCooldown {
     uint256 reqCollateral;
     uint8 collateralDecimals;  // store decimals from ERC-20 contract
     uint256 arbitrationLock;
-    uint256 writerProposedShare;
-    uint256 holderProposedShare;
-    uint256 arbiterProposedShare;
+    uint256 writerProposedPrice;
+    uint256 holderProposedPrice;
+    uint256 arbiterProposedPrice;
   }
 
   struct BoolFlags {
@@ -282,9 +282,9 @@ contract SmartPiggies is UsingCooldown {
     bool hasBeenCleared;  // flag whether the oracle returned a callback w/ price
     bool writerHasProposedNewArbiter;
     bool holderHasProposedNewArbiter;
-    bool writerHasProposedShare;
-    bool holderHasProposedShare;
-    bool arbiterHasProposedShare;
+    bool writerHasProposedPrice;
+    bool holderHasProposedPrice;
+    bool arbiterHasProposedPrice;
   }
 
   struct DetailAuction {
@@ -406,7 +406,7 @@ contract SmartPiggies is UsingCooldown {
     uint256 indexed tokenId
   );
 
-  event ShareProposed(
+  event PriceProposed(
     address indexed from,
     uint256 indexed tokenId,
     uint256 indexed proposedShare
@@ -416,8 +416,7 @@ contract SmartPiggies is UsingCooldown {
     address indexed from,
     address arbiter,
     uint256 indexed tokenId,
-    uint256 indexed holderShare,
-    uint256 writerShare
+    uint256 indexed exercisePrice
   );
 
   /**
@@ -944,27 +943,22 @@ contract SmartPiggies is UsingCooldown {
      if(piggies[_tokenId].flags.isEuro) {
        require(piggies[_tokenId].uintDetails.expiry <= block.number, "European option needs to be expired");
      }
-     payout = _calculateLongPayout(
-         piggies[_tokenId].flags.isPut,
-         piggies[_tokenId].uintDetails.settlementPrice,
-         piggies[_tokenId].uintDetails.strikePrice,
-         piggies[_tokenId].uintDetails.lotSize,
-         piggies[_tokenId].uintDetails.collateralDecimals
-     );
+     payout = _calculateLongPayout(_tokenId);
 
      // set the balances of the two counterparties based on the payout
      address _writer = piggies[_tokenId].addresses.writer;
      address _holder = piggies[_tokenId].addresses.holder;
      address _collateralERC = piggies[_tokenId].addresses.collateralERC;
 
-     if (payout > piggies[_tokenId].uintDetails.collateral) {
-       payout = piggies[_tokenId].uintDetails.collateral;
+     uint256 collateral = piggies[_tokenId].uintDetails.collateral;
+     if (payout > collateral) {
+       payout = collateral;
      }
      // extract the service fee
      uint256 fee = _getFee(payout);
      ERC20balances[feeAddress][_collateralERC] = ERC20balances[feeAddress][_collateralERC].add(fee);
      ERC20balances[_holder][_collateralERC] = ERC20balances[_holder][_collateralERC].add(payout).sub(fee);
-     ERC20balances[_writer][_collateralERC] = piggies[_tokenId].uintDetails.collateral.sub(payout);
+     ERC20balances[_writer][_collateralERC] = ERC20balances[_writer][_collateralERC].add(collateral).sub(payout);
 
      emit SettlePiggy(
        msg.sender,
@@ -1060,7 +1054,7 @@ contract SmartPiggies is UsingCooldown {
     }
   }
 
-  function thirdPartyArbitrationSettlement(uint256 _tokenId, uint256 _proposedShare)
+  function thirdPartyArbitrationSettlement(uint256 _tokenId, uint256 _proposedPrice)
     public
     returns (bool)
   {
@@ -1071,8 +1065,6 @@ contract SmartPiggies is UsingCooldown {
     if(!piggies[_tokenId].flags.hasBeenCleared) {
       require(piggies[_tokenId].uintDetails.expiry < block.number);
     }
-    // require valid share proposal
-    require(_proposedShare <= piggies[_tokenId].uintDetails.collateral, "cannot propose to split more collateral than exists");
 
     // set internal address references for convenience
     address _holder = piggies[_tokenId].addresses.holder;
@@ -1084,62 +1076,51 @@ contract SmartPiggies is UsingCooldown {
 
     // set flag for proposed share for that party
     if (msg.sender == _holder) {
-      piggies[_tokenId].uintDetails.holderProposedShare = _proposedShare;
-      piggies[_tokenId].flags.holderHasProposedShare = true;
-      emit ShareProposed(msg.sender, _tokenId, _proposedShare);
+      piggies[_tokenId].uintDetails.holderProposedPrice = _proposedPrice;
+      piggies[_tokenId].flags.holderHasProposedPrice = true;
+      emit PriceProposed(msg.sender, _tokenId, _proposedPrice);
     }
     if (msg.sender == _writer) {
-      piggies[_tokenId].uintDetails.writerProposedShare = _proposedShare;
-      piggies[_tokenId].flags.writerHasProposedShare = true;
-      emit ShareProposed(msg.sender, _tokenId, _proposedShare);
+      piggies[_tokenId].uintDetails.writerProposedPrice = _proposedPrice;
+      piggies[_tokenId].flags.writerHasProposedPrice = true;
+      emit PriceProposed(msg.sender, _tokenId, _proposedPrice);
     }
     if (msg.sender == _arbiter) {
-      piggies[_tokenId].uintDetails.arbiterProposedShare = _proposedShare;
-      piggies[_tokenId].flags.arbiterHasProposedShare = true;
-      emit ShareProposed(msg.sender, _tokenId, _proposedShare);
+      piggies[_tokenId].uintDetails.arbiterProposedPrice = _proposedPrice;
+      piggies[_tokenId].flags.arbiterHasProposedPrice = true;
+      emit PriceProposed(msg.sender, _tokenId, _proposedPrice);
     }
 
     // see if 2 of 3 parties have proposed a share
-    if (piggies[_tokenId].flags.holderHasProposedShare && piggies[_tokenId].flags.writerHasProposedShare ||
-      piggies[_tokenId].flags.holderHasProposedShare && piggies[_tokenId].flags.arbiterHasProposedShare ||
-      piggies[_tokenId].flags.writerHasProposedShare && piggies[_tokenId].flags.arbiterHasProposedShare)
+    if (piggies[_tokenId].flags.holderHasProposedPrice && piggies[_tokenId].flags.writerHasProposedPrice ||
+      piggies[_tokenId].flags.holderHasProposedPrice && piggies[_tokenId].flags.arbiterHasProposedPrice ||
+      piggies[_tokenId].flags.writerHasProposedPrice && piggies[_tokenId].flags.arbiterHasProposedPrice)
     {
       // if so, see if 2 of 3 parties have proposed the same amount
-      uint256 _holderShare = 0;
+      uint256 _settlementPrice = 0;
       bool _agreement = false;
       // check if holder has gotten agreement with either other party
-      if (piggies[_tokenId].uintDetails.holderProposedShare == piggies[_tokenId].uintDetails.writerProposedShare ||
-        piggies[_tokenId].uintDetails.holderProposedShare == piggies[_tokenId].uintDetails.arbiterProposedShare)
+      if (piggies[_tokenId].uintDetails.holderProposedPrice == piggies[_tokenId].uintDetails.writerProposedPrice ||
+        piggies[_tokenId].uintDetails.holderProposedPrice == piggies[_tokenId].uintDetails.arbiterProposedPrice)
       {
-        _holderShare = piggies[_tokenId].uintDetails.holderProposedShare;
+        _settlementPrice = piggies[_tokenId].uintDetails.holderProposedPrice;
         _agreement = true;
       }
 
       // check if the two non-holder parties agree
-      if (piggies[_tokenId].uintDetails.writerProposedShare == piggies[_tokenId].uintDetails.arbiterProposedShare)
+      if (piggies[_tokenId].uintDetails.writerProposedPrice == piggies[_tokenId].uintDetails.arbiterProposedPrice)
       {
-        _holderShare = piggies[_tokenId].uintDetails.writerProposedShare;
+        _settlementPrice = piggies[_tokenId].uintDetails.writerProposedPrice;
         _agreement = true;
       }
 
       if (_agreement) {
-        // set the share, update the collateral balances, mark as settled, emit event, return true
-        uint256 _writerShare = piggies[_tokenId].uintDetails.collateral.sub(_holderShare);
-        address _collateralERC = piggies[_tokenId].addresses.collateralERC;
-        uint256 fee = 0;
-        if(piggies[_tokenId].flags.hasBeenCleared) {
-          fee = _getFee(_holderShare);
-        }
-        ERC20balances[feeAddress][_collateralERC] = ERC20balances[feeAddress][_collateralERC].add(fee);
-        ERC20balances[_holder][_collateralERC] = ERC20balances[_holder][_collateralERC].add(_holderShare).sub(fee);
-        ERC20balances[_writer][_collateralERC] = ERC20balances[_writer][_collateralERC].add(_writerShare);
+        // if there is an agreement on a settlement price, update, emit event
+        piggies[_tokenId].uintDetails.settlementPrice = _settlementPrice;
+        piggies[_tokenId].flags.hasBeenCleared = true;
 
         // emit settlement event
-        emit ArbiterSettled(msg.sender, _arbiter, _tokenId, _holderShare, _writerShare);
-
-        //clean up piggyId
-        _removeTokenFromOwnedPiggies(_holder, _tokenId);
-        _resetPiggy(_tokenId);
+        emit ArbiterSettled(msg.sender, _arbiter, _tokenId, _settlementPrice);
 
         return (true);
       } else {
@@ -1364,17 +1345,17 @@ contract SmartPiggies is UsingCooldown {
     return true;
   }
 
-  function _calculateLongPayout(
-    bool _isPut,
-    uint256 _exercisePrice,
-    uint256 _strikePrice,
-    uint256 _lotSize,
-    uint8 _decimals
-  )
+  function _calculateLongPayout(uint256 _tokenId)
     internal
-    pure
+    view
     returns (uint256 _payout)
   {
+    bool _isPut = piggies[_tokenId].flags.isPut;
+    uint256 _strikePrice = piggies[_tokenId].uintDetails.strikePrice;
+    uint256 _exercisePrice = piggies[_tokenId].uintDetails.settlementPrice;
+    uint256 _lotSize = piggies[_tokenId].uintDetails.lotSize;
+    uint8 _decimals = piggies[_tokenId].uintDetails.collateralDecimals;
+
     if (_isPut && (_strikePrice > _exercisePrice)) {
       _payout = _strikePrice.sub(_exercisePrice);
     }
@@ -1442,17 +1423,17 @@ contract SmartPiggies is UsingCooldown {
     piggies[_tokenId].uintDetails.reqCollateral = 0;
     piggies[_tokenId].uintDetails.collateralDecimals = 0;
     piggies[_tokenId].uintDetails.arbitrationLock = 0;
-    piggies[_tokenId].uintDetails.writerProposedShare = 0;
-    piggies[_tokenId].uintDetails.holderProposedShare = 0;
-    piggies[_tokenId].uintDetails.arbiterProposedShare = 0;
+    piggies[_tokenId].uintDetails.writerProposedPrice = 0;
+    piggies[_tokenId].uintDetails.holderProposedPrice = 0;
+    piggies[_tokenId].uintDetails.arbiterProposedPrice = 0;
     piggies[_tokenId].flags.isRequest = false;
     piggies[_tokenId].flags.isEuro = false;
     piggies[_tokenId].flags.isPut = false;
     piggies[_tokenId].flags.hasBeenCleared = false;
     piggies[_tokenId].flags.writerHasProposedNewArbiter = false;
     piggies[_tokenId].flags.holderHasProposedNewArbiter = false;
-    piggies[_tokenId].flags.writerHasProposedShare = false;
-    piggies[_tokenId].flags.holderHasProposedShare = false;
-    piggies[_tokenId].flags.arbiterHasProposedShare = false;
+    piggies[_tokenId].flags.writerHasProposedPrice = false;
+    piggies[_tokenId].flags.holderHasProposedPrice = false;
+    piggies[_tokenId].flags.arbiterHasProposedPrice = false;
   }
 }

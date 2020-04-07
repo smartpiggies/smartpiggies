@@ -409,7 +409,7 @@ contract SmartPiggies is UsingCooldown {
   event PriceProposed(
     address indexed from,
     uint256 indexed tokenId,
-    uint256 indexed proposedShare
+    uint256 indexed proposedPrice
   );
 
   event ArbiterSettled(

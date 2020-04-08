@@ -4355,15 +4355,17 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[1].settlementPrice, "0", "Details should have returned settlementPrice amount of 0.");
         assert.strictEqual(result[1].reqCollateral, "0", "Details should have returned reqCollateral amount of 0.");
         assert.strictEqual(result[1].collateralDecimals, "0", "Details should have returned collateralDecimals amount of 18.");
-        assert.strictEqual(result[1].writerProposedShare, "0", "Details should have returned collateralDecimals amount of 18.");
-        assert.strictEqual(result[1].holderProposedShare, "0", "Details should have returned collateralDecimals amount of 18.");
+        assert.strictEqual(result[1].writerProposedPrice, "0", "Details should have returned zeroed writerProposedPrice");
+        assert.strictEqual(result[1].holderProposedPrice, "0", "Details should have returned zeroed holderProposedPrice");
+        assert.strictEqual(result[1].arbiterProposedPrice, "0", "Details should have returned zeroed arbiterProposedPrice");
         //check BoolFlags
         assert.isNotTrue(result[2].isRequest, "Details should have returned false for isRequest.");
         assert.isNotTrue(result[2].isEuro, "Details should have returned false for isEuro.");
         assert.isNotTrue(result[2].isPut, "Details should have returned false for isPut.");
         assert.isNotTrue(result[2].hasBeenCleared, "Details should have returned false for hasBeenCleared.");
-        assert.isNotTrue(result[2].writerHasProposedShare, "Details should have returned false for hasBeenCleared.");
-        assert.isNotTrue(result[2].holderHasProposedShare, "Details should have returned false for hasBeenCleared.");
+        assert.isNotTrue(result[2].writerHasProposedPrice, "Details should have returned false for writerHasProposedPrice.");
+        assert.isNotTrue(result[2].holderHasProposedPrice, "Details should have returned false for holderHasProposedPrice.");
+        assert.isNotTrue(result[2].arbiterHasProposedPrice, "Details should have returned false for holderHasProposedPrice.");
 
         return piggyInstance.getOwnedPiggies(owner, {from: owner})
       })

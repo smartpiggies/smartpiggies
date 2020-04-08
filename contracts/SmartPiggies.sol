@@ -882,7 +882,7 @@ contract SmartPiggies is UsingCooldown {
     require(!auctions[_tokenId].auctionActive, "cannot clear a token while auction is active");
     require(!piggies[_tokenId].flags.hasBeenCleared, "token has already been cleared");
     require(_tokenId != 0, "_tokenId cannot be zero");
-    require(_oracleFee != 0, "oracle fee cannot be zero");
+    
     // check if Euro require past expiry
     if (piggies[_tokenId].flags.isEuro) {
       require(piggies[_tokenId].uintDetails.expiry <= block.number, "cannot request a price on a European option before expiry");

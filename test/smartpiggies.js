@@ -3510,6 +3510,89 @@ contract ('SmartPiggies', function(accounts) {
       //end test block
     });
 
+    it("Should clear an if oracle fee is zero", function() {
+      collateralERC = tokenInstance.address
+      dataResolver = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = 5000
+      isEuro = false
+      isPut = true
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      oracleFeeZero = web3.utils.toBN(0)
+
+      params = [collateralERC,dataResolver,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest]
+
+      return piggyInstance.createPiggy(
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],params[8],
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.startAuction(
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
+          {from: owner}
+        )
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "startAuction did not return true")
+
+        return sequentialPromise([
+          () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
+          () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
+          () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
+        ])
+      })
+      .then(result => {
+        assert.isTrue(result[2].receipt.status, "satisfyAuction did not return true")
+
+        return piggyInstance.requestSettlementPrice(tokenId, oracleFeeZero, {from: user01})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "requestSettlementPrice did not return true")
+        //Oracle Event
+        assert.strictEqual(result.logs[0].event, "OracleReturned", "Event log from oracle didn't return correct event name")
+        assert.strictEqual(result.logs[0].args.resolver, dataResolver, "Event log from oracle didn't return correct sender")
+        assert.strictEqual(result.logs[0].args.tokenId.toString(), tokenId.toString(), "Event log from oracle didn't return correct tokenId")
+        assert.strictEqual(result.logs[0].args.price.toString(), oraclePrice.toString(), "Event log from oracle didn't return correct tokenId")
+
+        //Satisfy Event
+        assert.strictEqual(result.logs[1].event, "RequestSettlementPrice", "Event log from request didn't return correct event name")
+        assert.strictEqual(result.logs[1].args.feePayer, user01, "Event log from request didn't return correct sender")
+        assert.strictEqual(result.logs[1].args.tokenId.toString(), tokenId.toString(), "Event log from request didn't return correct tokenId")
+        assert.strictEqual(result.logs[1].args.oracleFee.toString(), oracleFeeZero.toString(), "Event log from request didn't return correct tokenId")
+        assert.strictEqual(result.logs[1].args.dataResolver.toString(), dataResolver, "Event log from request didn't return correct tokenId")
+
+        return piggyInstance.getDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        //settlementPriceBN = web3.utils.toBN(result[1].settlementPrice)
+        assert.strictEqual(result[1].settlementPrice, oraclePrice.toString(), "settlementPrice did not return correctly")
+      })
+      //end test block
+    });
+
     it("Should clear a European Put piggy", function() {
       collateralERC = tokenInstance.address
       dataResolver = resolverInstance.address
@@ -3807,7 +3890,7 @@ contract ('SmartPiggies', function(accounts) {
       //end test block
     });
 
-    it("Should fail to clear if oracle fee is Zero", function() {
+    it.skip("Should fail to clear if oracle fee is Zero", function() {
       collateralERC = tokenInstance.address
       dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(100 * decimals)

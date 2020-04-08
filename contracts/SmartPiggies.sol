@@ -17,7 +17,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **/
-pragma solidity >=0.4.24 <0.6.0;
+pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
 
@@ -30,7 +30,7 @@ interface PaymentToken {
 }
 
 contract Owned {
-  address payable owner;
+  address payable public owner;
   constructor() public {
     owner = msg.sender;
   }
@@ -153,7 +153,7 @@ contract Freezeable is Administered {
 contract Serviced is Freezeable {
   using SafeMath for uint256;
 
-  address payable feeAddress;
+  address payable public feeAddress;
   uint8   public feePercent;
   uint16  public feeResolution;
 
@@ -882,7 +882,7 @@ contract SmartPiggies is UsingCooldown {
     require(!auctions[_tokenId].auctionActive, "cannot clear a token while auction is active");
     require(!piggies[_tokenId].flags.hasBeenCleared, "token has already been cleared");
     require(_tokenId != 0, "_tokenId cannot be zero");
-    
+
     // check if Euro require past expiry
     if (piggies[_tokenId].flags.isEuro) {
       require(piggies[_tokenId].uintDetails.expiry <= block.number, "cannot request a price on a European option before expiry");

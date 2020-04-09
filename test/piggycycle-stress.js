@@ -42,6 +42,10 @@ contract ('SmartPiggies', function(accounts) {
   var oracleTokenAddress
   var oraclePrice = web3.utils.toBN(27000) //including hundreth of a cent
 
+
+  const DEFAULT_FEE_PERCENT = web3.utils.toBN(50)
+  const DEFAULT_FEE_RESOLUTION = web3.utils.toBN(10000)
+
   beforeEach(function() {
     //console.log(JSON.stringify("symbol: " + result, null, 4));
     return StableToken.new({from: owner})
@@ -107,9 +111,6 @@ contract ('SmartPiggies', function(accounts) {
         feeBalanceBefore = web3.utils.toBN('0')
 
         serviceFee = web3.utils.toBN('0')
-        const FEE_PERCENT = web3.utils.toBN(50)
-        const FEE_RESOLUTION = web3.utils.toBN(10000)
-
 
         params = [collateralERC,dataResolver,addr00,collateral,
           lotSize,strikePrice,expiry,isEuro,isPut,isRequest];
@@ -206,7 +207,7 @@ contract ('SmartPiggies', function(accounts) {
           if (payout.gt(collateral)) {
             payout = collateral
           }
-          serviceFee = payout.mul(FEE_PERCENT).div(FEE_RESOLUTION)
+          serviceFee = payout.mul(DEFAULT_FEE_PERCENT).div(DEFAULT_FEE_RESOLUTION)
           assert.strictEqual(result[2].logs[0].args.holderPayout.toString(), payout.sub(serviceFee).toString(), "Event log from settlement didn't return correct holder payout")
           assert.strictEqual(result[2].logs[0].args.writerPayout.toString(), collateral.sub(payout).toString(), "Event log from settlement didn't return correct writer payout")
 
@@ -218,14 +219,6 @@ contract ('SmartPiggies', function(accounts) {
         })
         .then(result => {
           lotSizeBN = web3.utils.toBN(lotSize)
-          /**
-          //console.log(JSON.stringify(strikePriceBN.sub(settlementPriceBN).mul(lotSizeBN).mul(decimals).toString(), null, 4))
-          if (strikePriceBN.gt(settlementPriceBN)) {
-            payout = strikePriceBN.sub(settlementPriceBN).mul(lotSizeBN).mul(decimals).idivn(100)
-          } else {
-            payout = web3.utils.toBN('0')
-          }
-          **/
 
           assert.strictEqual(result[0].toString(), user01BalanceBefore.add(collateral).sub(payout).toString(), "user01 balance did not return correctly")
           assert.strictEqual(result[1].toString(), user02BalanceBefore.add(payout).sub(serviceFee).toString(), "user02 balance did not return correctly")

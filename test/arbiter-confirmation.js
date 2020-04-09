@@ -118,13 +118,13 @@ contract ('SmartPiggies', function(accounts) {
 
       serviceFee = web3.utils.toBN('0')
 
-      params = [collateralERC,dataResolver,collateral,lotSize,
+      params = [collateralERC,dataResolver,addr00,collateral,lotSize,
               strikePrice,expiry,isEuro,isPut,isRequest]
 
       tokenId = web3.utils.toBN(0)
 
       return piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner}
+              params[4],params[5],params[6],params[7],params[8],params[9],{from: owner}
       )
       .then(result => {
         assert.isTrue(result.receipt.status, "create piggy tx did not return true")
@@ -172,14 +172,14 @@ contract ('SmartPiggies', function(accounts) {
 
       serviceFee = web3.utils.toBN('0')
 
-      params = [collateralERC,dataResolver,collateral,lotSize,
+      params = [collateralERC,dataResolver,addr00,collateral,lotSize,
               strikePrice,expiry,isEuro,isPut,isRequest]
 
       tokenId = web3.utils.toBN(1) // first token created will be id: 1
 
       return sequentialPromise([
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})), //[0]
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})), //[0]
         () => Promise.resolve(piggyInstance.setArbiter(tokenId, arbiter, {from: owner})), //[1]
         () => Promise.resolve(piggyInstance.confirmArbiter(tokenId, {from: arbiter})), //[2]
         () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: owner})), //[3]

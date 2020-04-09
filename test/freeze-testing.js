@@ -168,8 +168,8 @@ contract ('SmartPiggies', function(accounts) {
       zeroParam = 0
       currentBlock = web3.utils.toBN(0)
 
-      params = [collateralERC,dataResolver,collateral,lotSize,
-              strikePrice,expiry,isEuro,isPut,isRequest]
+      params = [collateralERC,dataResolver,addr00,collateral,
+        lotSize,strikePrice,expiry,isEuro,isPut,isRequest];
 
       return sequentialPromise([
         () => Promise.resolve(piggyInstance.addAdministrator(user01, {from: owner})), // [0]
@@ -184,7 +184,8 @@ contract ('SmartPiggies', function(accounts) {
         return expectedExceptionPromise(
           () => piggyInstance.createPiggy(
             params[0],params[1],params[2],params[3],
-            params[4],params[5],params[6],params[7],params[8],
+            params[4],params[5],params[6],params[7],
+            params[8],params[9],
             {from: owner, gas: 8000000 }),
             3000000);
       });
@@ -203,8 +204,8 @@ contract ('SmartPiggies', function(accounts) {
       zeroParam = 0
       currentBlock = web3.utils.toBN(0)
 
-      params = [collateralERC,dataResolver,collateral,lotSize,
-              strikePrice,expiry,isEuro,isPut,isRequest]
+      params = [collateralERC,dataResolver,addr00,collateral,
+        lotSize,strikePrice,expiry,isEuro,isPut,isRequest];
 
       return sequentialPromise([
         () => Promise.resolve(piggyInstance.addAdministrator(user01, {from: owner})), // [0]
@@ -212,7 +213,7 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(piggyInstance.createPiggy(
           params[0],params[1],params[2],params[3],
           params[4],params[5],params[6],params[7],
-          params[8], {from: owner})), // [2]
+          params[8], params[9], {from: owner})), // [2]
         () => Promise.resolve(piggyInstance.createPiggy(
           params[0],params[1],params[2],params[3],
           params[4],params[5],params[6],params[7],

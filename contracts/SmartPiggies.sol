@@ -331,6 +331,7 @@ contract SmartPiggies is UsingCooldown {
     uint256 indexed tokenId,
     address collateralERC,
     address dataResolver,
+    address arbiter,
     uint256 reqCollateral,
     uint256 lotSize,
     uint256 strikePrice,
@@ -456,6 +457,7 @@ contract SmartPiggies is UsingCooldown {
   function createPiggy(
     address _collateralERC,
     address _dataResolver,
+    address _arbiter,
     uint256 _collateral,
     uint256 _lotSize,
     uint256 _strikePrice,
@@ -497,6 +499,7 @@ contract SmartPiggies is UsingCooldown {
       _constructPiggy(
         _collateralERC,
         _dataResolver,
+        _arbiter,
         _collateral,
         _lotSize,
         _strikePrice,
@@ -541,6 +544,7 @@ contract SmartPiggies is UsingCooldown {
       _constructPiggy(
         piggies[_tokenId].addresses.collateralERC,
         piggies[_tokenId].addresses.dataResolver,
+        piggies[_tokenId].addresses.arbiter,
         piggies[tokenId].uintDetails.collateral.sub(splitCollateral), // accounting for interger division
         piggies[_tokenId].uintDetails.lotSize,
         piggies[_tokenId].uintDetails.strikePrice,
@@ -558,6 +562,7 @@ contract SmartPiggies is UsingCooldown {
       _constructPiggy(
         piggies[_tokenId].addresses.collateralERC,
         piggies[_tokenId].addresses.dataResolver,
+        piggies[_tokenId].addresses.arbiter,
         splitCollateral,
         piggies[_tokenId].uintDetails.lotSize,
         piggies[_tokenId].uintDetails.strikePrice,
@@ -588,6 +593,7 @@ contract SmartPiggies is UsingCooldown {
     uint256 _tokenId,
     address _collateralERC,
     address _dataResolver,
+    address _arbiter,
     uint256 _reqCollateral,
     uint256 _lotSize,
     uint256 _strikePrice,
@@ -607,6 +613,9 @@ contract SmartPiggies is UsingCooldown {
     }
     if (_dataResolver != address(0)) {
       piggies[_tokenId].addresses.dataResolver = _dataResolver;
+    }
+    if (_arbiter != address(0)) {
+      piggies[_tokenId].addresses.arbiter = _arbiter;
     }
     if (_reqCollateral != 0) {
       piggies[_tokenId].uintDetails.reqCollateral = _reqCollateral;
@@ -631,6 +640,7 @@ contract SmartPiggies is UsingCooldown {
       _tokenId,
       _collateralERC,
       _dataResolver,
+      _arbiter,
       _reqCollateral,
       _lotSize,
       _strikePrice,
@@ -1078,11 +1088,11 @@ contract SmartPiggies is UsingCooldown {
     public
     returns (bool)
   {
+    require(msg.sender != address(0), "sender can not be zero address");
     require(msg.sender == piggies[_tokenId].addresses.arbiter, "sender must be arbiter for piggy");
     piggies[_tokenId].flags.arbiterHasConfirmed = true;
 
     emit ArbiterConfirmed(msg.sender, _tokenId);
-
     return true;
   }
 
@@ -1091,7 +1101,7 @@ contract SmartPiggies is UsingCooldown {
     returns (bool)
   {
     // make sure address can't call as an unset arbiter
-    require(msg.sender != address(0), "address zero cannot call this function");
+    require(msg.sender != address(0), "sender can not be zero address");
     // if piggy did not cleared a price, i.e. oracle didn't return
     // require that piggy is expired to settle via arbitration
     if(!piggies[_tokenId].flags.hasBeenCleared) {
@@ -1215,6 +1225,7 @@ contract SmartPiggies is UsingCooldown {
   function _constructPiggy(
     address _collateralERC,
     address _dataResolver,
+    address _arbiter,
     uint256 _collateral,
     uint256 _lotSize,
     uint256 _strikePrice,
@@ -1237,6 +1248,7 @@ contract SmartPiggies is UsingCooldown {
     p.addresses.holder = msg.sender;
     p.addresses.collateralERC = _collateralERC;
     p.addresses.dataResolver = _dataResolver;
+    p.addresses.arbiter = _arbiter;
     p.uintDetails.lotSize = _lotSize;
     p.uintDetails.strikePrice = _strikePrice;
     p.flags.isEuro = _isEuro;
@@ -1272,10 +1284,11 @@ contract SmartPiggies is UsingCooldown {
 
     _addTokenToOwnedPiggies(msg.sender, tokenId);
 
-    address[] memory a = new address[](3);
+    address[] memory a = new address[](4);
     a[0] = msg.sender;
     a[1] = _collateralERC;
     a[2] = _dataResolver;
+    a[3] = _arbiter;
 
     uint256[] memory i = new uint256[](5);
     i[0] = tokenId;
@@ -1355,28 +1368,7 @@ contract SmartPiggies is UsingCooldown {
       return (_pStart.sub(_pDelta));
     }
   }
-/**
-  function _callResolver(address _dataResolver, address _feePayer, uint256 _oracleFee, uint256 _tokenId)
-    internal
-    returns (bool)
-  {
-    (bool success, bytes memory result) = address(_dataResolver).call(
-      abi.encodeWithSignature("fetchData(address,uint256,uint256)", _feePayer, _oracleFee, _tokenId)
-    );
 
-    bytes32 txCheck = abi.decode(result, (bytes32));
-    require(success && txCheck == TX_SUCCESS, "Call to fetch did not return correctly");
-
-    emit RequestSettlementPrice(
-      _feePayer,
-      _tokenId,
-      _oracleFee,
-      _dataResolver
-    );
-
-    return true;
-  }
-**/
   function _calculateLongPayout(uint256 _tokenId)
     internal
     view

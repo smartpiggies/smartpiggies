@@ -285,6 +285,7 @@ contract SmartPiggies is UsingCooldown {
     bool writerHasProposedPrice;
     bool holderHasProposedPrice;
     bool arbiterHasProposedPrice;
+    bool arbiterHasConfirmed;
   }
 
   struct DetailAuction {
@@ -402,6 +403,11 @@ contract SmartPiggies is UsingCooldown {
 
   event ArbiterSet(
     address indexed from,
+    address indexed arbiter,
+    uint256 indexed tokenId
+  );
+
+  event ArbiterConfirmed(
     address indexed arbiter,
     uint256 indexed tokenId
   );
@@ -892,8 +898,22 @@ contract SmartPiggies is UsingCooldown {
     {
       require(msg.sender == piggies[_tokenId].addresses.holder, "only the holder can settle an American style option before expiry");
     }
-    // fetch data from dataResolver contract
-    require(_callResolver(piggies[_tokenId].addresses.dataResolver, msg.sender, _oracleFee, _tokenId), "call to resolver did not return true");
+
+    address dataResolver = piggies[_tokenId].addresses.dataResolver;
+    (bool success, bytes memory result) = address(dataResolver).call(
+      abi.encodeWithSignature("fetchData(address,uint256,uint256)", msg.sender, _oracleFee, _tokenId)
+    );
+
+    bytes32 txCheck = abi.decode(result, (bytes32));
+    require(success && txCheck == TX_SUCCESS, "Call to fetch did not return correctly");
+
+    emit RequestSettlementPrice(
+      msg.sender,
+      _tokenId,
+      _oracleFee,
+      dataResolver
+    );
+
     return true;
   }
 
@@ -1052,6 +1072,18 @@ contract SmartPiggies is UsingCooldown {
       // missing a proposal from one party
       return false;
     }
+  }
+
+  function confirmArbiter(uint256 _tokenId)
+    public
+    returns (bool)
+  {
+    require(msg.sender == piggies[_tokenId].addresses.arbiter, "sender must be arbiter for piggy");
+    piggies[_tokenId].flags.arbiterHasConfirmed = true;
+
+    emit ArbiterConfirmed(msg.sender, _tokenId);
+
+    return true;
   }
 
   function thirdPartyArbitrationSettlement(uint256 _tokenId, uint256 _proposedPrice)
@@ -1323,7 +1355,7 @@ contract SmartPiggies is UsingCooldown {
       return (_pStart.sub(_pDelta));
     }
   }
-
+/**
   function _callResolver(address _dataResolver, address _feePayer, uint256 _oracleFee, uint256 _tokenId)
     internal
     returns (bool)
@@ -1344,7 +1376,7 @@ contract SmartPiggies is UsingCooldown {
 
     return true;
   }
-
+**/
   function _calculateLongPayout(uint256 _tokenId)
     internal
     view
@@ -1435,5 +1467,6 @@ contract SmartPiggies is UsingCooldown {
     piggies[_tokenId].flags.writerHasProposedPrice = false;
     piggies[_tokenId].flags.holderHasProposedPrice = false;
     piggies[_tokenId].flags.arbiterHasProposedPrice = false;
+    piggies[_tokenId].flags.arbiterHasConfirmed = false;
   }
 }

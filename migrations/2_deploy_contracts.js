@@ -26,7 +26,7 @@ module.exports = function(deployer) {
         endpoint,
         path,
         TestnetLINK.address,
-        27000,
+        oraclePrice,
         {gas: 3000000, gasPrice: 1100000000, overwrite: false}
       );
   });

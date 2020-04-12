@@ -137,8 +137,8 @@ contract ('SmartPiggies', function(accounts) {
 
       serviceFee = web3.utils.toBN('0')
 
-      params = [collateralERC,dataResolver,collateral,lotSize,
-              strikePrice,expiry,isEuro,isPut,isRequest]
+      params = [collateralERC,dataResolver,addr00,collateral,
+        lotSize,strikePrice,expiry,isEuro,isPut,isRequest];
 
       tokenIds = [0,1,2,3,4,5]
 
@@ -150,15 +150,15 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})),
         () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9], {from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9], {from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9], {from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9], {from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9], {from: owner})),
 
         () => Promise.resolve(piggyInstance.startAuction(tokenIds[1],startPrice,reservePrice,
                 auctionLength,timeStep,priceStep,{from: owner})),
@@ -242,8 +242,8 @@ contract ('SmartPiggies', function(accounts) {
 
       serviceFee = web3.utils.toBN('0')
 
-      params = [collateralERC,dataResolver,collateral,lotSize,
-              strikePrice,expiry,isEuro,isPut,isRequest]
+      params = [collateralERC,dataResolver,addr00,collateral,
+        lotSize,strikePrice,expiry,isEuro,isPut,isRequest];
 
       tokenIds = [0,1,2,3,4,5]
 
@@ -265,15 +265,15 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(piggyInstance.getERC20Balance(user05, tokenInstance.address, {from: owner})), //[7]
 
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
 
         () => Promise.resolve(piggyInstance.startAuction(tokenIds[1],startPrice,reservePrice,
                 auctionLength,timeStep,priceStep,{from: owner})),
@@ -455,8 +455,8 @@ contract ('SmartPiggies', function(accounts) {
 
       serviceFee = web3.utils.toBN('0')
 
-      params = [collateralERC,dataResolver,collateral,lotSize,
-              strikePrice,expiry,isEuro,isPut,isRequest]
+      params = [collateralERC,dataResolver,addr00,collateral,
+        lotSize,strikePrice,expiry,isEuro,isPut,isRequest];
 
       tokenIds = [0,1,2,3,4,5]
       numOfTokens = web3.utils.toBN(tokenIds.length).sub(web3.utils.toBN(1))
@@ -482,15 +482,15 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(piggyInstance.getERC20Balance(user05, tokenInstance.address, {from: owner})), //[7]
 
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
 
         () => Promise.resolve(piggyInstance.startAuction(tokenIds[1],startPrice,reservePrice,
                 auctionLength,timeStep,priceStep,{from: owner})),
@@ -682,8 +682,8 @@ contract ('SmartPiggies', function(accounts) {
 
       serviceFee = web3.utils.toBN('0')
 
-      params = [collateralERC,dataResolver,collateral,lotSize,
-              strikePrice,expiry,isEuro,isPut,isRequest]
+      params = [collateralERC,dataResolver,addr00,collateral,
+        lotSize,strikePrice,expiry,isEuro,isPut,isRequest];
 
       tokenIds = [0,1,2,3,4,5]
 
@@ -695,15 +695,15 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})),
         () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
 
         () => Promise.resolve(piggyInstance.startAuction(tokenIds[1],startPrice,reservePrice,
                 auctionLength,timeStep,priceStep,{from: owner})),
@@ -787,8 +787,8 @@ contract ('SmartPiggies', function(accounts) {
 
       serviceFee = web3.utils.toBN('0')
 
-      params = [collateralERC,dataResolver,collateral,lotSize,
-              strikePrice,expiry,isEuro,isPut,isRequest]
+      params = [collateralERC,dataResolver,addr00,collateral,
+        lotSize,strikePrice,expiry,isEuro,isPut,isRequest];
 
       tokenIds = [0,1,2,3,4,5]
 
@@ -810,15 +810,15 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(piggyInstance.getERC20Balance(user05, tokenInstance.address, {from: owner})), //[7]
 
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
 
         () => Promise.resolve(piggyInstance.startAuction(tokenIds[1],startPrice,reservePrice,
                 auctionLength,timeStep,priceStep,{from: owner})),
@@ -1000,8 +1000,8 @@ contract ('SmartPiggies', function(accounts) {
 
       serviceFee = web3.utils.toBN('0')
 
-      params = [collateralERC,dataResolver,collateral,lotSize,
-              strikePrice,expiry,isEuro,isPut,isRequest]
+      params = [collateralERC,dataResolver,addr00,collateral,
+        lotSize,strikePrice,expiry,isEuro,isPut,isRequest];
 
       tokenIds = [0,1,2,3,4,5]
       numOfTokens = web3.utils.toBN(tokenIds.length).sub(web3.utils.toBN(1))
@@ -1027,15 +1027,15 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(piggyInstance.getERC20Balance(user05, tokenInstance.address, {from: owner})), //[7]
 
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
-                params[4],params[5],params[6],params[7],params[8],{from: owner})),
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
 
         () => Promise.resolve(piggyInstance.startAuction(tokenIds[1],startPrice,reservePrice,
                 auctionLength,timeStep,priceStep,{from: owner})),

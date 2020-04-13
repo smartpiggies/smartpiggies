@@ -298,7 +298,7 @@ contract ('SmartPiggies', function(accounts) {
       dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(1 * decimals)
       lotSize = web3.utils.toBN(1)
-      strikePrice = web3.utils.toBN(27000) // split below 27000
+      strikePrice = web3.utils.toBN(27000) // split above 27000
       expiry = 500
       isEuro = false
       isPut = false
@@ -493,13 +493,13 @@ contract ('SmartPiggies', function(accounts) {
       })
     }); //end test
 
-    it("Should settle via arbiter on creation", function() {
+    it("Should settle via arbiter on creation between multiple parties", function() {
       //American call
       collateralERC = tokenInstance.address
       dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(1 * decimals)
       lotSize = web3.utils.toBN(1)
-      strikePrice = web3.utils.toBN(27000) // split below 27000
+      strikePrice = web3.utils.toBN(27000) // split above 27000
       expiry = 500
       isEuro = false
       isPut = false
@@ -758,4 +758,756 @@ contract ('SmartPiggies', function(accounts) {
 
   }); //end describe
 
+  describe("Test arbitration when all parties are the same account address", function() {
+
+    it("Should settle via arbitration if arbiter is writer", function() {
+      //American call
+      collateralERC = tokenInstance.address
+      dataResolver = resolverInstance.address
+      collateral = web3.utils.toBN(1 * decimals)
+      lotSize = web3.utils.toBN(1)
+      strikePrice = web3.utils.toBN(27000) // split above 27000
+      expiry = 500
+      isEuro = false
+      isPut = false
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      oracleFee = web3.utils.toBN('1000000000000000000')
+
+      serviceFee = web3.utils.toBN(0)
+
+      params = [collateralERC,dataResolver,owner,collateral,
+        lotSize,strikePrice,expiry,isEuro,isPut,isRequest]
+
+      tokenIds = [1,2,3,4,5]
+      numOfTokens = web3.utils.toBN(tokenIds.length)
+
+      let originalBalanceOwner, originalBalanceUser01
+      let auctionProceeds = web3.utils.toBN(0)
+      let auctionPrice01,auctionPrice02,auctionPrice03,auctionPrice04,auctionPrice05
+      let totalCollateral = web3.utils.toBN(0)
+      let payout = web3.utils.toBN(0)
+      let totalPayout = web3.utils.toBN(0)
+      let totalFees = web3.utils.toBN(0)
+
+      let proposedPrices = [
+            web3.utils.toBN(27012),
+            web3.utils.toBN(27029),
+            web3.utils.toBN(27053),
+            web3.utils.toBN(27076),
+            web3.utils.toBN(27091)
+          ]
+      let payouts = []
+      let serviceFees = []
+
+      // create 5 piggies, auction, and settle
+      return sequentialPromise([
+        () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})), //[0]
+        () => Promise.resolve(tokenInstance.balanceOf(user01, {from: user01})), //[1]
+
+        () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})), //[2]
+        () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner})), //[3]
+
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
+
+        () => Promise.resolve(piggyInstance.startAuction(tokenIds[0],startPrice,reservePrice,
+                auctionLength,timeStep,priceStep,{from: owner})),
+        () => Promise.resolve(piggyInstance.startAuction(tokenIds[1],startPrice,reservePrice,
+                auctionLength,timeStep,priceStep,{from: owner})),
+        () => Promise.resolve(piggyInstance.startAuction(tokenIds[2],startPrice,reservePrice,
+                auctionLength,timeStep,priceStep,{from: owner})),
+        () => Promise.resolve(piggyInstance.startAuction(tokenIds[3],startPrice,reservePrice,
+                auctionLength,timeStep,priceStep,{from: owner})),
+        () => Promise.resolve(piggyInstance.startAuction(tokenIds[4],startPrice,reservePrice,
+                auctionLength,timeStep,priceStep,{from: owner})),
+
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[0], {from: user01})), //[14]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[1], {from: user01})), //[15]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[2], {from: user01})), //[16]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[3], {from: user01})), //[17]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[4], {from: user01})), //[18]
+
+        () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[0], oracleFee, {from: user01})),
+        () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[1], oracleFee, {from: user01})),
+        () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[2], oracleFee, {from: user01})),
+        () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[3], oracleFee, {from: user01})),
+        () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[4], oracleFee, {from: user01})),
+
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenIds[0], proposedPrices[0], {from: owner})), //[24]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenIds[1], proposedPrices[1], {from: owner})), //[25]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenIds[2], proposedPrices[2], {from: owner})), //[26]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenIds[3], proposedPrices[3], {from: owner})), //[27]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenIds[4], proposedPrices[4], {from: owner})), //[28]
+
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenIds[0], {from: owner})),
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenIds[1], {from: owner})),
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenIds[2], {from: owner})),
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenIds[3], {from: owner})),
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenIds[4], {from: owner})),
+
+        () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})), //[34]
+        () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner})), //[35]
+      ])
+      .then(result => {
+        // ERC20 balance accounting should be collateral from all piggies
+        originalBalanceOwner = result[0]
+        originalBalanceUser01 = result[1]
+
+        originalERC20BalanceOwner = result[2]
+        originalERC20BalanceUser01 = result[3]
+
+        auctionPrice01 = result[14].logs[1].args.paidPremium
+        auctionPrice02 = result[15].logs[1].args.paidPremium
+        auctionPrice03 = result[16].logs[1].args.paidPremium
+        auctionPrice04 = result[17].logs[1].args.paidPremium
+        auctionPrice05 = result[18].logs[1].args.paidPremium
+
+        auctionProceeds = auctionProceeds.add(auctionPrice01).add(auctionPrice02)
+          .add(auctionPrice03).add(auctionPrice04).add(auctionPrice05)
+
+        //token 1
+        assert.strictEqual(result[24].logs[0].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[24].logs[0].args.from, owner, "Event log didn't return correct sender")
+        assert.strictEqual(result[24].logs[0].args.tokenId.toString(), tokenIds[0].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[24].logs[0].args.proposedPrice.toString(), proposedPrices[0].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[24].logs[1].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[24].logs[1].args.from, owner, "Event log didn't return correct sender")
+        assert.strictEqual(result[24].logs[1].args.tokenId.toString(), tokenIds[0].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[24].logs[1].args.proposedPrice.toString(), proposedPrices[0].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[24].logs[2].event, "ArbiterSettled", "event name did not return correctly");
+        assert.strictEqual(result[24].logs[2].args.from, owner, "event param did not return correct address for sender");
+        assert.strictEqual(result[24].logs[2].args.arbiter, owner, "event param did not return correct address for arbiter");
+        assert.strictEqual(result[24].logs[2].args.tokenId.toString(), tokenIds[0].toString(), "event param did not return correct tokenId");
+        assert.strictEqual(result[24].logs[2].args.exercisePrice.toString(), proposedPrices[0].toString(), "event param did not return correct share amount");
+
+        //token 2
+        assert.strictEqual(result[25].logs[0].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[25].logs[0].args.from, owner, "Event log didn't return correct sender")
+        assert.strictEqual(result[25].logs[0].args.tokenId.toString(), tokenIds[1].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[25].logs[0].args.proposedPrice.toString(), proposedPrices[1].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[25].logs[1].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[25].logs[1].args.from, owner, "Event log didn't return correct sender")
+        assert.strictEqual(result[25].logs[1].args.tokenId.toString(), tokenIds[1].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[25].logs[1].args.proposedPrice.toString(), proposedPrices[1].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[25].logs[2].event, "ArbiterSettled", "event name did not return correctly");
+        assert.strictEqual(result[25].logs[2].args.from, owner, "event param did not return correct address for sender");
+        assert.strictEqual(result[25].logs[2].args.arbiter, owner, "event param did not return correct address for arbiter");
+        assert.strictEqual(result[25].logs[2].args.tokenId.toString(), tokenIds[1].toString(), "event param did not return correct tokenId");
+        assert.strictEqual(result[25].logs[2].args.exercisePrice.toString(), proposedPrices[1].toString(), "event param did not return correct share amount");
+
+        //token 3
+        assert.strictEqual(result[26].logs[0].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[26].logs[0].args.from, owner, "Event log didn't return correct sender")
+        assert.strictEqual(result[26].logs[0].args.tokenId.toString(), tokenIds[2].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[26].logs[0].args.proposedPrice.toString(), proposedPrices[2].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[26].logs[1].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[26].logs[1].args.from, owner, "Event log didn't return correct sender")
+        assert.strictEqual(result[26].logs[1].args.tokenId.toString(), tokenIds[2].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[26].logs[1].args.proposedPrice.toString(), proposedPrices[2].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[26].logs[2].event, "ArbiterSettled", "event name did not return correctly");
+        assert.strictEqual(result[26].logs[2].args.from, owner, "event param did not return correct address for sender");
+        assert.strictEqual(result[26].logs[2].args.arbiter, owner, "event param did not return correct address for arbiter");
+        assert.strictEqual(result[26].logs[2].args.tokenId.toString(), tokenIds[2].toString(), "event param did not return correct tokenId");
+        assert.strictEqual(result[26].logs[2].args.exercisePrice.toString(), proposedPrices[2].toString(), "event param did not return correct share amount");
+
+        //token 4
+        assert.strictEqual(result[27].logs[0].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[27].logs[0].args.from, owner, "Event log didn't return correct sender")
+        assert.strictEqual(result[27].logs[0].args.tokenId.toString(), tokenIds[3].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[27].logs[0].args.proposedPrice.toString(), proposedPrices[3].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[27].logs[1].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[27].logs[1].args.from, owner, "Event log didn't return correct sender")
+        assert.strictEqual(result[27].logs[1].args.tokenId.toString(), tokenIds[3].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[27].logs[1].args.proposedPrice.toString(), proposedPrices[3].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[27].logs[2].event, "ArbiterSettled", "event name did not return correctly");
+        assert.strictEqual(result[27].logs[2].args.from, owner, "event param did not return correct address for sender");
+        assert.strictEqual(result[27].logs[2].args.arbiter, owner, "event param did not return correct address for arbiter");
+        assert.strictEqual(result[27].logs[2].args.tokenId.toString(), tokenIds[3].toString(), "event param did not return correct tokenId");
+        assert.strictEqual(result[27].logs[2].args.exercisePrice.toString(), proposedPrices[3].toString(), "event param did not return correct share amount");
+
+        //token 5
+        assert.strictEqual(result[28].logs[0].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[28].logs[0].args.from, owner, "Event log didn't return correct sender")
+        assert.strictEqual(result[28].logs[0].args.tokenId.toString(), tokenIds[4].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[28].logs[0].args.proposedPrice.toString(), proposedPrices[4].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[28].logs[1].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[28].logs[1].args.from, owner, "Event log didn't return correct sender")
+        assert.strictEqual(result[28].logs[1].args.tokenId.toString(), tokenIds[4].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[28].logs[1].args.proposedPrice.toString(), proposedPrices[4].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[28].logs[2].event, "ArbiterSettled", "event name did not return correctly");
+        assert.strictEqual(result[28].logs[2].args.from, owner, "event param did not return correct address for sender");
+        assert.strictEqual(result[28].logs[2].args.arbiter, owner, "event param did not return correct address for arbiter");
+        assert.strictEqual(result[28].logs[2].args.tokenId.toString(), tokenIds[4].toString(), "event param did not return correct tokenId");
+        assert.strictEqual(result[28].logs[2].args.exercisePrice.toString(), proposedPrices[4].toString(), "event param did not return correct share amount");
+
+        erc20BalanceOwner = result[34]
+        erc20BalanceUser01 = result[35]
+
+        // token balance at token contract should be initial supply minted for user
+        assert.strictEqual(originalBalanceOwner.toString(), supply.toString(), "owner's original token balance did not return correctly")
+        assert.strictEqual(originalBalanceUser01.toString(), supply.toString(), "user01's original token balance did not return correctly")
+
+        // token balance at smartpiggies contract should start at zero
+        assert.strictEqual(originalERC20BalanceOwner.toString(), "0", "owner's original smartpiggies erc20 balance did not return zero")
+        assert.strictEqual(originalERC20BalanceUser01.toString(), "0", "user01's original smartpiggies erc20 balance did not return zero")
+
+        // calculate call payouts:
+        // if settlement price > strike | payout = settlement price - strike * lot size
+        oneHundred = web3.utils.toBN(100)
+
+        let payouts = proposedPrices.map(e => e.sub(strikePrice).mul(decimals).mul(lotSize).div(oneHundred))
+        let feeAmounts = payouts.map(e => e.mul(DEFAULT_FEE_PERCENT).div(DEFAULT_FEE_RESOLUTION))
+
+        payouts.forEach(e => totalPayout = totalPayout.add(e))
+        feeAmounts.forEach(e => totalFees = totalFees.add(e))
+        assert.strictEqual(erc20BalanceUser01.toString(), totalPayout.sub(totalFees).toString(), "user01's balance did not return correctly");
+
+        totalCollateral = collateral.mul(numOfTokens)
+        assert.strictEqual(erc20BalanceOwner.toString(), totalCollateral.sub(totalPayout).toString(), "writer balance did not return correctly")
+
+        return sequentialPromise([
+          () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})), //[0]
+          () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner})), //[1]
+
+          () => Promise.resolve(piggyInstance.claimPayout(tokenInstance.address, erc20BalanceOwner, {from: owner})), //[2]
+          () => Promise.resolve(piggyInstance.claimPayout(tokenInstance.address, erc20BalanceUser01, {from: user01})), //[3]
+
+          () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})), //[4]
+          () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner})), //[5]
+        ])
+      })
+      .then(result => {
+        balanceBeforeOwner = web3.utils.toBN(result[0])
+        balanceBeforeUser01 = web3.utils.toBN(result[1])
+
+        balanceAfterOwner = web3.utils.toBN(result[4])
+        balanceAfterUser01 = web3.utils.toBN(result[5])
+
+        // test token balances in token contract after claiming payout
+        assert.strictEqual(balanceAfterOwner.toString(),
+          originalBalanceOwner.add(auctionProceeds).sub(totalPayout).toString(),
+          "owner's final balance did not match original balance")
+
+        assert.strictEqual(balanceAfterUser01.toString(),
+          originalBalanceUser01.add(totalPayout).sub(totalFees).sub(auctionProceeds).toString(),
+          "user01's final balance did not match original balance")
+
+        // test token balance before and after claiming payout, receiving payout
+        assert.strictEqual(balanceAfterOwner.toString(), balanceBeforeOwner.add(totalCollateral).sub(totalPayout).toString(), "owner's token balance did not update correctly") // no change for owner
+
+        assert.strictEqual(balanceAfterUser01.toString(), balanceBeforeUser01.add(totalPayout).sub(totalFees).toString(), "user01's token balance did not return correctly")
+      })
+    }); //end test
+
+    it("Should settle via arbitration if arbiter is holder", function() {
+      //American call
+      collateralERC = tokenInstance.address
+      dataResolver = resolverInstance.address
+      collateral = web3.utils.toBN(1 * decimals)
+      lotSize = web3.utils.toBN(1)
+      strikePrice = web3.utils.toBN(27000) // split above 27000
+      expiry = 500
+      isEuro = false
+      isPut = false
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      oracleFee = web3.utils.toBN('1000000000000000000')
+
+      serviceFee = web3.utils.toBN(0)
+
+      params = [collateralERC,dataResolver,user01,collateral,
+        lotSize,strikePrice,expiry,isEuro,isPut,isRequest]
+
+      tokenIds = [1,2,3,4,5]
+      numOfTokens = web3.utils.toBN(tokenIds.length)
+
+      let originalBalanceOwner, originalBalanceUser01
+      let auctionProceeds = web3.utils.toBN(0)
+      let auctionPrice01,auctionPrice02,auctionPrice03,auctionPrice04,auctionPrice05
+      let totalCollateral = web3.utils.toBN(0)
+      let payout = web3.utils.toBN(0)
+      let totalPayout = web3.utils.toBN(0)
+      let totalFees = web3.utils.toBN(0)
+
+      let proposedPrices = [
+            web3.utils.toBN(27012),
+            web3.utils.toBN(27029),
+            web3.utils.toBN(27053),
+            web3.utils.toBN(27076),
+            web3.utils.toBN(27091)
+          ]
+      let payouts = []
+      let serviceFees = []
+
+      // create 5 piggies, auction, and settle
+      return sequentialPromise([
+        () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})), //[0]
+        () => Promise.resolve(tokenInstance.balanceOf(user01, {from: user01})), //[1]
+
+        () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})), //[2]
+        () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner})), //[3]
+
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
+
+        () => Promise.resolve(piggyInstance.startAuction(tokenIds[0],startPrice,reservePrice,
+                auctionLength,timeStep,priceStep,{from: owner})),
+        () => Promise.resolve(piggyInstance.startAuction(tokenIds[1],startPrice,reservePrice,
+                auctionLength,timeStep,priceStep,{from: owner})),
+        () => Promise.resolve(piggyInstance.startAuction(tokenIds[2],startPrice,reservePrice,
+                auctionLength,timeStep,priceStep,{from: owner})),
+        () => Promise.resolve(piggyInstance.startAuction(tokenIds[3],startPrice,reservePrice,
+                auctionLength,timeStep,priceStep,{from: owner})),
+        () => Promise.resolve(piggyInstance.startAuction(tokenIds[4],startPrice,reservePrice,
+                auctionLength,timeStep,priceStep,{from: owner})),
+
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[0], {from: user01})), //[14]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[1], {from: user01})), //[15]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[2], {from: user01})), //[16]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[3], {from: user01})), //[17]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[4], {from: user01})), //[18]
+
+        () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[0], oracleFee, {from: user01})),
+        () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[1], oracleFee, {from: user01})),
+        () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[2], oracleFee, {from: user01})),
+        () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[3], oracleFee, {from: user01})),
+        () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[4], oracleFee, {from: user01})),
+
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenIds[0], proposedPrices[0], {from: user01})), //[24]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenIds[1], proposedPrices[1], {from: user01})), //[25]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenIds[2], proposedPrices[2], {from: user01})), //[26]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenIds[3], proposedPrices[3], {from: user01})), //[27]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenIds[4], proposedPrices[4], {from: user01})), //[28]
+
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenIds[0], {from: user01})),
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenIds[1], {from: user01})),
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenIds[2], {from: user01})),
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenIds[3], {from: user01})),
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenIds[4], {from: user01})),
+
+        () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})), //[34]
+        () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner})), //[35]
+      ])
+      .then(result => {
+        // ERC20 balance accounting should be collateral from all piggies
+        originalBalanceOwner = result[0]
+        originalBalanceUser01 = result[1]
+
+        originalERC20BalanceOwner = result[2]
+        originalERC20BalanceUser01 = result[3]
+
+        auctionPrice01 = result[14].logs[1].args.paidPremium
+        auctionPrice02 = result[15].logs[1].args.paidPremium
+        auctionPrice03 = result[16].logs[1].args.paidPremium
+        auctionPrice04 = result[17].logs[1].args.paidPremium
+        auctionPrice05 = result[18].logs[1].args.paidPremium
+
+        auctionProceeds = auctionProceeds.add(auctionPrice01).add(auctionPrice02)
+          .add(auctionPrice03).add(auctionPrice04).add(auctionPrice05)
+
+        //token 1
+        assert.strictEqual(result[24].logs[0].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[24].logs[0].args.from, user01, "Event log didn't return correct sender")
+        assert.strictEqual(result[24].logs[0].args.tokenId.toString(), tokenIds[0].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[24].logs[0].args.proposedPrice.toString(), proposedPrices[0].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[24].logs[1].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[24].logs[1].args.from, user01, "Event log didn't return correct sender")
+        assert.strictEqual(result[24].logs[1].args.tokenId.toString(), tokenIds[0].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[24].logs[1].args.proposedPrice.toString(), proposedPrices[0].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[24].logs[2].event, "ArbiterSettled", "event name did not return correctly");
+        assert.strictEqual(result[24].logs[2].args.from, user01, "event param did not return correct address for sender");
+        assert.strictEqual(result[24].logs[2].args.arbiter, user01, "event param did not return correct address for arbiter");
+        assert.strictEqual(result[24].logs[2].args.tokenId.toString(), tokenIds[0].toString(), "event param did not return correct tokenId");
+        assert.strictEqual(result[24].logs[2].args.exercisePrice.toString(), proposedPrices[0].toString(), "event param did not return correct share amount");
+
+        //token 2
+        assert.strictEqual(result[25].logs[0].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[25].logs[0].args.from, user01, "Event log didn't return correct sender")
+        assert.strictEqual(result[25].logs[0].args.tokenId.toString(), tokenIds[1].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[25].logs[0].args.proposedPrice.toString(), proposedPrices[1].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[25].logs[1].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[25].logs[1].args.from, user01, "Event log didn't return correct sender")
+        assert.strictEqual(result[25].logs[1].args.tokenId.toString(), tokenIds[1].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[25].logs[1].args.proposedPrice.toString(), proposedPrices[1].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[25].logs[2].event, "ArbiterSettled", "event name did not return correctly");
+        assert.strictEqual(result[25].logs[2].args.from, user01, "event param did not return correct address for sender");
+        assert.strictEqual(result[25].logs[2].args.arbiter, user01, "event param did not return correct address for arbiter");
+        assert.strictEqual(result[25].logs[2].args.tokenId.toString(), tokenIds[1].toString(), "event param did not return correct tokenId");
+        assert.strictEqual(result[25].logs[2].args.exercisePrice.toString(), proposedPrices[1].toString(), "event param did not return correct share amount");
+
+        //token 3
+        assert.strictEqual(result[26].logs[0].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[26].logs[0].args.from, user01, "Event log didn't return correct sender")
+        assert.strictEqual(result[26].logs[0].args.tokenId.toString(), tokenIds[2].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[26].logs[0].args.proposedPrice.toString(), proposedPrices[2].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[26].logs[1].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[26].logs[1].args.from, user01, "Event log didn't return correct sender")
+        assert.strictEqual(result[26].logs[1].args.tokenId.toString(), tokenIds[2].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[26].logs[1].args.proposedPrice.toString(), proposedPrices[2].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[26].logs[2].event, "ArbiterSettled", "event name did not return correctly");
+        assert.strictEqual(result[26].logs[2].args.from, user01, "event param did not return correct address for sender");
+        assert.strictEqual(result[26].logs[2].args.arbiter, user01, "event param did not return correct address for arbiter");
+        assert.strictEqual(result[26].logs[2].args.tokenId.toString(), tokenIds[2].toString(), "event param did not return correct tokenId");
+        assert.strictEqual(result[26].logs[2].args.exercisePrice.toString(), proposedPrices[2].toString(), "event param did not return correct share amount");
+
+        //token 4
+        assert.strictEqual(result[27].logs[0].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[27].logs[0].args.from, user01, "Event log didn't return correct sender")
+        assert.strictEqual(result[27].logs[0].args.tokenId.toString(), tokenIds[3].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[27].logs[0].args.proposedPrice.toString(), proposedPrices[3].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[27].logs[1].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[27].logs[1].args.from, user01, "Event log didn't return correct sender")
+        assert.strictEqual(result[27].logs[1].args.tokenId.toString(), tokenIds[3].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[27].logs[1].args.proposedPrice.toString(), proposedPrices[3].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[27].logs[2].event, "ArbiterSettled", "event name did not return correctly");
+        assert.strictEqual(result[27].logs[2].args.from, user01, "event param did not return correct address for sender");
+        assert.strictEqual(result[27].logs[2].args.arbiter, user01, "event param did not return correct address for arbiter");
+        assert.strictEqual(result[27].logs[2].args.tokenId.toString(), tokenIds[3].toString(), "event param did not return correct tokenId");
+        assert.strictEqual(result[27].logs[2].args.exercisePrice.toString(), proposedPrices[3].toString(), "event param did not return correct share amount");
+
+        //token 5
+        assert.strictEqual(result[28].logs[0].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[28].logs[0].args.from, user01, "Event log didn't return correct sender")
+        assert.strictEqual(result[28].logs[0].args.tokenId.toString(), tokenIds[4].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[28].logs[0].args.proposedPrice.toString(), proposedPrices[4].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[28].logs[1].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[28].logs[1].args.from, user01, "Event log didn't return correct sender")
+        assert.strictEqual(result[28].logs[1].args.tokenId.toString(), tokenIds[4].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[28].logs[1].args.proposedPrice.toString(), proposedPrices[4].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[28].logs[2].event, "ArbiterSettled", "event name did not return correctly");
+        assert.strictEqual(result[28].logs[2].args.from, user01, "event param did not return correct address for sender");
+        assert.strictEqual(result[28].logs[2].args.arbiter, user01, "event param did not return correct address for arbiter");
+        assert.strictEqual(result[28].logs[2].args.tokenId.toString(), tokenIds[4].toString(), "event param did not return correct tokenId");
+        assert.strictEqual(result[28].logs[2].args.exercisePrice.toString(), proposedPrices[4].toString(), "event param did not return correct share amount");
+
+        erc20BalanceOwner = result[34]
+        erc20BalanceUser01 = result[35]
+
+        // token balance at token contract should be initial supply minted for user
+        assert.strictEqual(originalBalanceOwner.toString(), supply.toString(), "owner's original token balance did not return correctly")
+        assert.strictEqual(originalBalanceUser01.toString(), supply.toString(), "user01's original token balance did not return correctly")
+
+        // token balance at smartpiggies contract should start at zero
+        assert.strictEqual(originalERC20BalanceOwner.toString(), "0", "owner's original smartpiggies erc20 balance did not return zero")
+        assert.strictEqual(originalERC20BalanceUser01.toString(), "0", "user01's original smartpiggies erc20 balance did not return zero")
+
+        // calculate call payouts:
+        // if settlement price > strike | payout = settlement price - strike * lot size
+        oneHundred = web3.utils.toBN(100)
+
+        let payouts = proposedPrices.map(e => e.sub(strikePrice).mul(decimals).mul(lotSize).div(oneHundred))
+        let feeAmounts = payouts.map(e => e.mul(DEFAULT_FEE_PERCENT).div(DEFAULT_FEE_RESOLUTION))
+
+        payouts.forEach(e => totalPayout = totalPayout.add(e))
+        feeAmounts.forEach(e => totalFees = totalFees.add(e))
+        assert.strictEqual(erc20BalanceUser01.toString(), totalPayout.sub(totalFees).toString(), "user01's balance did not return correctly");
+
+        totalCollateral = collateral.mul(numOfTokens)
+        assert.strictEqual(erc20BalanceOwner.toString(), totalCollateral.sub(totalPayout).toString(), "writer balance did not return correctly")
+
+        return sequentialPromise([
+          () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})), //[0]
+          () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner})), //[1]
+
+          () => Promise.resolve(piggyInstance.claimPayout(tokenInstance.address, erc20BalanceOwner, {from: owner})), //[2]
+          () => Promise.resolve(piggyInstance.claimPayout(tokenInstance.address, erc20BalanceUser01, {from: user01})), //[3]
+
+          () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})), //[4]
+          () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner})), //[5]
+        ])
+      })
+      .then(result => {
+        balanceBeforeOwner = web3.utils.toBN(result[0])
+        balanceBeforeUser01 = web3.utils.toBN(result[1])
+
+        balanceAfterOwner = web3.utils.toBN(result[4])
+        balanceAfterUser01 = web3.utils.toBN(result[5])
+
+        // test token balances in token contract after claiming payout
+        assert.strictEqual(balanceAfterOwner.toString(),
+          originalBalanceOwner.add(auctionProceeds).sub(totalPayout).toString(),
+          "owner's final balance did not match original balance")
+
+        assert.strictEqual(balanceAfterUser01.toString(),
+          originalBalanceUser01.add(totalPayout).sub(totalFees).sub(auctionProceeds).toString(),
+          "user01's final balance did not match original balance")
+
+        // test token balance before and after claiming payout, receiving payout
+        assert.strictEqual(balanceAfterOwner.toString(), balanceBeforeOwner.add(totalCollateral).sub(totalPayout).toString(), "owner's token balance did not update correctly") // no change for owner
+
+        assert.strictEqual(balanceAfterUser01.toString(), balanceBeforeUser01.add(totalPayout).sub(totalFees).toString(), "user01's token balance did not return correctly")
+      })
+    }); //end test
+
+    it("Should settle via arbitration if writer is holder", function() {
+      //American call
+      collateralERC = tokenInstance.address
+      dataResolver = resolverInstance.address
+      collateral = web3.utils.toBN(1 * decimals)
+      lotSize = web3.utils.toBN(1)
+      strikePrice = web3.utils.toBN(27000) // split above 27000
+      expiry = 500
+      isEuro = false
+      isPut = false
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      oracleFee = web3.utils.toBN('1000000000000000000')
+
+      serviceFee = web3.utils.toBN(0)
+
+      params = [collateralERC,dataResolver,addr00,collateral,
+        lotSize,strikePrice,expiry,isEuro,isPut,isRequest]
+
+      tokenIds = [1,2,3,4,5]
+      numOfTokens = web3.utils.toBN(tokenIds.length)
+
+      let originalBalanceUser01
+      let totalCollateral = web3.utils.toBN(0)
+      let payout = web3.utils.toBN(0)
+      let totalPayout = web3.utils.toBN(0)
+      let totalFees = web3.utils.toBN(0)
+
+      let proposedPrices = [
+            web3.utils.toBN(27012),
+            web3.utils.toBN(27029),
+            web3.utils.toBN(27053),
+            web3.utils.toBN(27076),
+            web3.utils.toBN(27091)
+          ]
+      let payouts = []
+      let serviceFees = []
+
+      // create 5 piggies, auction, and settle
+      return sequentialPromise([
+        () => Promise.resolve(tokenInstance.balanceOf(user01, {from: user01})), //[0]
+
+        () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: user01})), //[1]
+
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: user01})),
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: user01})),
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: user01})),
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: user01})),
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: user01})),
+
+        () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[0], oracleFee, {from: user01})),
+        () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[1], oracleFee, {from: user01})),
+        () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[2], oracleFee, {from: user01})),
+        () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[3], oracleFee, {from: user01})),
+        () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[4], oracleFee, {from: user01})),
+
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenIds[0], proposedPrices[0], {from: user01})), //[12]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenIds[1], proposedPrices[1], {from: user01})), //[13]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenIds[2], proposedPrices[2], {from: user01})), //[14]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenIds[3], proposedPrices[3], {from: user01})), //[15]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenIds[4], proposedPrices[4], {from: user01})), //[16]
+
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenIds[0], {from: user01})),
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenIds[1], {from: user01})),
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenIds[2], {from: user01})),
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenIds[3], {from: user01})),
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenIds[4], {from: user01})),
+
+        () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: user01})), //22]
+      ])
+      .then(result => {
+        // ERC20 balance accounting should be collateral from all piggies
+        originalBalanceUser01 = result[0]
+
+        originalERC20BalanceUser01 = result[1]
+
+        //token 1
+        assert.strictEqual(result[12].logs[0].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[12].logs[0].args.from, user01, "Event log didn't return correct sender")
+        assert.strictEqual(result[12].logs[0].args.tokenId.toString(), tokenIds[0].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[12].logs[0].args.proposedPrice.toString(), proposedPrices[0].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[12].logs[1].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[12].logs[1].args.from, user01, "Event log didn't return correct sender")
+        assert.strictEqual(result[12].logs[1].args.tokenId.toString(), tokenIds[0].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[12].logs[1].args.proposedPrice.toString(), proposedPrices[0].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[12].logs[2].event, "ArbiterSettled", "event name did not return correctly");
+        assert.strictEqual(result[12].logs[2].args.from, user01, "event param did not return correct address for sender");
+        assert.strictEqual(result[12].logs[2].args.arbiter, addr00, "event param did not return correct address for arbiter");
+        assert.strictEqual(result[12].logs[2].args.tokenId.toString(), tokenIds[0].toString(), "event param did not return correct tokenId");
+        assert.strictEqual(result[12].logs[2].args.exercisePrice.toString(), proposedPrices[0].toString(), "event param did not return correct share amount");
+
+        //token 2
+        assert.strictEqual(result[13].logs[0].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[13].logs[0].args.from, user01, "Event log didn't return correct sender")
+        assert.strictEqual(result[13].logs[0].args.tokenId.toString(), tokenIds[1].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[13].logs[0].args.proposedPrice.toString(), proposedPrices[1].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[13].logs[1].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[13].logs[1].args.from, user01, "Event log didn't return correct sender")
+        assert.strictEqual(result[13].logs[1].args.tokenId.toString(), tokenIds[1].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[13].logs[1].args.proposedPrice.toString(), proposedPrices[1].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[13].logs[2].event, "ArbiterSettled", "event name did not return correctly");
+        assert.strictEqual(result[13].logs[2].args.from, user01, "event param did not return correct address for sender");
+        assert.strictEqual(result[13].logs[2].args.arbiter, addr00, "event param did not return correct address for arbiter");
+        assert.strictEqual(result[13].logs[2].args.tokenId.toString(), tokenIds[1].toString(), "event param did not return correct tokenId");
+        assert.strictEqual(result[13].logs[2].args.exercisePrice.toString(), proposedPrices[1].toString(), "event param did not return correct share amount");
+
+        //token 3
+        assert.strictEqual(result[14].logs[0].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[14].logs[0].args.from, user01, "Event log didn't return correct sender")
+        assert.strictEqual(result[14].logs[0].args.tokenId.toString(), tokenIds[2].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[14].logs[0].args.proposedPrice.toString(), proposedPrices[2].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[14].logs[1].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[14].logs[1].args.from, user01, "Event log didn't return correct sender")
+        assert.strictEqual(result[14].logs[1].args.tokenId.toString(), tokenIds[2].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[14].logs[1].args.proposedPrice.toString(), proposedPrices[2].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[14].logs[2].event, "ArbiterSettled", "event name did not return correctly");
+        assert.strictEqual(result[14].logs[2].args.from, user01, "event param did not return correct address for sender");
+        assert.strictEqual(result[14].logs[2].args.arbiter, addr00, "event param did not return correct address for arbiter");
+        assert.strictEqual(result[14].logs[2].args.tokenId.toString(), tokenIds[2].toString(), "event param did not return correct tokenId");
+        assert.strictEqual(result[14].logs[2].args.exercisePrice.toString(), proposedPrices[2].toString(), "event param did not return correct share amount");
+
+        //token 4
+        assert.strictEqual(result[15].logs[0].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[15].logs[0].args.from, user01, "Event log didn't return correct sender")
+        assert.strictEqual(result[15].logs[0].args.tokenId.toString(), tokenIds[3].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[15].logs[0].args.proposedPrice.toString(), proposedPrices[3].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[15].logs[1].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[15].logs[1].args.from, user01, "Event log didn't return correct sender")
+        assert.strictEqual(result[15].logs[1].args.tokenId.toString(), tokenIds[3].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[15].logs[1].args.proposedPrice.toString(), proposedPrices[3].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[15].logs[2].event, "ArbiterSettled", "event name did not return correctly");
+        assert.strictEqual(result[15].logs[2].args.from, user01, "event param did not return correct address for sender");
+        assert.strictEqual(result[15].logs[2].args.arbiter, addr00, "event param did not return correct address for arbiter");
+        assert.strictEqual(result[15].logs[2].args.tokenId.toString(), tokenIds[3].toString(), "event param did not return correct tokenId");
+        assert.strictEqual(result[15].logs[2].args.exercisePrice.toString(), proposedPrices[3].toString(), "event param did not return correct share amount");
+
+        //token 5
+        assert.strictEqual(result[16].logs[0].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[16].logs[0].args.from, user01, "Event log didn't return correct sender")
+        assert.strictEqual(result[16].logs[0].args.tokenId.toString(), tokenIds[4].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[16].logs[0].args.proposedPrice.toString(), proposedPrices[4].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[16].logs[1].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[16].logs[1].args.from, user01, "Event log didn't return correct sender")
+        assert.strictEqual(result[16].logs[1].args.tokenId.toString(), tokenIds[4].toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[16].logs[1].args.proposedPrice.toString(), proposedPrices[4].toString(), "Event log didn't return correct share param");
+
+        assert.strictEqual(result[16].logs[2].event, "ArbiterSettled", "event name did not return correctly");
+        assert.strictEqual(result[16].logs[2].args.from, user01, "event param did not return correct address for sender");
+        assert.strictEqual(result[16].logs[2].args.arbiter, addr00, "event param did not return correct address for arbiter");
+        assert.strictEqual(result[16].logs[2].args.tokenId.toString(), tokenIds[4].toString(), "event param did not return correct tokenId");
+        assert.strictEqual(result[16].logs[2].args.exercisePrice.toString(), proposedPrices[4].toString(), "event param did not return correct share amount");
+
+        erc20BalanceUser01 = result[22]
+
+        // token balance at token contract should be initial supply minted for user
+        assert.strictEqual(originalBalanceUser01.toString(), supply.toString(), "user01's original token balance did not return correctly")
+
+        // token balance at smartpiggies contract should start at zero
+        assert.strictEqual(originalERC20BalanceUser01.toString(), "0", "user01's original smartpiggies erc20 balance did not return zero")
+
+        // calculate call payouts:
+        // if settlement price > strike | payout = settlement price - strike * lot size
+        oneHundred = web3.utils.toBN(100)
+
+        let payouts = proposedPrices.map(e => e.sub(strikePrice).mul(decimals).mul(lotSize).div(oneHundred))
+        let feeAmounts = payouts.map(e => e.mul(DEFAULT_FEE_PERCENT).div(DEFAULT_FEE_RESOLUTION))
+
+        payouts.forEach(e => totalPayout = totalPayout.add(e))
+        feeAmounts.forEach(e => totalFees = totalFees.add(e))
+        totalCollateral = collateral.mul(numOfTokens)
+        assert.strictEqual(erc20BalanceUser01.toString(), totalCollateral.sub(totalFees).toString(), "writer's balance did not return correctly")
+
+        return sequentialPromise([
+          () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner})), //[0]
+          () => Promise.resolve(piggyInstance.claimPayout(tokenInstance.address, erc20BalanceUser01, {from: user01})), //[1]
+          () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner})), //[2]
+        ])
+      })
+      .then(result => {
+        balanceBeforeUser01 = web3.utils.toBN(result[0])
+        balanceAfterUser01 = web3.utils.toBN(result[2])
+
+        // test token balances in token contract after claiming payout
+        assert.strictEqual(balanceAfterUser01.toString(),
+          originalBalanceUser01.sub(totalFees).toString(),
+          "user01's final balance did not match original balance")
+
+        // test token balance before and after claiming payout, receiving payout
+        assert.strictEqual(balanceAfterUser01.toString(), balanceBeforeUser01.add(totalCollateral).sub(totalFees).toString(), "user01's token balance did not return correctly")
+      })
+    }); //end test
+
+  }); //end describe
 }); //end test suite

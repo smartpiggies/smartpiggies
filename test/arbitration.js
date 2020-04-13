@@ -658,6 +658,130 @@ contract ('SmartPiggies', function(accounts) {
       });
     }); //end test block
 
+    it("Should settle via arbitration when writer, holder, and arbiter are the same", function() {
+      collateralERC = tokenInstance.address
+      dataResolver = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = web3.utils.toBN(28000)
+      expiry = web3.utils.toBN(1) // can only settle after expiry
+      isEuro = false
+      isPut = true
+      isRequest = false
+      currentBlock = web3.utils.toBN(0)
+      tokenId = 1;
+
+      const FEE_PERCENT = web3.utils.toBN(50)
+      const FEE_RESOLUTION = web3.utils.toBN(10000)
+      serviceFee = web3.utils.toBN('0')
+      proposedPrice = web3.utils.toBN(28500)
+
+      params = [collateralERC,dataResolver,addr00,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest];
+
+      return sequentialPromise([
+        () => Promise.resolve(piggyInstance.createPiggy(
+          params[0],params[1],params[2],params[3],
+          params[4],params[5],params[6],params[7],
+          params[8], params[9], {from: owner})), // [0]
+        () => Promise.resolve(piggyInstance.setArbiter(tokenId, user02, {from: owner})), // [1]
+        () => Promise.resolve(piggyInstance.transferFrom(owner, user01, tokenId, {from: owner})), // [2]
+        () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user03, {from: owner})), // [3]
+        () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user03, {from: user01})), // [4]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenId, proposedPrice, {from: owner})), // [5]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenId, proposedPrice, {from: user03})), // [6]
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: user03})) // [7] settle called by arbiter
+      ])
+      .then(result => {
+        /* first proposal event */
+        assert.strictEqual(result[5].logs[0].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[5].logs[0].args.from, owner, "Event log didn't return correct sender")
+        assert.strictEqual(result[5].logs[0].args.tokenId.toString(), tokenId.toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[5].logs[0].args.proposedPrice.toString(), proposedPrice.toString(), "Event log didn't return correct price param");
+        /* second proposal event */
+        assert.strictEqual(result[6].logs[0].event, "PriceProposed", "Event logs did not return correct event name");
+        assert.strictEqual(result[6].logs[0].args.from, user03, "Event log didn't return correct sender")
+        assert.strictEqual(result[6].logs[0].args.tokenId.toString(), tokenId.toString(), "Event log didn't return correct token id param");
+        assert.strictEqual(result[6].logs[0].args.proposedPrice.toString(), proposedPrice.toString(), "Event log didn't return correct price param");
+        /* settle event */
+        assert.strictEqual(result[6].logs[1].event, "ArbiterSettled", "event name did not return correctly");
+        assert.strictEqual(result[6].logs[1].args.from, user03, "event param did not return correct address for sender");
+        assert.strictEqual(result[6].logs[1].args.arbiter, user03, "event param did not return correct address for arbiter");
+        assert.strictEqual(result[6].logs[1].args.tokenId.toString(), tokenId.toString(), "event param did not return correct tokenId");
+        assert.strictEqual(result[6].logs[1].args.exercisePrice.toString(), proposedPrice.toString(), "event param did not return correct price amount");
+        return piggyInstance.getDetails(tokenId, {from: owner});
+      })
+      .then(result => {
+        /* check that struct is zero'ed out */
+        assert.strictEqual(result.addresses.arbiter, addr00, "arbiter struct param did not return address zero");
+        assert.strictEqual(result.addresses.writerProposedNewArbiter, addr00, "writerProposedNewArbiter did not return address zero");
+        assert.strictEqual(result.addresses.holderProposedNewArbiter, addr00, "holderProposedNewArbiter did not return address zero");
+        assert.strictEqual(result.uintDetails.arbiterProposedPrice, zeroParam.toString(), "arbiterProposedPrice did not return address zero");
+        assert.strictEqual(result.uintDetails.writerProposedPrice, zeroParam.toString(), "writerProposedPrice did not return address zero");
+        assert.strictEqual(result.uintDetails.holderProposedPrice, zeroParam.toString(), "holderProposedPrice did not return address zero");
+        assert.isNotTrue(result.flags.arbiterHasBeenSet, "arbiterHasBeenSet did not return false");
+        assert.isNotTrue(result.flags.writerHasProposedNewArbiter, "writerHasProposedNewArbiter did not return false");
+        assert.isNotTrue(result.flags.holderHasProposedNewArbiter, "holderHasProposedNewArbiter did not return false");
+        assert.isNotTrue(result.flags.arbiterHasProposedPrice, "arbiterHasProposedPrice did not return false");
+        assert.isNotTrue(result.flags.writerHasProposedPrice, "writerHasProposedPrice did not return false");
+        assert.isNotTrue(result.flags.holderHasProposedPrice, "holderHasProposedPrice did not return false");
+
+        return piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner});
+      })
+      .then(result => {
+        // Put payout:
+        // if strike > settlement price | payout = strike - settlement price * lot size
+        payout = web3.utils.toBN(0)
+        if (strikePrice.gt(proposedPrice)) {
+          delta = strikePrice.sub(proposedPrice)
+          payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
+        }
+        if (payout.gt(collateral)) {
+          payout = collateral
+        }
+        serviceFee = payout.mul(FEE_PERCENT).div(FEE_RESOLUTION)
+
+        assert.strictEqual(result.toString(), collateral.sub(payout).toString(), "owner's ERC20 balance did not return correctly");
+        return piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: user01});
+      })
+      .then(result => {
+        assert.strictEqual(result.toString(), payout.sub(serviceFee).toString(), "user's ERC20 balance did not return correctly");
+
+        /* check piggy struct has been zero'ed */
+        return piggyInstance.getDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        //check DetailAddresses
+        assert.strictEqual(result[0].writer, addr00, "Details should have correct writer address.");
+        assert.strictEqual(result[0].holder, addr00, "Details should have correct holder address.");
+        assert.strictEqual(result[0].collateralERC, addr00, "Details should have correct collateralERC address.");
+        assert.strictEqual(result[0].dataResolver, addr00, "Details should have correct dataResolver address.");
+        //check DetailUints
+        assert.strictEqual(result[1].collateral, "0", "Details should have correct collateral amount.");
+        assert.strictEqual(result[1].lotSize, "0", "Details should have correct lotSize amount.");
+        assert.strictEqual(result[1].strikePrice, "0", "Details should have correct strikePrice amount.");
+        assert.strictEqual(result[1].settlementPrice, "0", "Details should have returned settlementPrice amount of 0.");
+        assert.strictEqual(result[1].reqCollateral, "0", "Details should have returned reqCollateral amount of 0.");
+        assert.strictEqual(result[1].collateralDecimals, "0", "Details should have returned collateralDecimals amount of 18.");
+        assert.strictEqual(result[1].writerProposedPrice, "0", "Details should have returned zeroed writerProposedPrice");
+        assert.strictEqual(result[1].holderProposedPrice, "0", "Details should have returned zeroed holderProposedPrice");
+        //check BoolFlags
+        assert.isNotTrue(result[2].isRequest, "Details should have returned false for isRequest.");
+        assert.isNotTrue(result[2].isEuro, "Details should have returned false for isEuro.");
+        assert.isNotTrue(result[2].isPut, "Details should have returned false for isPut.");
+        assert.isNotTrue(result[2].hasBeenCleared, "Details should have returned false for hasBeenCleared.");
+        assert.isNotTrue(result[2].writerHasProposedPrice, "Details should have returned false for writerHasProposedPrice.");
+        assert.isNotTrue(result[2].holderHasProposedPrice, "Details should have returned false for holderHasProposedPrice.");
+
+        return piggyInstance.getOwnedPiggies(owner, {from: owner})
+
+      })
+      .then(result => {
+        //Note returning result without .toString() will return an empty array
+        assert.strictEqual(result.toString(), '', "getOwnedPiggies did not return correctly");
+      });
+    }); //end test block
+
     it.skip("Should fail to settle via arbitartion if arbiter has not been set", function() {
       collateralERC = tokenInstance.address
       dataResolver = resolverInstance.address

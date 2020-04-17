@@ -129,7 +129,7 @@ contract ('SmartPiggies', function(accounts) {
       .then(result => {
         assert.isTrue(result.receipt.status, "create piggy tx did not return true")
         tokenId = result.logs[0].args.ints[0]
-        return piggyInstance.setArbiter(tokenId, arbiter, {from: owner})
+        return piggyInstance.updateArbiter(tokenId, arbiter, {from: owner})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "setArbiter did not return true")
@@ -180,7 +180,7 @@ contract ('SmartPiggies', function(accounts) {
       return sequentialPromise([
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
                 params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})), //[0]
-        () => Promise.resolve(piggyInstance.setArbiter(tokenId, arbiter, {from: owner})), //[1]
+        () => Promise.resolve(piggyInstance.updateArbiter(tokenId, arbiter, {from: owner})), //[1]
         () => Promise.resolve(piggyInstance.confirmArbiter(tokenId, {from: arbiter})), //[2]
         () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: owner})), //[3]
         () => Promise.resolve(piggyInstance.startAuction(tokenId,startPrice,reservePrice,

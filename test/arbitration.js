@@ -114,7 +114,7 @@ contract ('SmartPiggies', function(accounts) {
 
         /* get token id of created piggy */
         tokenId = result.logs[0].args[1][0].toString();
-        return piggyInstance.setArbiter(tokenId, user01);
+        return piggyInstance.updateArbiter(tokenId, user01);
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "set arbiter status did not return true");
@@ -161,7 +161,7 @@ contract ('SmartPiggies', function(accounts) {
 
       /* transaction should revert if sender is not owner */
       return expectedExceptionPromise(
-        () => piggyInstance.setArbiter(
+        () => piggyInstance.updateArbiter(
           tokenId, user01,
           {from: user01, gas: 8000000 }),
           3000000);
@@ -204,7 +204,7 @@ contract ('SmartPiggies', function(accounts) {
 
         /* transaction should revert if sender is not owner */
         return expectedExceptionPromise(
-          () => piggyInstance.setArbiter(
+          () => piggyInstance.updateArbiter(
             tokenId, user02,
             {from: user02, gas: 8000000 }),
             3000000);
@@ -237,7 +237,7 @@ contract ('SmartPiggies', function(accounts) {
           params[0],params[1],params[2],params[3],
           params[4],params[5],params[6],params[7],
           params[8], params[9], {from: owner})), // [0]
-        () => Promise.resolve(piggyInstance.setArbiter(tokenId, user02, {from: owner})), // [1]
+        () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user02, {from: owner})), // [1]
         () => Promise.resolve(piggyInstance.transferFrom(owner, user01, tokenId, {from: owner})), // [2]
         () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user03, {from: owner})), // [3]
         () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user03, {from: user01})), // [4]
@@ -279,7 +279,7 @@ contract ('SmartPiggies', function(accounts) {
           params[0],params[1],params[2],params[3],
           params[4],params[5],params[6],params[7],
           params[8], params[9], {from: owner})), // [0]
-        () => Promise.resolve(piggyInstance.setArbiter(tokenId, user02, {from: owner})), // [1]
+        () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user02, {from: owner})), // [1]
         () => Promise.resolve(piggyInstance.transferFrom(owner, user01, tokenId, {from: owner})), // [2]
       ])
       .then(result => {
@@ -321,7 +321,7 @@ contract ('SmartPiggies', function(accounts) {
           params[0],params[1],params[2],params[3],
           params[4],params[5],params[6],params[7],
           params[8], params[9], {from: owner})), // [0]
-        () => Promise.resolve(piggyInstance.setArbiter(tokenId, user02, {from: owner})), // [1]
+        () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user02, {from: owner})), // [1]
         () => Promise.resolve(piggyInstance.transferFrom(owner, user01, tokenId, {from: owner})), // [2]
         () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user03, {from: owner})), // [3]
         () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user03, {from: user01})), // [4]
@@ -468,7 +468,7 @@ contract ('SmartPiggies', function(accounts) {
           params[0],params[1],params[2],params[3],
           params[4],params[5],params[6],params[7],
           params[8], params[9], {from: owner})), // [0]
-        () => Promise.resolve(piggyInstance.setArbiter(tokenId, user02, {from: owner})), // [1]
+        () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user02, {from: owner})), // [1]
         () => Promise.resolve(piggyInstance.transferFrom(owner, user01, tokenId, {from: owner})), // [2]
         () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user03, {from: owner})), // [3]
         () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user03, {from: user01})), // [4]
@@ -593,7 +593,7 @@ contract ('SmartPiggies', function(accounts) {
           params[0],params[1],params[2],params[3],
           params[4],params[5],params[6],params[7],
           params[8], params[9], {from: owner})), // [0]
-        () => Promise.resolve(piggyInstance.setArbiter(tokenId, user02, {from: owner})), // [1]
+        () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user02, {from: owner})), // [1]
         () => Promise.resolve(piggyInstance.transferFrom(owner, user01, tokenId, {from: owner})), // [2]
         () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user03, {from: owner})), // [3]
         () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user03, {from: user01})), // [4]
@@ -684,7 +684,7 @@ contract ('SmartPiggies', function(accounts) {
           params[0],params[1],params[2],params[3],
           params[4],params[5],params[6],params[7],
           params[8], params[9], {from: owner})), // [0]
-        () => Promise.resolve(piggyInstance.setArbiter(tokenId, user02, {from: owner})), // [1]
+        () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user02, {from: owner})), // [1]
         () => Promise.resolve(piggyInstance.transferFrom(owner, user01, tokenId, {from: owner})), // [2]
         () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user03, {from: owner})), // [3]
         () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user03, {from: user01})), // [4]
@@ -841,7 +841,7 @@ contract ('SmartPiggies', function(accounts) {
           params[0],params[1],params[2],params[3],
           params[4],params[5],params[6],params[7],
           params[8], params[9], {from: owner})), // [0]
-        () => Promise.resolve(piggyInstance.setArbiter(tokenId, user02, {from: owner})), // [1]
+        () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user02, {from: owner})), // [1]
         () => Promise.resolve(piggyInstance.transferFrom(owner, user01, tokenId, {from: owner})), // [2]
         () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: owner})), // [3]
       ])
@@ -881,7 +881,7 @@ contract ('SmartPiggies', function(accounts) {
           params[0],params[1],params[2],params[3],
           params[4],params[5],params[6],params[7],
           params[8], params[9], {from: owner})), // [0]
-        () => Promise.resolve(piggyInstance.setArbiter(tokenId, user02, {from: owner})), // [1]
+        () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user02, {from: owner})), // [1]
         () => Promise.resolve(piggyInstance.transferFrom(owner, user01, tokenId, {from: owner})), // [2]
         () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: owner})), // [3]
       ])
@@ -954,7 +954,7 @@ contract ('SmartPiggies', function(accounts) {
       .then(result => {
         //use last tokenId created
         tokenId = result
-        return piggyInstance.setArbiter(tokenId, user03, {from: owner});
+        return piggyInstance.updateArbiter(tokenId, user03, {from: owner});
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "setArbiter did not return true");

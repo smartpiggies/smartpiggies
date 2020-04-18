@@ -115,15 +115,12 @@ contract ('SmartPiggies', function(accounts) {
         params = [collateralERC,dataResolver,addr00,collateral,
           lotSize,strikePrice,expiry,isEuro,isPut,isRequest];
 
-        return piggyInstance.setFeeAddress(feeAddress, {from: owner})
-        .then(result => {
-          assert.isTrue(result.receipt.status, "setFeeAddress status did not return true")
-          return piggyInstance.createPiggy(
-            params[0],params[1],params[2],params[3],
-            params[4],params[5],params[6],params[7],
-            params[8],params[9],
-            {from: user01})
-        })
+        return piggyInstance.createPiggy(
+          params[0],params[1],params[2],params[3],
+          params[4],params[5],params[6],params[7],
+          params[8],params[9],
+          {from: user01}
+        )
         .then(result => {
           assert.isTrue(result.receipt.status, "create did not return true")
           assert.strictEqual(result.logs[0].event, "CreatePiggy", "Event log from create didn't return correct event name")

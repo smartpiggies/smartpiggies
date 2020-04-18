@@ -185,7 +185,7 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: owner})), //[3]
         () => Promise.resolve(piggyInstance.startAuction(tokenId,startPrice,reservePrice,
                 auctionLength,timeStep,priceStep,{from: owner})), //[4]
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})), //[5]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, "0", {from: user01})), //[5]
         () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})), //[6]
         () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})), //[7]
         () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: owner})) //[8]

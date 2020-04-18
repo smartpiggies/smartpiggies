@@ -47,6 +47,7 @@ contract ('SmartPiggies', function(accounts) {
   var path = '';
   var oracleTokenAddress;
   var oraclePrice = web3.utils.toBN(27000); //including hundreth of a cent
+  let zeroNonce = web3.utils.toBN(0)
 
   const DEFAULT_FEE_PERCENT = web3.utils.toBN(50)
   const DEFAULT_FEE_RESOLUTION = web3.utils.toBN(10000)
@@ -2405,7 +2406,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.isTrue(result[3].auctionActive, "getAuctionDetails did not return true for auction active")
         assert.isNotTrue(result[3].satisfyInProgress, "getAuctionDetails did not return false for satisfyInProgress")
 
-        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+        return piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
@@ -2499,7 +2500,7 @@ contract ('SmartPiggies', function(accounts) {
         expiryBlock = result.expiryBlock
         startBlock = web3.utils.toBN(result.startBlock)
 
-        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+        return piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
@@ -2616,7 +2617,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.isTrue(result.auctionActive, "getAuctionDetails did not return true for auction active")
         assert.isNotTrue(result.satisfyInProgress, "getAuctionDetails did not return false for satisfyInProgress")
 
-        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+        return piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
@@ -2694,7 +2695,7 @@ contract ('SmartPiggies', function(accounts) {
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "approve did not return true")
-        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+        return piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
@@ -3326,7 +3327,7 @@ contract ('SmartPiggies', function(accounts) {
       .then(result => {
         expiryBlock = result.expiryBlock
         startBlock = web3.utils.toBN(result.startBlock)
-        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+        return piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
@@ -3456,7 +3457,7 @@ contract ('SmartPiggies', function(accounts) {
       .then(result => {
         expiryBlock = result.expiryBlock
         startBlock = web3.utils.toBN(result.startBlock)
-        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+        return piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
@@ -3584,7 +3585,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.isTrue(result.auctionActive, "getAuctionDetails did not return true for auction active")
         assert.isNotTrue(result.satisfyInProgress, "getAuctionDetails did not return false for satisfyInProgress")
 
-        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+        return piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
@@ -3676,6 +3677,7 @@ contract ('SmartPiggies', function(accounts) {
         return expectedExceptionPromise(
             () => piggyInstance.satisfyAuction(
               tokenId,
+              zeroNonce, 
               {from: owner, gas: 8000000 }), //transaction should fail from owner
             3000000);
       })
@@ -3737,7 +3739,7 @@ contract ('SmartPiggies', function(accounts) {
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "approve did not return true")
-        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+        return piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
@@ -3761,6 +3763,7 @@ contract ('SmartPiggies', function(accounts) {
         return expectedExceptionPromise(
             () => piggyInstance.satisfyAuction(
               tokenId,
+              zeroNonce,
               {from: user02, gas: 8000000 }), //transaction should fail from owner
             3000000);
       })
@@ -3822,7 +3825,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
         ])
@@ -3906,7 +3909,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
         ])
@@ -3993,7 +3996,7 @@ contract ('SmartPiggies', function(accounts) {
         return tokenInstance.approve(piggyInstance.address, collateral, {from: user01})
       })
       .then(() => {
-        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+        return piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
@@ -4135,7 +4138,7 @@ contract ('SmartPiggies', function(accounts) {
         return tokenInstance.approve(piggyInstance.address, collateral, {from: user01})
       })
       .then(() => {
-        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+        return piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
@@ -4220,7 +4223,7 @@ contract ('SmartPiggies', function(accounts) {
         return tokenInstance.approve(piggyInstance.address, collateral, {from: user01})
       })
       .then(() => {
-        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+        return piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
@@ -4294,7 +4297,7 @@ contract ('SmartPiggies', function(accounts) {
         return tokenInstance.approve(piggyInstance.address, collateral, {from: user01})
       })
       .then(() => {
-        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+        return piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
@@ -4368,7 +4371,7 @@ contract ('SmartPiggies', function(accounts) {
         return tokenInstance.approve(piggyInstance.address, collateral, {from: user01})
       })
       .then(() => {
-        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+        return piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
@@ -4442,7 +4445,7 @@ contract ('SmartPiggies', function(accounts) {
         return tokenInstance.approve(piggyInstance.address, collateral, {from: user01})
       })
       .then(() => {
-        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+        return piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
@@ -4516,7 +4519,7 @@ contract ('SmartPiggies', function(accounts) {
         return tokenInstance.approve(piggyInstance.address, collateral, {from: user01})
       })
       .then(() => {
-        return piggyInstance.satisfyAuction(tokenId, {from: user01})
+        return piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "satisfyAuction did not return true")
@@ -4594,7 +4597,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -4678,7 +4681,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -4765,7 +4768,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -4893,7 +4896,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -4975,7 +4978,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -5060,7 +5063,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -5143,7 +5146,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -5227,7 +5230,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -5310,7 +5313,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -5395,7 +5398,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -5477,7 +5480,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -5558,7 +5561,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -5624,7 +5627,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01}))
         ])
@@ -5693,7 +5696,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -5776,7 +5779,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -5860,7 +5863,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -5943,7 +5946,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -6026,7 +6029,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -6110,7 +6113,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -6193,7 +6196,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -6260,7 +6263,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01}))
         ])
@@ -6333,7 +6336,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -6427,7 +6430,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -6504,7 +6507,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})),
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
           () => Promise.resolve(linkInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(linkInstance.approve(resolverInstance.address, collateral, {from: user01})),
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
@@ -6593,7 +6596,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01}))
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01}))
         ])
       })
       .then(result => {
@@ -6676,7 +6679,7 @@ contract ('SmartPiggies', function(accounts) {
         return sequentialPromise([
           () => Promise.resolve(tokenInstance.mint(user01, collateral, {from: owner})),
           () => Promise.resolve(tokenInstance.approve(piggyInstance.address, collateral, {from: user01})),
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01}))
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01}))
         ])
       })
       .then(result => {

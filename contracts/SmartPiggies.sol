@@ -1034,30 +1034,12 @@ contract SmartPiggies is UsingCooldown {
   /** Arbitration mechanisms
   */
 
-  function setArbiter(uint256 _tokenId, address _arbiter)
-    public
-    returns (bool)
-  {
-    // require valid token, valid non-zero address, that arbiter has not been set, that token is not on auction, that msg.sender is writer
-    require(piggies[_tokenId].addresses.writer == msg.sender, "you must be the writer to set an arbiter");
-    require(piggies[_tokenId].addresses.holder == msg.sender, "you must currently control the token to set an arbiter");
-    require(!auctions[_tokenId].auctionActive, "token cannot be on auction");
-    require(_arbiter != address(0), "arbiter address must not be zero address");
-    require(piggies[_tokenId].addresses.arbiter == address(0), "arbiter has already been set");
-
-    // update struct values
-    piggies[_tokenId].addresses.arbiter = _arbiter;
-
-    emit ArbiterSet(msg.sender, _arbiter, _tokenId);
-
-    return true;
-  }
-
   function updateArbiter(uint256 _tokenId, address _newArbiter)
     public
     returns (bool)
   {
     require(_newArbiter != address(0), "arbiter address must not be zero address");
+    require(!auctions[_tokenId].auctionActive, "token cannot be on auction");
     address _holder = piggies[_tokenId].addresses.holder;
     address _writer = piggies[_tokenId].addresses.writer;
     require(msg.sender == _holder || msg.sender == _writer, "only the writer or holder can propose a new arbiter");

@@ -44,6 +44,7 @@ contract ('SmartPiggies', function(accounts) {
   var path = '';
   var oracleTokenAddress;
   var oraclePrice = web3.utils.toBN(0); // return price from oracle
+  let zeroNonce = web3.utils.toBN(0)
 
   /* default feePercent param = 50 */
   const DEFAULT_FEE_PERCENT = web3.utils.toBN(50);
@@ -204,11 +205,11 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(piggyInstance.startAuction(tokenIds[4],startPrice,reservePrice,
                 auctionLength,timeStep,priceStep,{from: owner})),
 
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[0], {from: user01})), //[15]
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[1], {from: user01})), //[16]
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[2], {from: user01})), //[17]
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[3], {from: user01})), //[18]
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[4], {from: user01})), //[19]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[0], zeroNonce, {from: user01})), //[15]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[1], zeroNonce, {from: user01})), //[16]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[2], zeroNonce, {from: user01})), //[17]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[3], zeroNonce, {from: user01})), //[18]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[4], zeroNonce, {from: user01})), //[19]
 
         () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[0], oracleFee, {from: user01})),
         () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[1], oracleFee, {from: user01})),
@@ -385,11 +386,11 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(piggyInstance.startAuction(tokenIds[4],startPrice,reservePrice,
                 auctionLength,timeStep,priceStep,{from: owner})),
 
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[0], {from: user01})), //[15]
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[1], {from: user01})), //[16]
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[2], {from: user01})), //[17]
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[3], {from: user01})), //[18]
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[4], {from: user01})), //[19]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[0], zeroNonce, {from: user01})), //[15]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[1], zeroNonce, {from: user01})), //[16]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[2], zeroNonce, {from: user01})), //[17]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[3], zeroNonce, {from: user01})), //[18]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[4], zeroNonce, {from: user01})), //[19]
 
         () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[0], oracleFee, {from: user01})),
         () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[1], oracleFee, {from: user01})),
@@ -580,11 +581,11 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(piggyInstance.startAuction(tokenIds[4],startPrice,reservePrice,
                 auctionLength,timeStep,priceStep,{from: owner})),
 
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[0], {from: user01})), //[15]
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[1], {from: user01})), //[16]
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[2], {from: user01})), //[17]
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[3], {from: user01})), //[18]
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[4], {from: user01})), //[19]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[0], zeroNonce, {from: user01})), //[15]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[1], zeroNonce, {from: user01})), //[16]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[2], zeroNonce, {from: user01})), //[17]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[3], zeroNonce, {from: user01})), //[18]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[4], zeroNonce, {from: user01})), //[19]
 
         () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[0], oracleFee, {from: user01})),
         () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[1], oracleFee, {from: user01})),
@@ -784,11 +785,11 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(piggyInstance.startAuction(tokenIds[4],startPrice,reservePrice,
                 auctionLength,timeStep,priceStep,{from: owner})),
 
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[0], {from: user01})), //[15]
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[1], {from: user01})), //[16]
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[2], {from: user01})), //[17]
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[3], {from: user01})), //[18]
-        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[4], {from: user01})), //[19]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[0], zeroNonce, {from: user01})), //[15]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[1], zeroNonce, {from: user01})), //[16]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[2], zeroNonce, {from: user01})), //[17]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[3], zeroNonce, {from: user01})), //[18]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenIds[4], zeroNonce, {from: user01})), //[19]
 
         () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[0], oracleFee, {from: user01})),
         () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenIds[1], oracleFee, {from: user01})),

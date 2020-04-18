@@ -37,6 +37,8 @@ contract ('SmartPiggies', function(accounts) {
   var path = '';
   var oracleTokenAddress;
   var oraclePrice = web3.utils.toBN(27000); //including hundreth of a cent
+  let zeroNonce = web3.utils.toBN(0)
+
   /* default feePercent param = 50 */
   const DEFAULT_FEE_PERCENT = web3.utils.toBN(50);
   /* default feePercent param = 10,000 */
@@ -138,7 +140,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.isTrue(result.receipt.status, "startAuction did not return true")
 
         return sequentialPromise([
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})), //[0]
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})), //[0]
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})), //[1]
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})), //[2]
           () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})), //[3]
@@ -233,7 +235,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.isTrue(result.receipt.status, "startAuction did not return true")
 
         return sequentialPromise([
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})), //[0]
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})), //[0]
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})), //[1]
           () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})), //[2]
           () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})), //[3]

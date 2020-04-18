@@ -17,7 +17,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 **/
-pragma solidity 0.5.16;
+pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
 
@@ -273,6 +273,7 @@ contract SmartPiggies is UsingCooldown {
     uint256 writerProposedPrice;
     uint256 holderProposedPrice;
     uint256 arbiterProposedPrice;
+    uint8 rfpNonce;
   }
 
   struct BoolFlags {
@@ -329,6 +330,7 @@ contract SmartPiggies is UsingCooldown {
   event UpdateRFP(
     address indexed from,
     uint256 indexed tokenId,
+    uint8 indexed rfpNonce,
     address collateralERC,
     address dataResolver,
     address arbiter,
@@ -607,6 +609,7 @@ contract SmartPiggies is UsingCooldown {
   {
     require(piggies[_tokenId].addresses.holder == msg.sender, "you must own the RFP to update it");
     require(piggies[_tokenId].flags.isRequest, "you can only update an RFP");
+    require(!auctions[_tokenId].satisfyInProgress, "auction cannot be in the process of being satisfied");
     uint256 expiryBlock;
     if (_collateralERC != address(0)) {
       piggies[_tokenId].addresses.collateralERC = _collateralERC;
@@ -635,9 +638,14 @@ contract SmartPiggies is UsingCooldown {
     piggies[_tokenId].flags.isEuro = _isEuro;
     piggies[_tokenId].flags.isPut = _isPut;
 
+    // increment update nonce
+    // protects fulfiller from auction front running
+    ++piggies[_tokenId].uintDetails.rfpNonce;
+
     emit UpdateRFP(
       msg.sender,
       _tokenId,
+      piggies[_tokenId].uintDetails.rfpNonce,
       _collateralERC,
       _dataResolver,
       _arbiter,
@@ -758,7 +766,7 @@ contract SmartPiggies is UsingCooldown {
     return true;
   }
 
-  function satisfyAuction(uint256 _tokenId)
+  function satisfyAuction(uint256 _tokenId, uint8 _rfpNonce)
     public
     whenNotFrozen
     returns (bool)
@@ -773,17 +781,26 @@ contract SmartPiggies is UsingCooldown {
     }
     // get linear auction premium; reserve price should be a ceiling or floor depending on whether this is an RFP or an option, respectively
     uint256 _auctionPremium = _getAuctionPrice(_tokenId);
+
     // lock mutex
     auctions[_tokenId].satisfyInProgress = true;
+
+    bool success; // return bool from a token transfer
+    bytes memory result; // return data from a token transfer
+    bytes32 txCheck; // bytes32 check from a token transfer
+
     if (piggies[_tokenId].flags.isRequest) {
+      // check RFP Nonce against auction front running
+      require(_rfpNonce == piggies[_tokenId].uintDetails.rfpNonce, "RFP Nonce does not match");
+
       // msg.sender needs to delegate reqCollateral
-      (bool success, bytes memory result) = attemptPaymentTransfer(
+      (success, result) = attemptPaymentTransfer(
         piggies[_tokenId].addresses.collateralERC,
         msg.sender,
         address(this),
         piggies[_tokenId].uintDetails.reqCollateral
       );
-      bytes32 txCheck = abi.decode(result, (bytes32));
+      txCheck = abi.decode(result, (bytes32));
       if (!success || txCheck != TX_SUCCESS) {
         auctions[_tokenId].satisfyInProgress = false;
         return false;
@@ -799,27 +816,27 @@ contract SmartPiggies is UsingCooldown {
         _change = auctions[_tokenId].reservePrice.sub(_adjPremium);
       }
       // current holder pays premium (via amount already delegated to this contract in startAuction)
-      (bool success02, bytes memory result02) = address(PaymentToken(piggies[_tokenId].addresses.collateralERC)).call(
+      (success, result) = address(PaymentToken(piggies[_tokenId].addresses.collateralERC)).call(
         abi.encodeWithSignature(
           "transfer(address,uint256)",
           msg.sender,
           _adjPremium
         )
       );
-      bytes32 txCheck02 = abi.decode(result02, (bytes32));
-      require(success02 && txCheck02 == TX_SUCCESS, "ERC20 token transfer failed");
+      txCheck = abi.decode(result, (bytes32));
+      require(success && txCheck == TX_SUCCESS, "ERC20 token transfer failed");
 
       // current holder receives any change due
       if (_change > 0) {
-        (bool success03, bytes memory result03) = address(PaymentToken(piggies[_tokenId].addresses.collateralERC)).call(
+        (success, result) = address(PaymentToken(piggies[_tokenId].addresses.collateralERC)).call(
           abi.encodeWithSignature(
             "transfer(address,uint256)",
             piggies[_tokenId].addresses.holder,
             _change
           )
         );
-        bytes32 txCheck03 = abi.decode(result03, (bytes32));
-        require(success03 && txCheck03 == TX_SUCCESS, "ERC20 token transfer failed");
+        txCheck = abi.decode(result, (bytes32));
+        require(success && txCheck == TX_SUCCESS, "ERC20 token transfer failed");
       }
       // isRequest becomes false
       piggies[_tokenId].flags.isRequest = false;
@@ -841,14 +858,14 @@ contract SmartPiggies is UsingCooldown {
         _adjPremium = auctions[_tokenId].reservePrice;
       }
       // msg.sender pays (adjusted) premium
-      (bool success04, bytes memory result04) = attemptPaymentTransfer(
+      (success, result) = attemptPaymentTransfer(
         piggies[_tokenId].addresses.collateralERC,
         msg.sender,
         piggies[_tokenId].addresses.holder,
         _adjPremium
       );
-      bytes32 txCheck04 = abi.decode(result04, (bytes32));
-      if (!success04 || txCheck04 != TX_SUCCESS) {
+      txCheck = abi.decode(result, (bytes32));
+      if (!success || txCheck != TX_SUCCESS) {
         auctions[_tokenId].satisfyInProgress = false;
         return false;
       }
@@ -1432,6 +1449,7 @@ contract SmartPiggies is UsingCooldown {
     piggies[_tokenId].uintDetails.writerProposedPrice = 0;
     piggies[_tokenId].uintDetails.holderProposedPrice = 0;
     piggies[_tokenId].uintDetails.arbiterProposedPrice = 0;
+    piggies[_tokenId].uintDetails.rfpNonce = 0;
     piggies[_tokenId].flags.isRequest = false;
     piggies[_tokenId].flags.isEuro = false;
     piggies[_tokenId].flags.isPut = false;

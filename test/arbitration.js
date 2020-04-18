@@ -41,6 +41,7 @@ contract ('SmartPiggies', function(accounts) {
   let oracleTokenAddress;
   let oraclePrice = web3.utils.toBN(27000); //including hundreth of a cent
   let zeroParam = web3.utils.toBN(0);
+  let zeroNonce = web3.utils.toBN(0);
 
   beforeEach(function() {
     //console.log(JSON.stringify("symbol: " + result, null, 4));
@@ -967,7 +968,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.isTrue(result.receipt.status, "startAuction did not return true")
 
         return sequentialPromise([
-          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, {from: user01})), //[0]
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})), //[0]
           () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})), //[1]
           () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenId, proposedPrice, {from: user01})), //[2]
           () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenId, proposedPrice, {from: user03})), //[3]

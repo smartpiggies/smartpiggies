@@ -106,7 +106,7 @@ contract Administered is Owned {
 }
 
 
-contract Freezeable is Administered {
+contract Freezable is Administered {
   bool public notFrozen;
   constructor() public {
     notFrozen = true;
@@ -150,7 +150,7 @@ contract Freezeable is Administered {
 }
 
 
-contract Serviced is Freezeable {
+contract Serviced is Freezable {
   using SafeMath for uint256;
 
   address payable public feeAddress;
@@ -266,13 +266,13 @@ contract SmartPiggies is UsingCooldown {
     uint256 lotSize;
     uint256 strikePrice;
     uint256 expiry;
-    uint256 settlementPrice;
+    uint256 settlementPrice; //04.20.20 oil price is negative :9
     uint256 reqCollateral;
     uint8 collateralDecimals;  // store decimals from ERC-20 contract
     uint256 arbitrationLock;
-    uint256 writerProposedPrice;
-    uint256 holderProposedPrice;
-    uint256 arbiterProposedPrice;
+    uint256 writerProposedPrice; //can propose negative price
+    uint256 holderProposedPrice; //can propose negative price
+    uint256 arbiterProposedPrice; //can propose negative price
     uint8 rfpNonce;
   }
 
@@ -311,6 +311,7 @@ contract SmartPiggies is UsingCooldown {
   mapping (uint256 => uint256) private ownedPiggiesIndex;
   mapping (uint256 => Piggy) private piggies;
   mapping (uint256 => DetailAuction) private auctions;
+  mapping (address => bool) private paymentLocked;
 
   /** Events
   */
@@ -526,7 +527,6 @@ contract SmartPiggies is UsingCooldown {
     returns (bool)
   {
     require(_tokenId != 0, "token ID cannot be zero");
-    require(piggies[_tokenId].addresses.writer != address(0), "token writer cannot be a zero address");
     require(!piggies[_tokenId].flags.isRequest, "token cannot be an RFP");
     require(piggies[_tokenId].uintDetails.collateral > 0, "token collateral must be greater than zero");
     require(piggies[_tokenId].addresses.holder == msg.sender, "only the holder can split");
@@ -951,7 +951,7 @@ contract SmartPiggies is UsingCooldown {
     public
   {
     require(msg.sender == piggies[_tokenId].addresses.dataResolver, "resolver calling address was not correct"); // MUST restrict a call to only the resolver address
-    piggies[_tokenId].uintDetails.settlementPrice = _price;
+    piggies[_tokenId].uintDetails.settlementPrice = _price; //type is int, i.e. can be negative
     piggies[_tokenId].flags.hasBeenCleared = true;
 
     // if abitration is set, lock piggy for cooldown period
@@ -1026,8 +1026,14 @@ contract SmartPiggies is UsingCooldown {
     public
     returns (bool)
   {
+    require(msg.sender != address(0), "sender cannot be zero address");
+    require(_amount != 0, "amount cannot be zero");
+    require(!paymentLocked[msg.sender], "payment request is locked");
     require(_amount <= ERC20balances[msg.sender][_paymentToken], "ERC20 balance is less than requested amount");
     ERC20balances[msg.sender][_paymentToken] = ERC20balances[msg.sender][_paymentToken].sub(_amount);
+
+    //lock payment request
+    paymentLocked[msg.sender] = true;
 
     (bool success, bytes memory result) = address(PaymentToken(_paymentToken)).call(
       abi.encodeWithSignature(
@@ -1044,7 +1050,8 @@ contract SmartPiggies is UsingCooldown {
       _amount,
       _paymentToken
     );
-
+    //clear payment lock
+    paymentLocked[msg.sender] = false;
     return true;
   }
 
@@ -1077,10 +1084,9 @@ contract SmartPiggies is UsingCooldown {
         // new arbiter address did not match
         return false;
       }
-    } else {
-      // missing a proposal from one party
-      return false;
     }
+    // missing a proposal from one party
+    return false;
   }
 
   function confirmArbiter(uint256 _tokenId)
@@ -1103,8 +1109,8 @@ contract SmartPiggies is UsingCooldown {
     require(msg.sender != address(0), "sender can not be zero address");
     // if piggy did not cleared a price, i.e. oracle didn't return
     // require that piggy is expired to settle via arbitration
-    if(!piggies[_tokenId].flags.hasBeenCleared) {
-      require(piggies[_tokenId].uintDetails.expiry < block.number);
+    if(block.number < piggies[_tokenId].uintDetails.expiry) {
+      require(piggies[_tokenId].flags.hasBeenCleared);
     }
 
     // set internal address references for convenience
@@ -1168,10 +1174,9 @@ contract SmartPiggies is UsingCooldown {
         // no agreement
         return false;
       }
-    } else {
-      // 2 of 3 have not proposed
-      return false;
     }
+    // 2 of 3 have not proposed
+    return false;
   }
 
   /** Helper functions
@@ -1205,7 +1210,6 @@ contract SmartPiggies is UsingCooldown {
     view
     returns (uint256[] memory)
   {
-    require(_owner != address(0), "address cannot be zero");
     return ownedPiggies[_owner];
   }
 
@@ -1214,7 +1218,6 @@ contract SmartPiggies is UsingCooldown {
     view
     returns (uint256)
   {
-    require(_owner != address(0), "address cannot be zero");
     return ERC20balances[_owner][_erc20];
   }
 

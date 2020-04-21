@@ -291,6 +291,17 @@ contract ('SmartPiggies', function(accounts) {
       });
     }); //end test block
 
+    it("Should fail to claim a zero, i.e. '0', amount", function() {
+      /* transaction should revert if included amount is zero */
+      return expectedExceptionPromise(
+        () => piggyInstance.claimPayout(
+          tokenInstance.address,
+          "0",
+          {from: user01, gas: 8000000 }),
+          3000000);
+
+    }); //end test`
+
   }); //end describe block
 
 }); //end test suite

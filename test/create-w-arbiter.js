@@ -259,11 +259,10 @@ contract ('SmartPiggies', function(accounts) {
 
           () => Promise.resolve(piggyInstance.claimPayout(tokenInstance.address, erc20BalanceOwner, {from: owner})), //[3]
           () => Promise.resolve(piggyInstance.claimPayout(tokenInstance.address, erc20BalanceUser01, {from: user01})), //[4]
-          () => Promise.resolve(piggyInstance.claimPayout(tokenInstance.address, erc20BalanceArbiter, {from: user05})), //[5]
 
-          () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})), //[6]
-          () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner})), //[7]
-          () => Promise.resolve(tokenInstance.balanceOf(arbiter, {from: owner})), //[8]
+          () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})), //[5]
+          () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner})), //[6]
+          () => Promise.resolve(tokenInstance.balanceOf(arbiter, {from: owner})), //[7]
         ])
       })
       .then(result => {
@@ -271,9 +270,9 @@ contract ('SmartPiggies', function(accounts) {
         balanceBeforeUser01 = web3.utils.toBN(result[1])
         balanceBeforeArbiter = web3.utils.toBN(result[2])
 
-        balanceAfterOwner = web3.utils.toBN(result[6])
-        balanceAfterUser01 = web3.utils.toBN(result[7])
-        balanceAfterArbiter = web3.utils.toBN(result[8])
+        balanceAfterOwner = web3.utils.toBN(result[5])
+        balanceAfterUser01 = web3.utils.toBN(result[6])
+        balanceAfterArbiter = web3.utils.toBN(result[7])
 
         // test token balances in token contract after claiming payout
         assert.strictEqual(balanceAfterOwner.toString(),
@@ -460,11 +459,10 @@ contract ('SmartPiggies', function(accounts) {
 
           () => Promise.resolve(piggyInstance.claimPayout(tokenInstance.address, erc20BalanceOwner, {from: owner})), //[3]
           () => Promise.resolve(piggyInstance.claimPayout(tokenInstance.address, erc20BalanceUser01, {from: user01})), //[4]
-          () => Promise.resolve(piggyInstance.claimPayout(tokenInstance.address, erc20BalanceArbiter, {from: user05})), //[5]
 
-          () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})), //[6]
-          () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner})), //[7]
-          () => Promise.resolve(tokenInstance.balanceOf(arbiter, {from: owner})), //[8]
+          () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})), //[5]
+          () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner})), //[6]
+          () => Promise.resolve(tokenInstance.balanceOf(arbiter, {from: owner})), //[7]
         ])
       })
       .then(result => {
@@ -472,9 +470,9 @@ contract ('SmartPiggies', function(accounts) {
         balanceBeforeUser01 = web3.utils.toBN(result[1])
         balanceBeforeArbiter = web3.utils.toBN(result[2])
 
-        balanceAfterOwner = web3.utils.toBN(result[6])
-        balanceAfterUser01 = web3.utils.toBN(result[7])
-        balanceAfterArbiter = web3.utils.toBN(result[8])
+        balanceAfterOwner = web3.utils.toBN(result[5])
+        balanceAfterUser01 = web3.utils.toBN(result[6])
+        balanceAfterArbiter = web3.utils.toBN(result[7])
 
         // test token balances in token contract after claiming payout
         assert.strictEqual(balanceAfterOwner.toString(),

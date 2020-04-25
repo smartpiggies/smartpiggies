@@ -302,6 +302,98 @@ contract ('SmartPiggies', function(accounts) {
 
     }); //end test`
 
+    it("Should fail if called multiple times with collateral withdraw failure", function() {
+      /* transaction should revert if trying to withdraw more than available */
+      //American call
+      collateralERC = tokenInstance.address
+      dataResolver = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = web3.utils.toBN(100)
+      strikePrice = web3.utils.toBN(26500) // holder wins
+      expiry = 500
+      isEuro = false
+      isPut = false
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      oracleFee = web3.utils.toBN('1000000000000000000')
+
+      serviceFee = web3.utils.toBN('0')
+
+      params = [collateralERC,dataResolver,addr00,collateral,
+        lotSize,strikePrice,expiry,isEuro,isPut,isRequest];
+
+      return piggyInstance.createPiggy(
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],
+        params[8],params[9],
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner});
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+        return piggyInstance.startAuction(
+          tokenId,startPrice,reservePrice,
+          auctionLength,timeStep,priceStep,
+          {from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "startAuction did not return true")
+
+        return sequentialPromise([
+          () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})), //[0]
+          () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})), //[1]
+          () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})), //[2]
+          () => Promise.resolve(piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner})), //[3]
+          () => Promise.resolve(piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: owner})), //[4]
+          () => Promise.resolve(piggyInstance.getERC20Balance(feeAddress, tokenInstance.address, {from: owner})) //[5]
+        ])
+      })
+      .then(result => {
+        assert.isTrue(result[2].receipt.status, "settlePiggy did not return true")
+        // Call payout:
+        // if settlement price > strike | payout = settlement price - strike * lot size
+        payout = web3.utils.toBN(0)
+        if (oraclePrice.gt(strikePrice)) {
+          delta = oraclePrice.sub(strikePrice)
+          payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
+        }
+        if (payout.gt(collateral)) {
+          payout = collateral
+        }
+        serviceFee = payout.mul(DEFAULT_FEE_PERCENT).div(DEFAULT_FEE_RESOLUTION)
+
+        //call calculation for writer Collaterial - payout
+        assert.strictEqual(result[3].toString(), collateral.sub(payout).toString(), "Owner balance did not update correctly")
+        //call calculation for holder = payout
+        assert.strictEqual(result[4].toString(), payout.sub(serviceFee).toString(), "User balance did not update correctly")
+        assert.strictEqual(result[5].toString(), serviceFee.toString(), "feeAddress balance did not return 0")
+
+        return piggyInstance.claimPayout(tokenInstance.address, payout.sub(serviceFee), {from: user01})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "claim status did not return true.")
+        return expectedExceptionPromise(
+          () => piggyInstance.claimPayout(
+            tokenInstance.address,
+            payout.sub(serviceFee),
+            {from: user01, gas: 8000000 }),
+            3000000);
+      })
+    }); //end test`
+
   }); //end describe block
 
 }); //end test suite

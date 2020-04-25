@@ -997,7 +997,7 @@ contract ('SmartPiggies', function(accounts) {
         //end test
     });
 
-    it("Should test for failure if on cleared", function() {
+    it("Should test for failure if cleared", function() {
       oracleFee = web3.utils.toBN('1000000000000000000')
       strikePriceBN = web3.utils.toBN(strikePrice)
       settlementPriceBN = web3.utils.toBN('0')
@@ -3677,7 +3677,7 @@ contract ('SmartPiggies', function(accounts) {
         return expectedExceptionPromise(
             () => piggyInstance.satisfyAuction(
               tokenId,
-              zeroNonce, 
+              zeroNonce,
               {from: owner, gas: 8000000 }), //transaction should fail from owner
             3000000);
       })

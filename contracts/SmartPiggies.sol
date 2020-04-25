@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
-
+// thank you openzeppelin for SafeMath
 import "./SafeMath.sol";
 
 interface PaymentToken {
@@ -251,6 +251,14 @@ contract SmartPiggies is UsingCooldown {
   bytes32 constant TX_SUCCESS = bytes32(0x0000000000000000000000000000000000000000000000000000000000000001);
   uint256 public tokenId;
 
+  /**
+   * @title Helps contracts guard against reentrancy attacks.
+   * @author Remco Bloemen <remco@2π.com>, Eenae <alexey@mixbytes.io>
+   * @dev If you mark a function `nonReentrant`, you should also
+   * mark it `external`.
+   */
+  uint256 private _guardCounter;
+
   struct DetailAddresses {
     address writer;
     address holder;
@@ -311,7 +319,6 @@ contract SmartPiggies is UsingCooldown {
   mapping (uint256 => uint256) private ownedPiggiesIndex;
   mapping (uint256 => Piggy) private piggies;
   mapping (uint256 => DetailAuction) private auctions;
-  mapping (address => bool) private paymentLocked;
 
   /** Events
   */
@@ -440,7 +447,14 @@ contract SmartPiggies is UsingCooldown {
     Serviced(msg.sender)
   {
     //declarations here
+    _guardCounter = 1;
+  }
 
+  modifier nonReentrant() {
+      _guardCounter.add(1);
+      uint256 localCounter = _guardCounter;
+      _;
+      require(localCounter == _guardCounter, "re-entered");
   }
 
   /** @notice Create a new token
@@ -469,8 +483,9 @@ contract SmartPiggies is UsingCooldown {
     bool _isPut,
     bool _isRequest
   )
-    public
+    external
     whenNotFrozen
+    nonReentrant
     returns (bool)
   {
     require(
@@ -485,18 +500,6 @@ contract SmartPiggies is UsingCooldown {
       _expiry != 0,
       "option parameters cannot be zero"
     );
-    // if not an RFP, make sure the collateral can be transferred
-    if (!_isRequest) {
-      (bool success, bytes memory result) = attemptPaymentTransfer(
-        _collateralERC,
-        msg.sender,
-        address(this),
-        _collateral
-      );
-      bytes32 txCheck = abi.decode(result, (bytes32));
-      require(success && txCheck == TX_SUCCESS, "token transfer did not complete");
-    }
-    // RFP checks go here
 
     require(
       _constructPiggy(
@@ -515,6 +518,19 @@ contract SmartPiggies is UsingCooldown {
       ),
       "failed to create piggy"
     );
+
+    // *** warning untrusted function call ***
+    // if not an RFP, make sure the collateral can be transferred
+    if (!_isRequest) {
+      (bool success, bytes memory result) = attemptPaymentTransfer(
+        _collateralERC,
+        msg.sender,
+        address(this),
+        _collateral
+      );
+      bytes32 txCheck = abi.decode(result, (bytes32));
+      require(success && txCheck == TX_SUCCESS, "token transfer did not complete");
+    }
 
     return true;
   }
@@ -664,27 +680,39 @@ contract SmartPiggies is UsingCooldown {
       if it is not an RFP, will return collateral before burning
   */
   function reclaimAndBurn(uint256 _tokenId)
-    public
+    external
+    nonReentrant
     returns (bool)
   {
     require(msg.sender == piggies[_tokenId].addresses.holder, "you must own the token to burn it");
     require(!auctions[_tokenId].auctionActive, "you cannot burn a token which is on auction");
+
+    emit ReclaimAndBurn(msg.sender, _tokenId, piggies[_tokenId].flags.isRequest);
+    // remove id from index mapping
+    _removeTokenFromOwnedPiggies(piggies[_tokenId].addresses.holder, _tokenId);
+
     if (!piggies[_tokenId].flags.isRequest) {
       require(msg.sender == piggies[_tokenId].addresses.writer, "you must own the collateral to reclaim it");
+
+      // keep collateralERC address
+      address collateralERC = piggies[_tokenId].addresses.collateralERC;
+      // keep collateral
+      uint256 collateral = piggies[_tokenId].uintDetails.collateral;
+      // burn the token (zero out storage fields)
+      _resetPiggy(_tokenId);
+
+      // *** warning untrusted function call ***
       // return the collateral to sender
-      (bool success, bytes memory result) = address(PaymentToken(piggies[_tokenId].addresses.collateralERC)).call(
+      (bool success, bytes memory result) = address(PaymentToken(collateralERC)).call(
         abi.encodeWithSignature(
           "transfer(address,uint256)",
           msg.sender,
-          piggies[_tokenId].uintDetails.collateral
+          collateral
         )
       );
       bytes32 txCheck = abi.decode(result, (bytes32));
       require(success && txCheck == TX_SUCCESS, "ERC20 token transfer failed");
     }
-    emit ReclaimAndBurn(msg.sender, _tokenId, piggies[_tokenId].flags.isRequest);
-    // remove id from index mapping
-    _removeTokenFromOwnedPiggies(piggies[_tokenId].addresses.holder, _tokenId);
     // burn the token (zero out storage fields)
     _resetPiggy(_tokenId);
     return true;
@@ -698,8 +726,9 @@ contract SmartPiggies is UsingCooldown {
     uint256 _timeStep,
     uint256 _priceStep
   )
-    public
+    external
     whenNotFrozen
+    nonReentrant
     returns (bool)
   {
     uint256 _auctionExpiry = block.number.add(_auctionLength);
@@ -709,7 +738,17 @@ contract SmartPiggies is UsingCooldown {
     require(!piggies[_tokenId].flags.hasBeenCleared, "option cannot have been cleared");
     require(!auctions[_tokenId].auctionActive, "auction cannot already be running");
 
+    // if we made it past the various checks, set the auction metadata up in auctions mapping
+    auctions[_tokenId].startBlock = block.number;
+    auctions[_tokenId].expiryBlock = _auctionExpiry;
+    auctions[_tokenId].startPrice = _startPrice;
+    auctions[_tokenId].reservePrice = _reservePrice;
+    auctions[_tokenId].timeStep = _timeStep;
+    auctions[_tokenId].priceStep = _priceStep;
+    auctions[_tokenId].auctionActive = true;
+
     if (piggies[_tokenId].flags.isRequest) {
+      // *** warning untrusted function call ***
       (bool success, bytes memory result) = attemptPaymentTransfer(
         piggies[_tokenId].addresses.collateralERC,
         msg.sender,
@@ -719,14 +758,6 @@ contract SmartPiggies is UsingCooldown {
       bytes32 txCheck = abi.decode(result, (bytes32));
       require(success && txCheck == TX_SUCCESS, "transferFrom did not return true");
     }
-    // if we made it past the various checks, set the auction metadata up in auctions mapping
-    auctions[_tokenId].startBlock = block.number;
-    auctions[_tokenId].expiryBlock = _auctionExpiry;
-    auctions[_tokenId].startPrice = _startPrice;
-    auctions[_tokenId].reservePrice = _reservePrice;
-    auctions[_tokenId].timeStep = _timeStep;
-    auctions[_tokenId].priceStep = _priceStep;
-    auctions[_tokenId].auctionActive = true;
 
     emit StartAuction(
       msg.sender,
@@ -742,15 +773,20 @@ contract SmartPiggies is UsingCooldown {
   }
 
   function endAuction(uint256 _tokenId)
-    public
+    external
+    nonReentrant
     returns (bool)
   {
     require(piggies[_tokenId].addresses.holder == msg.sender, "you must own a token to auction it");
     require(auctions[_tokenId].auctionActive, "auction must be active to cancel it");
     require(!auctions[_tokenId].satisfyInProgress, "auction cannot be in the process of being satisfied");  // this should be added to other functions as well
+
     if (piggies[_tokenId].flags.isRequest) {
-      // refund the _reservePrice premium
       uint256 _premiumToReturn = auctions[_tokenId].reservePrice;
+      _clearAuctionDetails(_tokenId);
+
+      // *** warning untrusted function call ***
+      // refund the _reservePrice premium
       (bool success, bytes memory result) = address(PaymentToken(piggies[_tokenId].addresses.collateralERC)).call(
         abi.encodeWithSignature(
           "transfer(address,uint256)",
@@ -761,14 +797,16 @@ contract SmartPiggies is UsingCooldown {
       bytes32 txCheck = abi.decode(result, (bytes32));
       require(success && txCheck == TX_SUCCESS, "ERC20 token transfer failed");
     }
+
     _clearAuctionDetails(_tokenId);
     emit EndAuction(msg.sender, _tokenId, piggies[_tokenId].flags.isRequest);
     return true;
   }
 
   function satisfyAuction(uint256 _tokenId, uint8 _rfpNonce)
-    public
+    external
     whenNotFrozen
+    nonReentrant
     returns (bool)
   {
     require(!auctions[_tokenId].satisfyInProgress, "cannot reenter this function while it is in progress");
@@ -793,6 +831,7 @@ contract SmartPiggies is UsingCooldown {
       // check RFP Nonce against auction front running
       require(_rfpNonce == piggies[_tokenId].uintDetails.rfpNonce, "RFP Nonce does not match");
 
+      // *** warning untrusted function call ***
       // msg.sender needs to delegate reqCollateral
       (success, result) = attemptPaymentTransfer(
         piggies[_tokenId].addresses.collateralERC,
@@ -815,6 +854,7 @@ contract SmartPiggies is UsingCooldown {
       } else {
         _change = auctions[_tokenId].reservePrice.sub(_adjPremium);
       }
+      // *** warning untrusted function call ***
       // current holder pays premium (via amount already delegated to this contract in startAuction)
       (success, result) = address(PaymentToken(piggies[_tokenId].addresses.collateralERC)).call(
         abi.encodeWithSignature(
@@ -828,6 +868,7 @@ contract SmartPiggies is UsingCooldown {
 
       // current holder receives any change due
       if (_change > 0) {
+        // *** warning untrusted function call ***
         (success, result) = address(PaymentToken(piggies[_tokenId].addresses.collateralERC)).call(
           abi.encodeWithSignature(
             "transfer(address,uint256)",
@@ -857,6 +898,7 @@ contract SmartPiggies is UsingCooldown {
       if (_adjPremium < auctions[_tokenId].reservePrice) {
         _adjPremium = auctions[_tokenId].reservePrice;
       }
+      // *** warning untrusted function call ***
       // msg.sender pays (adjusted) premium
       (success, result) = attemptPaymentTransfer(
         piggies[_tokenId].addresses.collateralERC,
@@ -908,10 +950,11 @@ contract SmartPiggies is UsingCooldown {
       @return The settlement price from the oracle to be used in `settleOption()`
    */
   function requestSettlementPrice(uint256 _tokenId, uint256 _oracleFee)
-    public
+    external
+    nonReentrant
     returns (bool)
   {
-    require(msg.sender != address(0), "sender cannot be the zero address");
+    require(msg.sender != address(0));
     require(!auctions[_tokenId].auctionActive, "cannot clear a token while auction is active");
     require(!piggies[_tokenId].flags.hasBeenCleared, "token has already been cleared");
     require(_tokenId != 0, "_tokenId cannot be zero");
@@ -927,10 +970,10 @@ contract SmartPiggies is UsingCooldown {
     }
 
     address dataResolver = piggies[_tokenId].addresses.dataResolver;
+    // *** warning untrusted function call ***
     (bool success, bytes memory result) = address(dataResolver).call(
       abi.encodeWithSignature("fetchData(address,uint256,uint256)", msg.sender, _oracleFee, _tokenId)
     );
-
     bytes32 txCheck = abi.decode(result, (bytes32));
     require(success && txCheck == TX_SUCCESS, "Call to fetch did not return correctly");
 
@@ -976,7 +1019,7 @@ contract SmartPiggies is UsingCooldown {
      public
      returns (bool)
    {
-     require(msg.sender != address(0), "msg.sender cannot be zero");
+     require(msg.sender != address(0));
      require(_tokenId != 0, "tokenId cannot be zero");
      require(piggies[_tokenId].flags.hasBeenCleared, "piggy has not received an oracle price");
 
@@ -1023,17 +1066,18 @@ contract SmartPiggies is UsingCooldown {
   // claim payout - pull payment
   // sends any reference ERC-20 which the claimant is owed (as a result of an auction or settlement)
   function claimPayout(address _paymentToken, uint256 _amount)
-    public
+    external
+    nonReentrant
     returns (bool)
   {
-    require(msg.sender != address(0), "sender cannot be zero address");
+    require(msg.sender != address(0));
     require(_amount != 0, "amount cannot be zero");
-    require(!paymentLocked[msg.sender], "payment request is locked");
+    //require(!paymentLocked[msg.sender], "payment request is locked");
     require(_amount <= ERC20balances[msg.sender][_paymentToken], "ERC20 balance is less than requested amount");
     ERC20balances[msg.sender][_paymentToken] = ERC20balances[msg.sender][_paymentToken].sub(_amount);
 
     //lock payment request
-    paymentLocked[msg.sender] = true;
+    //paymentLocked[msg.sender] = true;
 
     (bool success, bytes memory result) = address(PaymentToken(_paymentToken)).call(
       abi.encodeWithSignature(
@@ -1051,7 +1095,7 @@ contract SmartPiggies is UsingCooldown {
       _paymentToken
     );
     //clear payment lock
-    paymentLocked[msg.sender] = false;
+    //paymentLocked[msg.sender] = false;
     return true;
   }
 
@@ -1093,7 +1137,7 @@ contract SmartPiggies is UsingCooldown {
     public
     returns (bool)
   {
-    require(msg.sender != address(0), "sender can not be zero address");
+    require(msg.sender != address(0));
     require(msg.sender == piggies[_tokenId].addresses.arbiter, "sender must be arbiter for piggy");
     piggies[_tokenId].flags.arbiterHasConfirmed = true;
 
@@ -1106,7 +1150,7 @@ contract SmartPiggies is UsingCooldown {
     returns (bool)
   {
     // make sure address can't call as an unset arbiter
-    require(msg.sender != address(0), "sender can not be zero address");
+    require(msg.sender != address(0));
     // if piggy did not cleared a price, i.e. oracle didn't return
     // require that piggy is expired to settle via arbitration
     if(block.number < piggies[_tokenId].uintDetails.expiry) {
@@ -1313,17 +1357,24 @@ contract SmartPiggies is UsingCooldown {
     return true;
   }
 
-  // make sure the ERC-20 contract for collateral correctly reports decimals
+  /**
+      make sure the ERC-20 contract for collateral correctly reports decimals
+      suggested visibility external, set to interanl as other internal fucntions
+      use this
+   */
   function _getERC20Decimals(address _ERC20)
     internal
+    nonReentrant
     returns (uint8)
   {
+    // *** warning untrusted function call ***
     (bool success, bytes memory _decBytes) = address(PaymentToken(_ERC20)).call(
         abi.encodeWithSignature("decimals()")
       );
      require(success, "collateral ERC-20 contract does not properly specify decimals");
      // convert bytes to uint8:
      uint256 _ERCdecimals;
+     // *** warning possibly unbounded loop ***
      for(uint256 i=0; i < _decBytes.length; i++) {
        _ERCdecimals = _ERCdecimals + uint8(_decBytes[i])*(2**(8*(_decBytes.length-(i+1))));
      }
@@ -1335,7 +1386,7 @@ contract SmartPiggies is UsingCooldown {
     internal
   {
     require(_from == piggies[_tokenId].addresses.holder, "from address is not the owner");
-    require(_to != address(0), "to address is zero");
+    require(_to != address(0), "receiving address cannot be zero");
     _removeTokenFromOwnedPiggies(_from, _tokenId);
     _addTokenToOwnedPiggies(_to, _tokenId);
     piggies[_tokenId].addresses.holder = _to;
@@ -1392,13 +1443,25 @@ contract SmartPiggies is UsingCooldown {
     return _payout;
   }
 
-  // abstract ERC-20 TransferFrom attepmts
+  /**
+      For clarity this is a private helper function to reuse the
+      repeated `transferFrom` calls to a token contract.
+      The contract does still use address(ERC20Address).call("transfer(address,uint256)")
+      when the contract is making transfers from itself back to users.
+      `attemptPaymentTransfer` is used when collateral is approved by a user
+      in the specified token contract, and this contract makes a transfer on
+      the user's behalf, as `transferFrom` checks allowance before sending
+      and this contract does not make approval transactions
+   */
   function attemptPaymentTransfer(address _ERC20, address _from, address _to, uint256 _amount)
     private
     returns (bool, bytes memory)
   {
-    // check the return data because compound violated the ERC20 standard for
-    // token transfers :9
+    // *** warning untrusted function call ***
+    /**
+    **  check the return data because compound violated the ERC20 standard for
+    **  token transfers :9
+    */
     (bool success, bytes memory result) = address(PaymentToken(_ERC20)).call(
       abi.encodeWithSignature(
         "transferFrom(address,address,uint256)",

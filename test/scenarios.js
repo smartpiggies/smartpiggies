@@ -1199,6 +1199,77 @@ contract ('SmartPiggies', function(accounts) {
       })
     }); //end test
 
+  }); //end describe
+
+  describe("Test calling auction multiple times", function() {
+
+    it("Should fail to auction a piggy more than once", function () {
+      //American put
+      collateralERC = tokenInstance.address
+      dataResolver = resolverInstance.address
+      collateral = web3.utils.toBN(1 * decimals)
+      lotSize = web3.utils.toBN(1)
+      strikePrice = web3.utils.toBN(27050) // split payout
+      expiry = 500
+      isEuro = false
+      isPut = true
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      oracleFee = web3.utils.toBN('1000000000000000000')
+
+      serviceFee = web3.utils.toBN('0')
+
+      params = [collateralERC,dataResolver,addr00,collateral,
+        lotSize,strikePrice,expiry,isEuro,isPut,isRequest];
+
+      tokenIds = [0,1,2,3,4,5]
+      numOfTokens = web3.utils.toBN(tokenIds.length).sub(web3.utils.toBN(1))
+
+      let originalBalanceOwner, originalBalanceUser01
+      let auctionProceeds = web3.utils.toBN(0)
+      let auctionPriceUser01, auctionPriceUser02, auctionPriceUser03,
+        auctionPriceUser04, auctionPriceUser05
+
+      let totalCollateral = web3.utils.toBN(0)
+      let totalPayout = web3.utils.toBN(0)
+
+      // create 5 piggies, auction, and settle
+      return sequentialPromise([
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner}))
+      ])
+      .then(result => {
+        assert.isTrue(result[0].receipt.status, "create status did not return true.")
+        return piggyInstance.startAuction(tokenIds[1],startPrice,reservePrice,
+                auctionLength,timeStep,priceStep,{from: owner})
+      })
+      .then(result => {
+        assert.isTrue(result.receipt.status, "auction status did not return true.")
+        return expectedExceptionPromise(
+          () => piggyInstance.startAuction(
+            tokenIds[1],startPrice,reservePrice,
+            auctionLength,timeStep,priceStep,
+            {from: owner, gas: 8000000 }),
+            3000000);
+      })
+    }); //end test
 
   }); //end describe
 

@@ -1026,7 +1026,273 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(0, feeBalanceBefore.add(serviceFee).cmp(feeBalanceAfter), "balance compare did not return equal");
       });
     }); //end test block
-
   }); //end describe block
+
+  describe("Test arbitration conditional states", function() {
+
+    it("Should settle via arbitration if expired, but not cleared", function() {
+      //American call
+      collateralERC = tokenInstance.address
+      dataResolver = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = web3.utils.toBN(100)
+      strikePrice = web3.utils.toBN(26500)
+      expiry = 5 // will expire
+      isEuro = false
+      isPut = false
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 2
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      auctionPrice = web3.utils.toBN(0)
+
+      oracleFee = web3.utils.toBN('1000000000000000000')
+      proposedPrice = web3.utils.toBN(26825)
+
+      serviceFee = web3.utils.toBN('0')
+      const FEE_PERCENT = web3.utils.toBN(50)
+      const FEE_RESOLUTION = web3.utils.toBN(10000)
+
+      shareAmount = collateral.div(web3.utils.toBN(2));
+
+      params = [collateralERC,dataResolver,addr00,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest];
+
+      let tokenId = web3.utils.toBN(1);
+      let expiryBlock = web3.utils.toBN(0);
+
+      return sequentialPromise([
+        () => Promise.resolve(piggyInstance.setCooldown(2, {from: owner})), //[0]
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8], params[9], {from: owner})), //[1]
+        () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: owner})), //[2]
+        () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user03, {from: owner})), //[3]
+        () => Promise.resolve(piggyInstance.startAuction(tokenId,startPrice,reservePrice,
+                auctionLength,timeStep,priceStep,{from: owner})), //[4]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})), //[5]
+        () => Promise.resolve(piggyInstance.freeze({from: owner})), //[6] increment block
+        () => Promise.resolve(piggyInstance.unfreeze({from: owner})), //[7] increment block
+        () => Promise.resolve(piggyInstance.freeze({from: owner})), //[8] increment block
+        () => Promise.resolve(piggyInstance.unfreeze({from: owner})), //[9] increment block
+        () => Promise.resolve(web3.eth.getBlockNumber()), //[10]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenId, proposedPrice, {from: user01})), //[11]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenId, proposedPrice, {from: user03})), //[12]
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: user03})), //[13]
+      ])
+      .then(result => {
+        expiryBlock = web3.utils.toBN(result[2][1].expiry)
+        let blockNow = web3.utils.toBN(result[10])
+        assert.isTrue(expiryBlock.lt(blockNow), "piggy is not expired");
+        assert.isTrue(result[11].receipt.status, "first arbitration did not return true");
+        assert.isTrue(result[12].receipt.status, "second arbitration did not return true");
+        assert.isTrue(result[13].receipt.status, "settle did not return true");
+        // Call payout:
+        // if settlement price > strike | payout = settlement price - strike * lot size
+        payout = web3.utils.toBN(0)
+        if (proposedPrice.gt(strikePrice)) {
+          delta = proposedPrice.sub(strikePrice)
+          payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
+        }
+        if (payout.gt(collateral)) {
+          payout = collateral
+        }
+
+        serviceFee = payout.mul(FEE_PERCENT).div(FEE_RESOLUTION);
+
+        return sequentialPromise([
+          () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})), //[0]
+          () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner})), //[1]
+          () => Promise.resolve(tokenInstance.balanceOf(feeAddress, {from: owner})), //[2]
+          () => Promise.resolve(piggyInstance.claimPayout(tokenInstance.address, payout.sub(serviceFee), {from: user01})), //[3]
+          () => Promise.resolve(piggyInstance.claimPayout(tokenInstance.address, serviceFee, {from: feeAddress})), //[4]
+          () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner})), //[5]
+          () => Promise.resolve(tokenInstance.balanceOf(feeAddress, {from: owner})), //[6]
+        ]);
+      })
+      .then(result => {
+        let userBalanceBefore = web3.utils.toBN(result[1]);
+        let feeBalanceBefore = web3.utils.toBN(result[2]);
+        let userBalanceAfter = web3.utils.toBN(result[5]);
+        let feeBalanceAfter = web3.utils.toBN(result[6]);
+
+        assert.isTrue(result[3].receipt.status, "user01 payout did not return true");
+        assert.isTrue(result[4].receipt.status, "fee payout did not return true");
+        /* check user01 balance */
+        assert.strictEqual(userBalanceAfter.toString(), userBalanceBefore.add(payout).sub(serviceFee).toString(), "balance after did not return correct amount");
+        assert.strictEqual(0, userBalanceBefore.add(payout).sub(serviceFee).cmp(userBalanceAfter), "balance compare did not return equal");
+        /* check feeAddress balance */
+        assert.strictEqual(feeBalanceAfter.toString(), feeBalanceBefore.add(serviceFee).toString(), "balance after did not return correct amount");
+        assert.strictEqual(0, feeBalanceBefore.add(serviceFee).cmp(feeBalanceAfter), "balance compare did not return equal");
+      });
+    }); //end test
+
+    it("Should settle via arbitration if cleared, but not expired", function() {
+      //American call
+      collateralERC = tokenInstance.address
+      dataResolver = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = web3.utils.toBN(100)
+      strikePrice = web3.utils.toBN(26500)
+      expiry = 500 // will not expire
+      isEuro = false
+      isPut = false
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 2
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      auctionPrice = web3.utils.toBN(0)
+
+      oracleFee = web3.utils.toBN('1000000000000000000')
+      proposedPrice = web3.utils.toBN(26825)
+
+      serviceFee = web3.utils.toBN('0')
+      const FEE_PERCENT = web3.utils.toBN(50)
+      const FEE_RESOLUTION = web3.utils.toBN(10000)
+
+      shareAmount = collateral.div(web3.utils.toBN(2));
+
+      params = [collateralERC,dataResolver,addr00,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest];
+
+      let tokenId = web3.utils.toBN(1);
+      let expiryBlock = web3.utils.toBN(0);
+
+      return sequentialPromise([
+        () => Promise.resolve(piggyInstance.setCooldown(2, {from: owner})), //[0]
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8], params[9], {from: owner})), //[1]
+        () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: owner})), //[2]
+        () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user03, {from: owner})), //[3]
+        () => Promise.resolve(piggyInstance.startAuction(tokenId,startPrice,reservePrice,
+                auctionLength,timeStep,priceStep,{from: owner})), //[4]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})), //[5]
+        () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})), //[6]
+        () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: owner})), //[7]
+        () => Promise.resolve(web3.eth.getBlockNumber()), //[8]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenId, proposedPrice, {from: user01})), //[9]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenId, proposedPrice, {from: user03})), //[10]
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: user03})), //[11]
+      ])
+      .then(result => {
+        expiryBlock = web3.utils.toBN(result[2][1].expiry)
+        blockNow = web3.utils.toBN(result[8])
+        assert.isTrue(result[7][2].hasBeenCleared, "piggy is not cleared");
+        assert.isTrue(expiryBlock.gt(blockNow), "piggy is expired");
+        assert.isTrue(result[9].receipt.status, "first arbitration did not return true");
+        assert.isTrue(result[10].receipt.status, "second arbitration did not return true");
+        assert.isTrue(result[11].receipt.status, "settle did not return true");
+        // Call payout:
+        // if settlement price > strike | payout = settlement price - strike * lot size
+        payout = web3.utils.toBN(0)
+        if (proposedPrice.gt(strikePrice)) {
+          delta = proposedPrice.sub(strikePrice)
+          payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
+        }
+        if (payout.gt(collateral)) {
+          payout = collateral
+        }
+
+        serviceFee = payout.mul(FEE_PERCENT).div(FEE_RESOLUTION);
+
+        return sequentialPromise([
+          () => Promise.resolve(tokenInstance.balanceOf(owner, {from: owner})), //[0]
+          () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner})), //[1]
+          () => Promise.resolve(tokenInstance.balanceOf(feeAddress, {from: owner})), //[2]
+          () => Promise.resolve(piggyInstance.claimPayout(tokenInstance.address, payout.sub(serviceFee), {from: user01})), //[3]
+          () => Promise.resolve(piggyInstance.claimPayout(tokenInstance.address, serviceFee, {from: feeAddress})), //[4]
+          () => Promise.resolve(tokenInstance.balanceOf(user01, {from: owner})), //[5]
+          () => Promise.resolve(tokenInstance.balanceOf(feeAddress, {from: owner})), //[6]
+        ]);
+      })
+      .then(result => {
+        let userBalanceBefore = web3.utils.toBN(result[1]);
+        let feeBalanceBefore = web3.utils.toBN(result[2]);
+        let userBalanceAfter = web3.utils.toBN(result[5]);
+        let feeBalanceAfter = web3.utils.toBN(result[6]);
+
+        assert.isTrue(result[3].receipt.status, "user01 payout did not return true");
+        assert.isTrue(result[4].receipt.status, "fee payout did not return true");
+        /* check user01 balance */
+        assert.strictEqual(userBalanceAfter.toString(), userBalanceBefore.add(payout).sub(serviceFee).toString(), "balance after did not return correct amount");
+        assert.strictEqual(0, userBalanceBefore.add(payout).sub(serviceFee).cmp(userBalanceAfter), "balance compare did not return equal");
+        /* check feeAddress balance */
+        assert.strictEqual(feeBalanceAfter.toString(), feeBalanceBefore.add(serviceFee).toString(), "balance after did not return correct amount");
+        assert.strictEqual(0, feeBalanceBefore.add(serviceFee).cmp(feeBalanceAfter), "balance compare did not return equal");
+      });
+    }); //end test
+
+    it("Should fail via arbitration if not cleared and not expired", function() {
+      //American call
+      collateralERC = tokenInstance.address
+      dataResolver = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = web3.utils.toBN(100)
+      strikePrice = web3.utils.toBN(26500)
+      expiry = 500 // will not expire
+      isEuro = false
+      isPut = false
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 2
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      auctionPrice = web3.utils.toBN(0)
+
+      oracleFee = web3.utils.toBN('1000000000000000000')
+      proposedPrice = web3.utils.toBN(26825)
+
+      serviceFee = web3.utils.toBN('0')
+      const FEE_PERCENT = web3.utils.toBN(50)
+      const FEE_RESOLUTION = web3.utils.toBN(10000)
+
+      shareAmount = collateral.div(web3.utils.toBN(2));
+
+      params = [collateralERC,dataResolver,addr00,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest];
+
+      let tokenId = web3.utils.toBN(1);
+      let expiryBlock = web3.utils.toBN(0);
+
+      return sequentialPromise([
+        () => Promise.resolve(piggyInstance.setCooldown(2, {from: owner})), //[0]
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8], params[9], {from: owner})), //[1]
+        () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: owner})), //[2]
+        () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user03, {from: owner})), //[3]
+        () => Promise.resolve(piggyInstance.startAuction(tokenId,startPrice,reservePrice,
+                auctionLength,timeStep,priceStep,{from: owner})), //[4]
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})), //[5]
+        () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: owner})), //[6]
+        () => Promise.resolve(web3.eth.getBlockNumber()), //[7]
+      ])
+      .then(result => {
+        expiryBlock = web3.utils.toBN(result[2][1].expiry)
+        blockNow = web3.utils.toBN(result[7])
+        assert.isNotTrue(result[6][2].hasBeenCleared, "piggy has been cleared");
+        assert.isTrue(expiryBlock.gt(blockNow), "piggy is expired");
+
+        /* transaction should fail if not cleared and not expired */
+        return expectedExceptionPromise(
+          () => piggyInstance.thirdPartyArbitrationSettlement(
+            tokenId,
+            proposedPrice,
+            {from: user01, gas: 8000000 }),
+            3000000);
+
+      });
+    }); //end test
+
+  }); //end describe
 
 }); // end test suite

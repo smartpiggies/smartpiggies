@@ -270,11 +270,11 @@ contract SmartPiggies is UsingCooldown {
     uint256 expiry;
     uint256 settlementPrice; //04.20.20 oil price is negative :9
     uint256 reqCollateral;
-    uint8 collateralDecimals;  // store decimals from ERC-20 contract
     uint256 arbitrationLock;
     uint256 writerProposedPrice; //can propose negative price
     uint256 holderProposedPrice; //can propose negative price
     uint256 arbiterProposedPrice; //can propose negative price
+    uint8 collateralDecimals;  // store decimals from ERC-20 contract
     uint8 rfpNonce;
   }
 

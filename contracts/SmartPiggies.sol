@@ -23,12 +23,6 @@ pragma experimental ABIEncoderV2;
 // thank you openzeppelin for SafeMath
 import "./SafeMath.sol";
 
-interface PaymentToken {
-  function transferFrom(address from, address to, uint256 value) external returns (bool);
-  function transfer(address to, uint256 value) external returns (bool);
-  function decimals() external returns (uint8);
-}
-
 contract Owned {
   address payable public owner;
   constructor() public {
@@ -703,7 +697,7 @@ contract SmartPiggies is UsingCooldown {
 
       // *** warning untrusted function call ***
       // return the collateral to sender
-      (bool success, bytes memory result) = address(PaymentToken(collateralERC)).call(
+      (bool success, bytes memory result) = address(collateralERC).call(
         abi.encodeWithSignature(
           "transfer(address,uint256)",
           msg.sender,
@@ -787,7 +781,7 @@ contract SmartPiggies is UsingCooldown {
 
       // *** warning untrusted function call ***
       // refund the _reservePrice premium
-      (bool success, bytes memory result) = address(PaymentToken(piggies[_tokenId].addresses.collateralERC)).call(
+      (bool success, bytes memory result) = address(piggies[_tokenId].addresses.collateralERC).call(
         abi.encodeWithSignature(
           "transfer(address,uint256)",
           msg.sender,
@@ -856,7 +850,7 @@ contract SmartPiggies is UsingCooldown {
       }
       // *** warning untrusted function call ***
       // current holder pays premium (via amount already delegated to this contract in startAuction)
-      (success, result) = address(PaymentToken(piggies[_tokenId].addresses.collateralERC)).call(
+      (success, result) = address(piggies[_tokenId].addresses.collateralERC).call(
         abi.encodeWithSignature(
           "transfer(address,uint256)",
           msg.sender,
@@ -869,7 +863,7 @@ contract SmartPiggies is UsingCooldown {
       // current holder receives any change due
       if (_change > 0) {
         // *** warning untrusted function call ***
-        (success, result) = address(PaymentToken(piggies[_tokenId].addresses.collateralERC)).call(
+        (success, result) = address(piggies[_tokenId].addresses.collateralERC).call(
           abi.encodeWithSignature(
             "transfer(address,uint256)",
             piggies[_tokenId].addresses.holder,
@@ -1079,7 +1073,7 @@ contract SmartPiggies is UsingCooldown {
     //lock payment request
     //paymentLocked[msg.sender] = true;
 
-    (bool success, bytes memory result) = address(PaymentToken(_paymentToken)).call(
+    (bool success, bytes memory result) = address(_paymentToken).call(
       abi.encodeWithSignature(
         "transfer(address,uint256)",
         msg.sender,
@@ -1368,7 +1362,7 @@ contract SmartPiggies is UsingCooldown {
     returns (uint8)
   {
     // *** warning untrusted function call ***
-    (bool success, bytes memory _decBytes) = address(PaymentToken(_ERC20)).call(
+    (bool success, bytes memory _decBytes) = address(_ERC20).call(
         abi.encodeWithSignature("decimals()")
       );
      require(success, "collateral ERC-20 contract does not properly specify decimals");
@@ -1463,7 +1457,7 @@ contract SmartPiggies is UsingCooldown {
     **  check the return data because compound violated the ERC20 standard for
     **  token transfers :9
     */
-    (bool success, bytes memory result) = address(PaymentToken(_ERC20)).call(
+    (bool success, bytes memory result) = address(_ERC20).call(
       abi.encodeWithSignature(
         "transferFrom(address,address,uint256)",
         _from,

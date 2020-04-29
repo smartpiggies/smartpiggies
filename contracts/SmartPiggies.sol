@@ -1372,13 +1372,14 @@ contract SmartPiggies is UsingCooldown {
         abi.encodeWithSignature("decimals()")
       );
      require(success, "collateral ERC-20 contract does not properly specify decimals");
-     // convert bytes to uint8:
-     uint256 _ERCdecimals;
-     // *** warning possibly unbounded loop ***
-     for(uint256 i=0; i < _decBytes.length; i++) {
-       _ERCdecimals = _ERCdecimals + uint8(_decBytes[i])*(2**(8*(_decBytes.length-(i+1))));
-     }
-     return uint8(_ERCdecimals);
+     /**
+         allow for uint256 range of decimals,
+         if token contract saves decimals as uint256
+         accept uint256 value.
+         Cast return value before return to force uint8 spec
+      */
+     uint256 _ERCdecimals = abi.decode(_decBytes, (uint256));
+     return uint8(_ERCdecimals); // explicit cast, possible loss of resolution
   }
 
   // internal transfer for transfers made on behalf of the contract

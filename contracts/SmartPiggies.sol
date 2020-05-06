@@ -110,7 +110,7 @@ contract Freezable is Administered {
   event Unfrozen(address indexed from);
 
   modifier whenNotFrozen() {
-  require(notFrozen, "Contract is frozen");
+  require(notFrozen, "contract frozen");
   _;
   }
 
@@ -445,10 +445,10 @@ contract SmartPiggies is UsingCooldown {
   }
 
   modifier nonReentrant() {
-      _guardCounter.add(1);
-      uint256 localCounter = _guardCounter;
-      _;
-      require(localCounter == _guardCounter, "re-entered");
+    _guardCounter.add(1);
+    uint256 localCounter = _guardCounter;
+    _;
+    require(localCounter == _guardCounter, "re-entered");
   }
 
   /** @notice Create a new token
@@ -485,14 +485,14 @@ contract SmartPiggies is UsingCooldown {
     require(
       _collateralERC != address(0) &&
       _dataResolver != address(0),
-      "addresses cannot be zero"
+      "address cannot be zero"
     );
     require(
       _collateral != 0 &&
       _lotSize != 0 &&
       _strikePrice != 0 &&
       _expiry != 0,
-      "option parameters cannot be zero"
+      "parameter cannot be zero"
     );
 
     require(
@@ -510,7 +510,7 @@ contract SmartPiggies is UsingCooldown {
         _isRequest,
         false
       ),
-      "failed to create piggy"
+      "create failed"
     );
 
     // *** warning untrusted function call ***
@@ -523,7 +523,7 @@ contract SmartPiggies is UsingCooldown {
         _collateral
       );
       bytes32 txCheck = abi.decode(result, (bytes32));
-      require(success && txCheck == TX_SUCCESS, "token transfer did not complete");
+      require(success && txCheck == TX_SUCCESS, "token transfer failed");
     }
 
     return true;
@@ -536,13 +536,13 @@ contract SmartPiggies is UsingCooldown {
     whenNotFrozen
     returns (bool)
   {
-    require(_tokenId != 0, "token ID cannot be zero");
-    require(!piggies[_tokenId].flags.isRequest, "token cannot be an RFP");
-    require(piggies[_tokenId].uintDetails.collateral > 0, "token collateral must be greater than zero");
+    require(_tokenId != 0, "tokenId cannot be zero");
+    require(!piggies[_tokenId].flags.isRequest, "cannot be an RFP");
+    require(piggies[_tokenId].uintDetails.collateral > 0, "collateral must be greater than zero");
     require(piggies[_tokenId].addresses.holder == msg.sender, "only the holder can split");
     require(block.number < piggies[_tokenId].uintDetails.expiry, "cannot split expired token");
     require(!auctions[_tokenId].auctionActive, "cannot split token on auction");
-    require(!piggies[_tokenId].flags.hasBeenCleared, "cannot split token that has been cleared");
+    require(!piggies[_tokenId].flags.hasBeenCleared, "cannot split cleared token");
 
     // assuming all checks have passed:
 
@@ -567,7 +567,7 @@ contract SmartPiggies is UsingCooldown {
         false, // piggies[tokenId].flags.isRequest
         true // split piggy
       ),
-      "failed to create a new piggy"
+      "create failed"
     ); // require this to succeed or revert, i.e. do not reset
 
     require(
@@ -585,7 +585,7 @@ contract SmartPiggies is UsingCooldown {
         false, //piggies[tokenId].isRequest
         true //split piggy
       ),
-      "failed to make a new piggy"
+      "create failed"
     ); // require this to succeed or revert, i.e. do not reset
 
     //clean up piggyId
@@ -597,7 +597,7 @@ contract SmartPiggies is UsingCooldown {
   function transferFrom(address _from, address _to, uint256 _tokenId)
     public
   {
-    require(msg.sender == piggies[_tokenId].addresses.holder, "msg.sender is not the owner");
+    require(msg.sender == piggies[_tokenId].addresses.holder, "sender must be the holder");
     _internalTransfer(_from, _to, _tokenId);
   }
 
@@ -617,9 +617,9 @@ contract SmartPiggies is UsingCooldown {
     whenNotFrozen
     returns (bool)
   {
-    require(piggies[_tokenId].addresses.holder == msg.sender, "you must own the RFP to update it");
+    require(piggies[_tokenId].addresses.holder == msg.sender, "sender must be the holder");
     require(piggies[_tokenId].flags.isRequest, "you can only update an RFP");
-    require(!auctions[_tokenId].satisfyInProgress, "auction cannot be in the process of being satisfied");
+    require(!auctions[_tokenId].satisfyInProgress, "auction in process of being satisfied");
     uint256 expiryBlock;
     if (_collateralERC != address(0)) {
       piggies[_tokenId].addresses.collateralERC = _collateralERC;
@@ -678,15 +678,15 @@ contract SmartPiggies is UsingCooldown {
     nonReentrant
     returns (bool)
   {
-    require(msg.sender == piggies[_tokenId].addresses.holder, "you must own the token to burn it");
-    require(!auctions[_tokenId].auctionActive, "you cannot burn a token which is on auction");
+    require(msg.sender == piggies[_tokenId].addresses.holder, "sender must be the holder");
+    require(!auctions[_tokenId].auctionActive, "token cannot be on auction");
 
     emit ReclaimAndBurn(msg.sender, _tokenId, piggies[_tokenId].flags.isRequest);
     // remove id from index mapping
     _removeTokenFromOwnedPiggies(piggies[_tokenId].addresses.holder, _tokenId);
 
     if (!piggies[_tokenId].flags.isRequest) {
-      require(msg.sender == piggies[_tokenId].addresses.writer, "you must own the collateral to reclaim it");
+      require(msg.sender == piggies[_tokenId].addresses.writer, "sender must own collateral to reclaim it");
 
       // keep collateralERC address
       address collateralERC = piggies[_tokenId].addresses.collateralERC;
@@ -705,7 +705,7 @@ contract SmartPiggies is UsingCooldown {
         )
       );
       bytes32 txCheck = abi.decode(result, (bytes32));
-      require(success && txCheck == TX_SUCCESS, "ERC20 token transfer failed");
+      require(success && txCheck == TX_SUCCESS, "token transfer failed");
     }
     // burn the token (zero out storage fields)
     _resetPiggy(_tokenId);
@@ -726,11 +726,11 @@ contract SmartPiggies is UsingCooldown {
     returns (bool)
   {
     uint256 _auctionExpiry = block.number.add(_auctionLength);
-    require(piggies[_tokenId].addresses.holder == msg.sender, "you must own a token to auction it");
-    require(piggies[_tokenId].uintDetails.expiry > block.number, "option must not be expired");
-    require(piggies[_tokenId].uintDetails.expiry > _auctionExpiry, "auction cannot expire after the option");
-    require(!piggies[_tokenId].flags.hasBeenCleared, "option cannot have been cleared");
-    require(!auctions[_tokenId].auctionActive, "auction cannot already be running");
+    require(piggies[_tokenId].addresses.holder == msg.sender, "sender must be the holder");
+    require(piggies[_tokenId].uintDetails.expiry > block.number, "token must not be expired");
+    require(piggies[_tokenId].uintDetails.expiry > _auctionExpiry, "auction cannot expire after token expiry");
+    require(!piggies[_tokenId].flags.hasBeenCleared, "token cannot be cleared");
+    require(!auctions[_tokenId].auctionActive, "auction cannot be running");
 
     // if we made it past the various checks, set the auction metadata up in auctions mapping
     auctions[_tokenId].startBlock = block.number;
@@ -750,7 +750,7 @@ contract SmartPiggies is UsingCooldown {
         _reservePrice  // this should be the max the requestor is willing to pay in a reverse dutch auction
       );
       bytes32 txCheck = abi.decode(result, (bytes32));
-      require(success && txCheck == TX_SUCCESS, "transferFrom did not return true");
+      require(success && txCheck == TX_SUCCESS, "token transfer failed");
     }
 
     emit StartAuction(
@@ -771,9 +771,9 @@ contract SmartPiggies is UsingCooldown {
     nonReentrant
     returns (bool)
   {
-    require(piggies[_tokenId].addresses.holder == msg.sender, "you must own a token to auction it");
-    require(auctions[_tokenId].auctionActive, "auction must be active to cancel it");
-    require(!auctions[_tokenId].satisfyInProgress, "auction cannot be in the process of being satisfied");  // this should be added to other functions as well
+    require(piggies[_tokenId].addresses.holder == msg.sender, "sender must be the holder");
+    require(auctions[_tokenId].auctionActive, "auction must be active");
+    require(!auctions[_tokenId].satisfyInProgress, "auction in process of being satisfied");  // this should be added to other functions as well
 
     if (piggies[_tokenId].flags.isRequest) {
       uint256 _premiumToReturn = auctions[_tokenId].reservePrice;
@@ -789,7 +789,7 @@ contract SmartPiggies is UsingCooldown {
         )
       );
       bytes32 txCheck = abi.decode(result, (bytes32));
-      require(success && txCheck == TX_SUCCESS, "ERC20 token transfer failed");
+      require(success && txCheck == TX_SUCCESS, "token transfer failed");
     }
 
     _clearAuctionDetails(_tokenId);
@@ -803,9 +803,9 @@ contract SmartPiggies is UsingCooldown {
     nonReentrant
     returns (bool)
   {
-    require(!auctions[_tokenId].satisfyInProgress, "cannot reenter this function while it is in progress");
-    require(piggies[_tokenId].addresses.holder != msg.sender, "cannot satisfy your own auction; use endAuction instead");
-    require(auctions[_tokenId].auctionActive, "auction must be active to satisfy it");
+    require(!auctions[_tokenId].satisfyInProgress, "auction in process of being satisfied");
+    require(piggies[_tokenId].addresses.holder != msg.sender, "cannot satisfy your auction; use endAuction");
+    require(auctions[_tokenId].auctionActive, "auction must be active to satisfy");
     // if auction is "active" according to state but has expired, change state
     if (auctions[_tokenId].expiryBlock < block.number) {
       _clearAuctionDetails(_tokenId);
@@ -823,7 +823,7 @@ contract SmartPiggies is UsingCooldown {
 
     if (piggies[_tokenId].flags.isRequest) {
       // check RFP Nonce against auction front running
-      require(_rfpNonce == piggies[_tokenId].uintDetails.rfpNonce, "RFP Nonce does not match");
+      require(_rfpNonce == piggies[_tokenId].uintDetails.rfpNonce, "RFP Nonce failed match");
 
       // *** warning untrusted function call ***
       // msg.sender needs to delegate reqCollateral
@@ -858,7 +858,7 @@ contract SmartPiggies is UsingCooldown {
         )
       );
       txCheck = abi.decode(result, (bytes32));
-      require(success && txCheck == TX_SUCCESS, "ERC20 token transfer failed");
+      require(success && txCheck == TX_SUCCESS, "token transfer failed");
 
       // current holder receives any change due
       if (_change > 0) {
@@ -871,7 +871,7 @@ contract SmartPiggies is UsingCooldown {
           )
         );
         txCheck = abi.decode(result, (bytes32));
-        require(success && txCheck == TX_SUCCESS, "ERC20 token transfer failed");
+        require(success && txCheck == TX_SUCCESS, "token transfer failed");
       }
       // isRequest becomes false
       piggies[_tokenId].flags.isRequest = false;
@@ -949,18 +949,18 @@ contract SmartPiggies is UsingCooldown {
     returns (bool)
   {
     require(msg.sender != address(0));
-    require(!auctions[_tokenId].auctionActive, "cannot clear a token while auction is active");
-    require(!piggies[_tokenId].flags.hasBeenCleared, "token has already been cleared");
-    require(_tokenId != 0, "_tokenId cannot be zero");
+    require(!auctions[_tokenId].auctionActive, "cannot clear while auction is active");
+    require(!piggies[_tokenId].flags.hasBeenCleared, "token has been cleared");
+    require(_tokenId != 0, "tokenId cannot be zero");
 
     // check if Euro require past expiry
     if (piggies[_tokenId].flags.isEuro) {
-      require(piggies[_tokenId].uintDetails.expiry <= block.number, "cannot request a price on a European option before expiry");
+      require(piggies[_tokenId].uintDetails.expiry <= block.number, "cannot request price for European before expiry");
     }
     // check if American and less than expiry, only holder can call
     if (!piggies[_tokenId].flags.isEuro && (block.number < piggies[_tokenId].uintDetails.expiry))
     {
-      require(msg.sender == piggies[_tokenId].addresses.holder, "only the holder can settle an American style option before expiry");
+      require(msg.sender == piggies[_tokenId].addresses.holder, "only the holder can settle American before expiry");
     }
 
     address dataResolver = piggies[_tokenId].addresses.dataResolver;
@@ -969,7 +969,7 @@ contract SmartPiggies is UsingCooldown {
       abi.encodeWithSignature("fetchData(address,uint256,uint256)", msg.sender, _oracleFee, _tokenId)
     );
     bytes32 txCheck = abi.decode(result, (bytes32));
-    require(success && txCheck == TX_SUCCESS, "Call to fetch did not return correctly");
+    require(success && txCheck == TX_SUCCESS, "call to resolver failed");
 
     emit RequestSettlementPrice(
       msg.sender,
@@ -987,7 +987,7 @@ contract SmartPiggies is UsingCooldown {
   )
     public
   {
-    require(msg.sender == piggies[_tokenId].addresses.dataResolver, "resolver calling address was not correct"); // MUST restrict a call to only the resolver address
+    require(msg.sender == piggies[_tokenId].addresses.dataResolver, "resolver callback address failed match"); // MUST restrict a call to only the resolver address
     piggies[_tokenId].uintDetails.settlementPrice = _price; //type is int, i.e. can be negative
     piggies[_tokenId].flags.hasBeenCleared = true;
 
@@ -1015,17 +1015,18 @@ contract SmartPiggies is UsingCooldown {
    {
      require(msg.sender != address(0));
      require(_tokenId != 0, "tokenId cannot be zero");
-     require(piggies[_tokenId].flags.hasBeenCleared, "piggy has not received an oracle price");
+     // require a settlement price to be returned from an oracle
+     require(piggies[_tokenId].flags.hasBeenCleared, "piggy is not cleared");
 
      // check if arbitratin is set, cooldown has passed
      if (piggies[_tokenId].addresses.arbiter != address(0)) {
-       require(piggies[_tokenId].uintDetails.arbitrationLock <= block.number, "Arbitration set, locked for cooldown period");
+       require(piggies[_tokenId].uintDetails.arbitrationLock <= block.number, "arbiter set, locked for cooldown period");
      }
 
      uint256 payout;
 
      if(piggies[_tokenId].flags.isEuro) {
-       require(piggies[_tokenId].uintDetails.expiry <= block.number, "European option needs to be expired");
+       require(piggies[_tokenId].uintDetails.expiry <= block.number, "european must be expired");
      }
      payout = _calculateLongPayout(_tokenId);
 
@@ -1067,7 +1068,7 @@ contract SmartPiggies is UsingCooldown {
     require(msg.sender != address(0));
     require(_amount != 0, "amount cannot be zero");
     //require(!paymentLocked[msg.sender], "payment request is locked");
-    require(_amount <= ERC20balances[msg.sender][_paymentToken], "ERC20 balance is less than requested amount");
+    require(_amount <= ERC20balances[msg.sender][_paymentToken], "balance less than requested amount");
     ERC20balances[msg.sender][_paymentToken] = ERC20balances[msg.sender][_paymentToken].sub(_amount);
 
     //lock payment request
@@ -1081,7 +1082,7 @@ contract SmartPiggies is UsingCooldown {
       )
     );
     bytes32 txCheck = abi.decode(result, (bytes32));
-    require(success && txCheck == TX_SUCCESS, "ERC20 token transfer failed");
+    require(success && txCheck == TX_SUCCESS, "token transfer failed");
 
     emit ClaimPayout(
       msg.sender,
@@ -1100,11 +1101,11 @@ contract SmartPiggies is UsingCooldown {
     public
     returns (bool)
   {
-    require(_newArbiter != address(0), "arbiter address must not be zero address");
+    require(_newArbiter != address(0), "arbiter address cannot be zero");
     require(!auctions[_tokenId].auctionActive, "token cannot be on auction");
     address _holder = piggies[_tokenId].addresses.holder;
     address _writer = piggies[_tokenId].addresses.writer;
-    require(msg.sender == _holder || msg.sender == _writer, "only the writer or holder can propose a new arbiter");
+    require(msg.sender == _holder || msg.sender == _writer, "only writer or holder can propose a new arbiter");
     if (msg.sender == _holder) {
       piggies[_tokenId].flags.holderHasProposedNewArbiter = true;
       piggies[_tokenId].addresses.holderProposedNewArbiter = _newArbiter;
@@ -1132,7 +1133,7 @@ contract SmartPiggies is UsingCooldown {
     returns (bool)
   {
     require(msg.sender != address(0));
-    require(msg.sender == piggies[_tokenId].addresses.arbiter, "sender must be arbiter for piggy");
+    require(msg.sender == piggies[_tokenId].addresses.arbiter, "sender must be the arbiter");
     piggies[_tokenId].flags.arbiterHasConfirmed = true;
 
     emit ArbiterConfirmed(msg.sender, _tokenId);
@@ -1157,7 +1158,7 @@ contract SmartPiggies is UsingCooldown {
     address _arbiter = piggies[_tokenId].addresses.arbiter;
 
     // check which party the sender is (of the 3 valid ones, else fail)
-    require(msg.sender == _holder || msg.sender == _writer || msg.sender == _arbiter, "you can only settle via arbitration if you are the holder, writer, or arbiter");
+    require(msg.sender == _holder || msg.sender == _writer || msg.sender == _arbiter, "sender must be holder, writer, or arbiter");
 
     // set flag for proposed share for that party
     if (msg.sender == _holder) {
@@ -1302,19 +1303,19 @@ contract SmartPiggies is UsingCooldown {
       p.uintDetails.collateralDecimals = _getERC20Decimals(_collateralERC);
       p.uintDetails.expiry = tokenExpiry;
     } else if (_isSplit) {
-      require(_splitTokenId != 0, "token ID cannot be zero");
+      require(_splitTokenId != 0, "tokenId cannot be zero");
       require(!piggies[_splitTokenId].flags.isRequest, "token cannot be an RFP");
       require(piggies[_splitTokenId].addresses.holder == msg.sender, "only the holder can split");
       require(block.number < piggies[_splitTokenId].uintDetails.expiry, "cannot split expired token");
       require(!auctions[_splitTokenId].auctionActive, "cannot split token on auction");
-      require(!piggies[_splitTokenId].flags.hasBeenCleared, "cannot split token that has been cleared");
+      require(!piggies[_splitTokenId].flags.hasBeenCleared, "cannot split cleared token");
       tokenExpiry = piggies[_splitTokenId].uintDetails.expiry;
       p.addresses.writer = piggies[_splitTokenId].addresses.writer;
       p.uintDetails.collateral = _collateral;
       p.uintDetails.collateralDecimals = piggies[_splitTokenId].uintDetails.collateralDecimals;
       p.uintDetails.expiry = tokenExpiry;
     } else {
-      require(!_isSplit, "split cannot be true when creating a new piggy");
+      require(!_isSplit, "split cannot be true when creating a piggy");
       tokenExpiry = _expiry.add(block.number);
       p.addresses.writer = msg.sender;
       p.uintDetails.collateral = _collateral;
@@ -1365,7 +1366,7 @@ contract SmartPiggies is UsingCooldown {
     (bool success, bytes memory _decBytes) = address(_ERC20).call(
         abi.encodeWithSignature("decimals()")
       );
-     require(success, "collateral ERC-20 contract does not properly specify decimals");
+     require(success, "contract does not properly specify decimals");
      /**
          allow for uint256 range of decimals,
          if token contract saves decimals as uint256
@@ -1380,7 +1381,7 @@ contract SmartPiggies is UsingCooldown {
   function _internalTransfer(address _from, address _to, uint256 _tokenId)
     internal
   {
-    require(_from == piggies[_tokenId].addresses.holder, "from address is not the owner");
+    require(_from == piggies[_tokenId].addresses.holder, "from must be the holder");
     require(_to != address(0), "receiving address cannot be zero");
     _removeTokenFromOwnedPiggies(_from, _tokenId);
     _addTokenToOwnedPiggies(_to, _tokenId);

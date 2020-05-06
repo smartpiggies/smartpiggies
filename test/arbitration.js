@@ -160,7 +160,7 @@ contract ('SmartPiggies', function(accounts) {
       /* get token id of created piggy */
       tokenId = result.logs[0].args[1][0].toString();
 
-      /* transaction should revert if sender is not owner */
+      /* transaction should revert if sender is not writer */
       return expectedExceptionPromise(
         () => piggyInstance.updateArbiter(
           tokenId, user01,
@@ -386,6 +386,8 @@ contract ('SmartPiggies', function(accounts) {
         assert.isNotTrue(result.flags.arbiterHasProposedPrice, "arbiterHasProposedPrice did not return false");
         assert.isNotTrue(result.flags.writerHasProposedPrice, "writerHasProposedPrice did not return false");
         assert.isNotTrue(result.flags.holderHasProposedPrice, "holderHasProposedPrice did not return false");
+        assert.isNotTrue(result.flags.arbiterHasConfirmed, "arbiterHasConfirmed did not return false");
+        assert.isNotTrue(result.flags.arbitrationAgreement, "arbitrationAgreement did not return false");
 
         return piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner});
       })
@@ -783,6 +785,110 @@ contract ('SmartPiggies', function(accounts) {
       });
     }); //end test block
 
+    it("Should set arbitrationAgreement to true", function() {
+      collateralERC = tokenInstance.address
+      dataResolver = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = web3.utils.toBN(28000)
+      expiry = web3.utils.toBN(1) // can only settle after expiry
+      isEuro = false
+      isPut = true
+      isRequest = false
+      currentBlock = web3.utils.toBN(0)
+      tokenId = 1;
+
+      const FEE_PERCENT = web3.utils.toBN(50)
+      const FEE_RESOLUTION = web3.utils.toBN(10000)
+      serviceFee = web3.utils.toBN('0')
+      proposedPrice = web3.utils.toBN(28500)
+
+      params = [collateralERC,dataResolver,addr00,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest];
+
+      return sequentialPromise([
+        () => Promise.resolve(piggyInstance.createPiggy(
+          params[0],params[1],params[2],params[3],
+          params[4],params[5],params[6],params[7],
+          params[8], params[9], {from: owner})), // [0]
+        () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user02, {from: owner})), // [1]
+        () => Promise.resolve(piggyInstance.transferFrom(owner, user01, tokenId, {from: owner})), // [2]
+        () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user03, {from: owner})), // [3]
+        () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user03, {from: user01})), // [4]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenId, proposedPrice, {from: owner})), // [5]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenId, proposedPrice, {from: user01})), // [6]
+        () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: user01})), // [7]
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: user01})), // [8]
+        () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: user01})), // [9]
+      ])
+      .then(result => {
+        // check that arbitrationAgreement has been set to true
+        assert.isTrue(result[7].flags.arbitrationAgreement, "arbitrationAgreement did not return true");
+
+        /* check that struct is zero'ed out
+        ** result.address = result[0]
+        ** result.uintDetails = result[1]
+        ** result.flags = result[2]
+        */
+        // check that arbitrationAgreement reset to false
+        assert.isNotTrue(result[9].flags.arbitrationAgreement, "arbitrationAgreement did not return false");
+
+        return piggyInstance.getERC20Balance(owner, tokenInstance.address, {from: owner});
+      })
+      .then(result => {
+        // Put payout:
+        // if strike > settlement price | payout = strike - settlement price * lot size
+        payout = web3.utils.toBN(0)
+        if (strikePrice.gt(proposedPrice)) {
+          delta = strikePrice.sub(proposedPrice)
+          payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
+        }
+        if (payout.gt(collateral)) {
+          payout = collateral
+        }
+        serviceFee = payout.mul(FEE_PERCENT).div(FEE_RESOLUTION)
+
+        assert.strictEqual(result.toString(), collateral.sub(payout).toString(), "owner's ERC20 balance did not return correctly");
+        return piggyInstance.getERC20Balance(user01, tokenInstance.address, {from: user01});
+      })
+      .then(result => {
+        assert.strictEqual(result.toString(), payout.sub(serviceFee).toString(), "user's ERC20 balance did not return correctly");
+
+        /* check piggy struct has been zero'ed */
+        return piggyInstance.getDetails(tokenId, {from: owner})
+      })
+      .then(result => {
+        //check DetailAddresses
+        assert.strictEqual(result[0].writer, addr00, "Details should have correct writer address.");
+        assert.strictEqual(result[0].holder, addr00, "Details should have correct holder address.");
+        assert.strictEqual(result[0].collateralERC, addr00, "Details should have correct collateralERC address.");
+        assert.strictEqual(result[0].dataResolver, addr00, "Details should have correct dataResolver address.");
+        //check DetailUints
+        assert.strictEqual(result[1].collateral, "0", "Details should have correct collateral amount.");
+        assert.strictEqual(result[1].lotSize, "0", "Details should have correct lotSize amount.");
+        assert.strictEqual(result[1].strikePrice, "0", "Details should have correct strikePrice amount.");
+        assert.strictEqual(result[1].settlementPrice, "0", "Details should have returned settlementPrice amount of 0.");
+        assert.strictEqual(result[1].reqCollateral, "0", "Details should have returned reqCollateral amount of 0.");
+        assert.strictEqual(result[1].collateralDecimals, "0", "Details should have returned collateralDecimals amount of 18.");
+        assert.strictEqual(result[1].writerProposedPrice, "0", "Details should have returned zeroed writerProposedPrice");
+        assert.strictEqual(result[1].holderProposedPrice, "0", "Details should have returned zeroed holderProposedPrice");
+        //check BoolFlags
+        assert.isNotTrue(result[2].isRequest, "Details should have returned false for isRequest.");
+        assert.isNotTrue(result[2].isEuro, "Details should have returned false for isEuro.");
+        assert.isNotTrue(result[2].isPut, "Details should have returned false for isPut.");
+        assert.isNotTrue(result[2].hasBeenCleared, "Details should have returned false for hasBeenCleared.");
+        assert.isNotTrue(result[2].writerHasProposedPrice, "Details should have returned false for writerHasProposedPrice.");
+        assert.isNotTrue(result[2].holderHasProposedPrice, "Details should have returned false for holderHasProposedPrice.");
+
+        return piggyInstance.getOwnedPiggies(owner, {from: owner})
+
+      })
+      .then(result => {
+        //Note returning result without .toString() will return an empty array
+        assert.strictEqual(result.toString(), '', "getOwnedPiggies did not return correctly");
+      });
+    }); //end test block
+
     it.skip("Should fail to settle via arbitartion if arbiter has not been set", function() {
       collateralERC = tokenInstance.address
       dataResolver = resolverInstance.address
@@ -896,6 +1002,50 @@ contract ('SmartPiggies', function(accounts) {
           () => piggyInstance.thirdPartyArbitrationSettlement(
             tokenId, proposedPrice,
             {from: user01, gas: 8000000 }),
+            3000000);
+      });
+    }); //end test block
+
+    it("Should fail to call arbitration once an agreement has been reached", function() {
+      collateralERC = tokenInstance.address
+      dataResolver = resolverInstance.address
+      collateral = web3.utils.toBN(100 * decimals)
+      lotSize = 10
+      strikePrice = 28000
+      expiry = web3.utils.toBN(1) // can only settle after expiry
+      isEuro = false
+      isPut = true
+      isRequest = false
+      currentBlock = web3.utils.toBN(0)
+      tokenId = 1;
+      shareAmount = collateral.div(web3.utils.toBN(2));
+
+      params = [collateralERC,dataResolver,addr00,collateral,lotSize,
+              strikePrice,expiry,isEuro,isPut,isRequest];
+
+      return sequentialPromise([
+        () => Promise.resolve(piggyInstance.createPiggy(
+          params[0],params[1],params[2],params[3],
+          params[4],params[5],params[6],params[7],
+          params[8], params[9], {from: owner})), // [0]
+        () => Promise.resolve(piggyInstance.updateArbiter(tokenId, user02, {from: owner})), // [1]
+        () => Promise.resolve(piggyInstance.transferFrom(owner, user01, tokenId, {from: owner})), // [2]
+        () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: owner})), // [3]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenId, proposedPrice, {from: owner})), // [4]
+        () => Promise.resolve(piggyInstance.thirdPartyArbitrationSettlement(tokenId, proposedPrice, {from: user01})), // [5]
+        () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: owner})), // [6]
+      ])
+      .then(result => {
+        assert.strictEqual(result[3][0].writer, owner, "writer did not return correct address");
+        assert.strictEqual(result[3][0].holder, user01, "holder did not return correct address");
+        assert.strictEqual(result[3][0].arbiter, user02, "arbiter did not return correct address");
+        assert.isTrue(result[6].flags.arbitrationAgreement, "agreement flag did not return true");
+
+        /* should fail */
+        return expectedExceptionPromise(
+          () => piggyInstance.thirdPartyArbitrationSettlement(
+            tokenId, shareAmount,
+            {from: user03, gas: 8000000 }),
             3000000);
       });
     }); //end test block

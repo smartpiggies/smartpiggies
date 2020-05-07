@@ -357,7 +357,7 @@ contract ('SmartPiggies', function(accounts) {
         */
         /* addresses */
         assert.strictEqual(result.addresses.writer, addr00, "writer param did not return address zero");
-        assert.strictEqual(result.addresses.writer, addr00, "holder param did not return address zero");
+        assert.strictEqual(result.addresses.holder, addr00, "holder param did not return address zero");
         assert.strictEqual(result.addresses.arbiter, addr00, "arbiter param did not return address zero");
         assert.strictEqual(result.addresses.collateralERC, addr00, "collateral param did not return address zero");
         assert.strictEqual(result.addresses.dataResolver, addr00, "collateral param did not return address zero");

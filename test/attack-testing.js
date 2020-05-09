@@ -6,9 +6,11 @@ var AttackTokenStartAuction = artifacts.require("./AttackTokenStartAuction.sol")
 var AttackTokenEndAuction = artifacts.require("./AttackTokenEndAuction.sol");
 var AttackTokenEndAuctionV2 = artifacts.require("./AttackTokenEndAuctionV2.sol");
 var AttackTokenSatisfyAuction = artifacts.require("./AttackTokenSatisfyAuction.sol");
+var AttackTokenClaim = artifacts.require("./AttackTokenClaim.sol");
 var TestnetLINK = artifacts.require("./TestnetLINK.sol");
 var SmartPiggies = artifacts.require("./SmartPiggies.sol");
 var Resolver = artifacts.require("./ResolverSelfReturn.sol");
+var ResolverAttack = artifacts.require("./ResolverSelfAttack.sol");
 
 const expectedExceptionPromise = require("../utils/expectedException.js");
 const sequentialPromise = require("../utils/sequentialPromise.js");
@@ -26,6 +28,7 @@ contract ('SmartPiggies', function(accounts) {
   let tokenEAuctionInstance;
   let tokenEAuctionInstance2;
   let tokenSatisfyInstance;
+  let tokenClaimInstance;
   let linkInstance;
   let piggyInstance;
   let resolverInstance;
@@ -88,6 +91,10 @@ contract ('SmartPiggies', function(accounts) {
     })
     .then(instance => {
       tokenSatisfyInstance = instance;
+      return AttackTokenClaim.new({from: owner})
+    })
+    .then(instance => {
+      tokenClaimInstance = instance;
       return TestnetLINK.new({from: owner});
     })
     .then(instance => {
@@ -105,6 +112,18 @@ contract ('SmartPiggies', function(accounts) {
     })
     .then(instance => {
       resolverInstance = instance;
+      return ResolverAttack.new(
+        dataSource,
+        underlying,
+        oracleService,
+        endpoint,
+        path,
+        oracleTokenAddress,
+        oraclePrice,
+        {from: owner});
+    })
+    .then(instance => {
+      resolverAttackInstance = instance;
       return SmartPiggies.new({from: owner, gas: 8000000, gasPrice: 1100000000});
     })
     .then(instance => {
@@ -117,6 +136,7 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(tokenCreateInstance.mint(user01, supply, {from: owner})),
         () => Promise.resolve(tokenReclaimInstance.mint(user01, supply, {from: owner})),
         () => Promise.resolve(tokenSatisfyInstance.mint(user01, supply, {from: owner})),
+        () => Promise.resolve(tokenClaimInstance.mint(user01, supply, {from: owner})),
 
         // give attacking contract tokens
         () => Promise.resolve(tokenInstance.mint(tokenInstance.address, supply, {from: owner})),
@@ -126,12 +146,15 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(tokenEAuctionInstance.mint(tokenEAuctionInstance.address, supply, {from: owner})),
         () => Promise.resolve(tokenEAuctionInstance2.mint(tokenEAuctionInstance2.address, supply, {from: owner})),
         () => Promise.resolve(tokenSatisfyInstance.mint(tokenSatisfyInstance.address, supply, {from: owner})),
+        () => Promise.resolve(tokenClaimInstance.mint(tokenClaimInstance.address, supply, {from: owner})),
 
         () => Promise.resolve(linkInstance.mint(owner, supply, {from: owner})),
         () => Promise.resolve(linkInstance.mint(user01, supply, {from: owner})),
+        () => Promise.resolve(linkInstance.mint(resolverAttackInstance.address, supply, {from: owner})),
 
         () => Promise.resolve(linkInstance.approve(resolverInstance.address, approveAmount, {from: owner})),
         () => Promise.resolve(linkInstance.approve(resolverInstance.address, approveAmount, {from: user01})),
+        () => Promise.resolve(linkInstance.approve(resolverAttackInstance.address, approveAmount, {from: user01})),
 
         () => Promise.resolve(piggyInstance.setFeeAddress(feeAddress, {from: owner})),
         () => Promise.resolve(tokenInstance.setAddress(piggyInstance.address, {from: owner})), //set attack address
@@ -141,6 +164,8 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(tokenEAuctionInstance.setAddress(piggyInstance.address, {from: owner})), //set attack address
         () => Promise.resolve(tokenEAuctionInstance2.setAddress(piggyInstance.address, {from: owner})), //set attack address
         () => Promise.resolve(tokenSatisfyInstance.setAddress(piggyInstance.address, {from: owner})), //set attack address
+        () => Promise.resolve(resolverAttackInstance.setAddress(piggyInstance.address, {from: owner})), //set attack address
+        () => Promise.resolve(tokenClaimInstance.setAddress(piggyInstance.address, {from: owner})), //set attack address
       ])
     });
   });
@@ -1001,6 +1026,395 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[19].toString(), spBalanceBefore.add(collateral).toString(), "smartpiggies balance did not return correctly");
       })
     }); // end test
+  }); // end describe
+
+  describe("Testing attack on requestSettlementPrice", function() {
+
+    it("Should fail to attack if resolver calls requestSettlementPrice", function() {
+      //American put
+      collateralERC = tokenInstance.address
+      dataResolver = resolverAttackInstance.address
+      collateral = web3.utils.toBN(1 * decimals)
+      lotSize = web3.utils.toBN(1)
+      strikePrice = web3.utils.toBN(27050) // split payout
+      expiry = 500
+      isEuro = false
+      isPut = true
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      oracleFee = web3.utils.toBN('1000000000000000000')
+
+      let tokenId = web3.utils.toBN(1)
+      let zeroNonce = web3.utils.toBN(0)
+      let count = web3.utils.toBN(0)
+
+      params = [collateralERC,dataResolver,addr00,collateral,
+        lotSize,strikePrice,expiry,isEuro,isPut,isRequest];
+
+      return sequentialPromise([
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
+
+        () => Promise.resolve(piggyInstance.startAuction(tokenId,startPrice,reservePrice,
+                auctionLength,timeStep,priceStep,{from: owner})),
+
+        () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, zeroNonce, {from: user01})),
+        () => Promise.resolve(resolverAttackInstance.setTokenId(tokenId, {from: owner})),
+        () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})),
+        () => Promise.resolve(resolverAttackInstance.count.call({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.didAttack.call({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.attackReturn.call({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.didXfer.call({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.xferReturn.call({from: owner})),
+        () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: user01})),
+      ])
+      .then(result => {
+        /**
+        console.log("count: ", result[5].toString())
+        console.log("attack: ", result[6].toString())
+        console.log("a return: ", result[7].toString())
+        console.log("xfer: ", result[8].toString())
+        console.log("x return: ", result[9].toString())
+        console.log("cleared: ", result[10][2].hasBeenCleared.toString())
+        console.log("price: ", result[10][1].settlementPrice.toString())
+        **/
+        assert.strictEqual(result[5].toString(), count.add(one).toString(), "count did not return correctly");
+        // attack should fail as the contract is the sender to the function call, but not the holder of the piggy
+        assert.isNotTrue(result[6], "attack did not return false");
+        assert.isTrue(result[10][2].hasBeenCleared, "token is not cleared");
+        assert.strictEqual(result[10][1].settlementPrice.toString(), oraclePrice.add(one).toString(), "settlement price did not return correctly");
+      })
+    }); // end test
+
+    it("Should attack if resolver calls requestSettlementPrice but execute correctly", function() {
+      //American put
+      collateralERC = tokenInstance.address
+      dataResolver = resolverAttackInstance.address
+      collateral = web3.utils.toBN(1 * decimals)
+      lotSize = web3.utils.toBN(1)
+      strikePrice = web3.utils.toBN(27050) // split payout
+      expiry = 500
+      isEuro = false
+      isPut = true
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      oracleFee = web3.utils.toBN('1000000000000000000')
+
+      let tokenId = web3.utils.toBN(1)
+      let zeroNonce = web3.utils.toBN(0)
+      let count = web3.utils.toBN(0)
+
+      params = [collateralERC,dataResolver,addr00,collateral,
+        lotSize,strikePrice,expiry,isEuro,isPut,isRequest];
+
+      return sequentialPromise([
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
+
+        () => Promise.resolve(piggyInstance.startAuction(tokenId,startPrice,reservePrice,
+                auctionLength,timeStep,priceStep,{from: owner})),
+        () => Promise.resolve(tokenInstance.mint(dataResolver, supply, {from: owner})),
+        () => Promise.resolve(resolverAttackInstance.approve({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.setTokenId(tokenId, {from: owner})),
+        () => Promise.resolve(resolverAttackInstance.satisfyAuction({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.requestSettlement({from: owner})),
+        () => Promise.resolve(piggyInstance.getDetails.call(tokenId, {from: owner})),
+        () => Promise.resolve(resolverAttackInstance.count.call({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.didAttack.call({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.attackReturn.call({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.didXfer.call({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.xferReturn.call({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.didApprove.call({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.approveReturn.call({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.didSatisfy.call({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.satisfyReturn.call({from: owner})),
+      ])
+      .then(result => {
+        /**
+        console.log("count: ", result[8].toString())
+        console.log("attack: ", result[9].toString())
+        console.log("attk return: ", result[10].toString())
+        console.log("xfer: ", result[11].toString())
+        console.log("xfer return: ", result[12].toString())
+
+        console.log("approve: ", result[13].toString())
+        console.log("approve return: ", result[14].toString())
+
+        console.log("satisfy: ", result[15].toString())
+        console.log("satisfy return: ", result[16].toString())
+
+        console.log("owner:    ", owner)
+        console.log("resolver: ", dataResolver)
+        console.log("holder:   ", result[7][0].holder.toString())
+        console.log("cleared: ", result[7][2].hasBeenCleared.toString())
+        console.log("price: ", result[7][1].settlementPrice.toString())
+        **/
+
+        /**
+        assert.strictEqual(result[8].toString(), count.add(one).toString(), "count did not return correctly");
+        // attack should fail as the contract is the sender to the function call, but not the holder of the piggy
+        assert.isNotTrue(result[9], "attack did not return false");
+        assert.isTrue(result[7][2].hasBeenCleared, "token is not cleared");
+        assert.strictEqual(result[7][1].settlementPrice.toString(), oraclePrice.add(one).toString(), "settlement price did not return correctly");
+        **/
+        console.log("***Resolver can callback and update a price multiple times***")
+      })
+    }); // end test
+
+    it("Should fail to attack if resolver calls requestSettlementPrice after token is reset", function() {
+      //American put
+      collateralERC = tokenInstance.address
+      dataResolver = resolverAttackInstance.address
+      collateral = web3.utils.toBN(1 * decimals)
+      lotSize = web3.utils.toBN(1)
+      strikePrice = web3.utils.toBN(27050) // split payout
+      expiry = 500
+      isEuro = false
+      isPut = true
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      oracleFee = web3.utils.toBN('1000000000000000000')
+
+      let tokenId = web3.utils.toBN(1)
+      let zeroNonce = web3.utils.toBN(0)
+      let count = web3.utils.toBN(0)
+
+      params = [collateralERC,dataResolver,addr00,collateral,
+        lotSize,strikePrice,expiry,isEuro,isPut,isRequest];
+
+      return sequentialPromise([
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
+
+        () => Promise.resolve(piggyInstance.startAuction(tokenId,startPrice,reservePrice,
+                auctionLength,timeStep,priceStep,{from: owner})),
+        () => Promise.resolve(tokenInstance.mint(dataResolver, supply, {from: owner})),
+        () => Promise.resolve(resolverAttackInstance.approve({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.setTokenId(tokenId, {from: owner})),
+        () => Promise.resolve(resolverAttackInstance.satisfyAuction({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.requestSettlement({from: owner})),
+        () => Promise.resolve(piggyInstance.getDetails.call(tokenId, {from: owner})),
+        () => Promise.resolve(resolverAttackInstance.count.call({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.didAttack.call({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.attackReturn.call({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.didXfer.call({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.xferReturn.call({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.didApprove.call({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.approveReturn.call({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.didSatisfy.call({from: owner})),
+        () => Promise.resolve(resolverAttackInstance.satisfyReturn.call({from: owner})),
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
+        () => Promise.resolve(piggyInstance.getDetails.call(tokenId, {from: owner})),
+      ])
+      .then(result => {
+        /**
+        console.log("count: ", result[8].toString())
+        console.log("attack: ", result[9].toString())
+        console.log("attk return: ", result[10].toString())
+        console.log("xfer: ", result[11].toString())
+        console.log("xfer return: ", result[12].toString())
+
+        console.log("approve: ", result[13].toString())
+        console.log("approve return: ", result[14].toString())
+
+        console.log("satisfy: ", result[15].toString())
+        console.log("satisfy return: ", result[16].toString())
+
+        console.log("owner:    ", owner)
+        console.log("resolver: ", dataResolver)
+        console.log("holder:   ", result[7][0].holder.toString())
+        console.log("cleared: ", result[7][2].hasBeenCleared.toString())
+        console.log("price: ", result[7][1].settlementPrice.toString())
+        **/
+
+        // should attack, and update appropriately
+        assert.isTrue(result[9], "attack did not return true");
+        assert.isTrue(result[7][2].hasBeenCleared, "token is not cleared");
+        assert.strictEqual(result[7][1].settlementPrice.toString(), oraclePrice.add(one).add(one).toString(), "settlement price did not return correctly");
+
+        // Piggy should be reset
+        assert.isNotTrue(result[18][2].hasBeenCleared, "token is not cleared");
+        assert.strictEqual(result[18][1].settlementPrice.toString(), zeroParam.toString(), "settlement price did not return correctly");
+
+        return resolverAttackInstance.lastId.call({from: owner})
+      })
+      .then(requestId => {
+
+        // should fail to call
+        return expectedExceptionPromise(
+            () => resolverAttackInstance.attackCallback(
+              requestId,
+              1,
+              {from: owner, gas: 8000000 }),
+            3000000);
+      })
+    }); // end test
+
+  }); // end describe
+
+  describe.only("Test attacking claimPayout", function() {
+
+    it.skip("magic test that will trip the satisfyAuction mutex", function() {
+      // tripped when AttackTokenClaim was not set appropriately in housekeeping
+      //American put
+      collateralERC = tokenInstance.address
+      dataResolver = resolverAttackInstance.address
+      collateral = web3.utils.toBN(1 * decimals)
+      lotSize = web3.utils.toBN(1)
+      strikePrice = web3.utils.toBN(27050) // split payout
+      expiry = 500
+      isEuro = false
+      isPut = true
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      oracleFee = web3.utils.toBN('1000000000000000000')
+
+      let tokenId = web3.utils.toBN(1)
+      let zeroNonce = web3.utils.toBN(0)
+      let count = web3.utils.toBN(0)
+
+      params = [collateralERC,dataResolver,addr00,collateral,
+        lotSize,strikePrice,expiry,isEuro,isPut,isRequest];
+
+      return sequentialPromise([
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: owner})),
+        () => Promise.resolve(piggyInstance.startAuction(tokenId,startPrice,reservePrice,
+                auctionLength,timeStep,priceStep,{from: owner})),
+        () => Promise.resolve(tokenClaimInstance.setTokenId(tokenId, {from: owner})),
+        () => Promise.resolve(tokenClaimInstance.satisfyAuction({from: owner})),
+        () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, 0, {from: owner})), // request tripped auction mutex
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})),
+        () => Promise.resolve(tokenClaimInstance.attack({from: owner})),
+        () => Promise.resolve(piggyInstance.getDetails.call(tokenId, {from: owner})),
+        () => Promise.resolve(tokenClaimInstance.count.call({from: owner})),
+        () => Promise.resolve(tokenClaimInstance.didAttack.call({from: owner})),
+        () => Promise.resolve(tokenClaimInstance.attackReturn.call({from: owner})),
+        () => Promise.resolve(tokenClaimInstance.didXfer.call({from: owner})),
+        () => Promise.resolve(tokenClaimInstance.xferReturn.call({from: owner})),
+        () => Promise.resolve(tokenClaimInstance.didSatisfy.call({from: owner})),
+        () => Promise.resolve(tokenClaimInstance.satisfyReturn.call({from: owner})),
+      ])
+      .then(result => {
+        console.log("count: ", result[8].toString())
+        console.log("attack: ", result[9].toString())
+        console.log("attk return: ", result[10].toString())
+        console.log("xfer: ", result[11].toString())
+        console.log("xfer return: ", result[12].toString())
+
+        console.log("satisfy: ", result[13].toString())
+        console.log("satisfy return: ", result[14].toString())
+
+        console.log("owner:    ", owner)
+        console.log("resolver: ", dataResolver)
+        console.log("holder:   ", result[7][0].holder.toString())
+        console.log("cleared: ", result[7][2].hasBeenCleared.toString())
+        console.log("price: ", result[7][1].settlementPrice.toString())
+      })
+    }); // end test
+
+    it("Should attack if resolver calls requestSettlementPrice but execute correctly", function() {
+      //American put
+      collateralERC = tokenClaimInstance.address
+      dataResolver = resolverInstance.address
+      collateral = web3.utils.toBN(1 * decimals)
+      lotSize = web3.utils.toBN(1)
+      strikePrice = web3.utils.toBN(27050) // split payout
+      expiry = 500
+      isEuro = false
+      isPut = true
+      isRequest = false
+
+      startPrice = web3.utils.toBN(10000)
+      reservePrice = web3.utils.toBN(100)
+      auctionLength = 100
+      timeStep = web3.utils.toBN(1)
+      priceStep = web3.utils.toBN(100)
+
+      startBlock = web3.utils.toBN(0)
+      auctionPrice = web3.utils.toBN(0)
+
+      oracleFee = web3.utils.toBN('1000000000000000000')
+
+      let tokenId = web3.utils.toBN(1)
+      let zeroNonce = web3.utils.toBN(0)
+      let count = web3.utils.toBN(0)
+
+      params = [collateralERC,dataResolver,addr00,collateral,
+        lotSize,strikePrice,expiry,isEuro,isPut,isRequest];
+
+      return sequentialPromise([
+        () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
+                params[4],params[5],params[6],params[7],params[8],params[9],{from: user01})),
+        () => Promise.resolve(piggyInstance.startAuction(tokenId,startPrice,reservePrice,
+                auctionLength,timeStep,priceStep,{from: user01})),
+        () => Promise.resolve(tokenClaimInstance.setTokenId(tokenId, {from: user01})),
+        () => Promise.resolve(tokenClaimInstance.satisfyAuction({from: user01})),
+        () => Promise.resolve(tokenClaimInstance.requestSettlement({from: user01})),
+        () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: user01})),
+        () => Promise.resolve(tokenClaimInstance.attack({from: user01})),
+        () => Promise.resolve(piggyInstance.getDetails.call(tokenId, {from: user01})),
+        () => Promise.resolve(tokenClaimInstance.count.call({from: user01})),
+        () => Promise.resolve(tokenClaimInstance.didAttack.call({from: user01})),
+        () => Promise.resolve(tokenClaimInstance.attackReturn.call({from: user01})),
+        () => Promise.resolve(tokenClaimInstance.xfer.call({from: user01})),
+        () => Promise.resolve(tokenClaimInstance.didSatisfy.call({from: user01})),
+        () => Promise.resolve(tokenClaimInstance.satisfyReturn.call({from: user01})),
+      ])
+      .then(result => {
+        console.log("count: ", result[8].toString())
+        console.log("attack: ", result[9].toString())
+        console.log("attk return: ", result[10].toString())
+        console.log("xfer: ", result[11].toString())
+        console.log("xfer return: ", result[12].toString())
+
+        console.log("satisfy: ", result[12].toString())
+        console.log("satisfy return: ", result[13].toString())
+
+        console.log("owner:    ", owner)
+        console.log("resolver: ", dataResolver)
+        console.log("holder:   ", result[7][0].holder.toString())
+        console.log("cleared: ", result[7][2].hasBeenCleared.toString())
+        console.log("price: ", result[7][1].settlementPrice.toString())
+      })
+    }); // end test
+
   }); // end describe
 
 }); // end unit test

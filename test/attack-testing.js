@@ -1279,7 +1279,7 @@ contract ('SmartPiggies', function(accounts) {
 
   }); // end describe
 
-  describe.only("Test attacking claimPayout", function() {
+  describe("Test attacking claimPayout", function() {
 
     it.skip("magic test that will trip the satisfyAuction mutex", function() {
       // tripped when AttackTokenClaim was not set appropriately in housekeeping
@@ -1367,19 +1367,21 @@ contract ('SmartPiggies', function(accounts) {
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
 
-      startBlock = web3.utils.toBN(0)
-      auctionPrice = web3.utils.toBN(0)
-
-      oracleFee = web3.utils.toBN('1000000000000000000')
-
       let tokenId = web3.utils.toBN(1)
       let zeroNonce = web3.utils.toBN(0)
       let count = web3.utils.toBN(0)
+      let attacker = tokenClaimInstance.address
+      let payout = web3.utils.toBN(0)
+      let claimAmount = web3.utils.toBN(0)
+      let balanceBefore = web3.utils.toBN(0)
+      let auctionPrice = web3.utils.toBN(0)
+      let serviceFee = web3.utils.toBN(0)
 
       params = [collateralERC,dataResolver,addr00,collateral,
         lotSize,strikePrice,expiry,isEuro,isPut,isRequest];
 
       return sequentialPromise([
+        () => Promise.resolve(tokenClaimInstance.balanceOf(attacker, {from: user01})),
         () => Promise.resolve(piggyInstance.createPiggy(params[0],params[1],params[2],params[3],
                 params[4],params[5],params[6],params[7],params[8],params[9],{from: user01})),
         () => Promise.resolve(piggyInstance.startAuction(tokenId,startPrice,reservePrice,
@@ -1388,30 +1390,64 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(tokenClaimInstance.satisfyAuction({from: user01})),
         () => Promise.resolve(tokenClaimInstance.requestSettlement({from: user01})),
         () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: user01})),
-        () => Promise.resolve(tokenClaimInstance.attack({from: user01})),
-        () => Promise.resolve(piggyInstance.getDetails.call(tokenId, {from: user01})),
-        () => Promise.resolve(tokenClaimInstance.count.call({from: user01})),
-        () => Promise.resolve(tokenClaimInstance.didAttack.call({from: user01})),
-        () => Promise.resolve(tokenClaimInstance.attackReturn.call({from: user01})),
-        () => Promise.resolve(tokenClaimInstance.xfer.call({from: user01})),
-        () => Promise.resolve(tokenClaimInstance.didSatisfy.call({from: user01})),
-        () => Promise.resolve(tokenClaimInstance.satisfyReturn.call({from: user01})),
+        () => Promise.resolve(tokenClaimInstance.balanceOf(attacker, {from: user01})),
+        () => Promise.resolve(piggyInstance.getERC20Balance.call(attacker, attacker, {from: user01})),
       ])
       .then(result => {
-        console.log("count: ", result[8].toString())
-        console.log("attack: ", result[9].toString())
-        console.log("attk return: ", result[10].toString())
-        console.log("xfer: ", result[11].toString())
-        console.log("xfer return: ", result[12].toString())
+        balanceBefore = web3.utils.toBN(result[0])
+        auctionPrice = startPrice.sub(priceStep).sub(priceStep) // two blocks have passed since start of auction
 
-        console.log("satisfy: ", result[12].toString())
-        console.log("satisfy return: ", result[13].toString())
+        // make sure token transfer worked correctly
+        assert.strictEqual(result[7].toString(), balanceBefore.sub(auctionPrice).toString(), "attacker's balance after auction didn't return correctly")
 
-        console.log("owner:    ", owner)
-        console.log("resolver: ", dataResolver)
-        console.log("holder:   ", result[7][0].holder.toString())
-        console.log("cleared: ", result[7][2].hasBeenCleared.toString())
-        console.log("price: ", result[7][1].settlementPrice.toString())
+        // Put payout:
+        // if strike > settlement price | payout = strike - settlement price * lot size
+        payout = web3.utils.toBN(0)
+        if (strikePrice.gt(oraclePrice)) {
+          delta = strikePrice.sub(oraclePrice)
+          payout = delta.mul(decimals).mul(lotSize).div(web3.utils.toBN(100))
+        }
+        if (payout.gt(collateral)) {
+          payout = collateral
+        }
+
+        serviceFee = payout.mul(DEFAULT_FEE_PERCENT).div(DEFAULT_FEE_RESOLUTION)
+
+        // check that the ERC20 balance on the smartpiggies contract is correct
+        assert.strictEqual(result[8].toString(), payout.sub(serviceFee).toString(), "ERC20 balance did not return correctly");
+
+        claimAmount = result[6].logs[0].args.holderPayout.toString()
+
+        return sequentialPromise([
+          () => Promise.resolve(tokenClaimInstance.attack(claimAmount, {from: user01})),
+          () => Promise.resolve(piggyInstance.getDetails.call(tokenId, {from: user01})),
+          () => Promise.resolve(tokenClaimInstance.count.call({from: user01})),
+          () => Promise.resolve(tokenClaimInstance.didAttack.call({from: user01})),
+          () => Promise.resolve(tokenClaimInstance.attackReturn.call({from: user01})),
+          () => Promise.resolve(tokenClaimInstance.xfer.call({from: user01})),
+          () => Promise.resolve(tokenClaimInstance.didSatisfy.call({from: user01})),
+          () => Promise.resolve(tokenClaimInstance.satisfyReturn.call({from: user01})),
+          () => Promise.resolve(piggyInstance.getERC20Balance.call(attacker, attacker, {from: user01})),
+          () => Promise.resolve(tokenClaimInstance.balanceOf(attacker, {from: user01})),
+        ])
+      })
+      .then(result => {
+        /**
+        console.log("count: ", result[2].toString())
+        console.log("attack: ", result[3].toString())
+        console.log("attk return: ", result[4].toString())
+        console.log("xfer: ", result[5].toString())
+        console.log("satisfy: ", result[6].toString())
+        console.log("satisfy return: ", result[7].toString())
+        **/
+
+        // make sure attack ran at least once
+        assert.isAtLeast(result[2].toNumber(), 1, "count did not run at least once");
+        // make sure balance on smartpiggies accounted correctly for one valide withdraw
+        assert.strictEqual(result[8].toString(), zeroParam.toString(), "ERC20 balance after claim request did not return correctly");
+
+        // make sure claim payout transferred the correct amount of payout
+        assert.strictEqual(result[9].toString(), balanceBefore.add(payout).sub(serviceFee).sub(auctionPrice).toString(), "attacker's token balance did not return correctly");
       })
     }); // end test
 

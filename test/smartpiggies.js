@@ -24,30 +24,30 @@ contract ('SmartPiggies', function(accounts) {
   //conditional testing
   condition = true
 
-  var tokenInstance;
-  var linkInstance;
-  var piggyInstance;
-  var resolverInstance;
-  var owner = accounts[0];
-  var user01 = accounts[1];
-  var user02 = accounts[2];
-  var feeAddress = accounts[3];
-  var addr00 = "0x0000000000000000000000000000000000000000";
-  var decimal = 18;
-  //multiply a BN
-  //var aNum = web3.utils.toBN(decimals).mul(web3.utils.toBN('1000'))
-  var decimals = web3.utils.toBN(Math.pow(10,decimal));
-  var supply = web3.utils.toWei("1000", "ether");
-  var approveAmount = web3.utils.toWei("100", "ether");
-  var exchangeRate = 1;
-  var dataSource = 'NASDAQ';
-  var underlying = 'SPY';
-  var oracleService = 'Self';
-  var endpoint = 'https://www.nasdaq.com/symbol/spy';
-  var path = '';
-  var oracleTokenAddress;
-  var oraclePrice = web3.utils.toBN(27000); //including hundreth of a cent
+  let tokenInstance;
+  let linkInstance;
+  let piggyInstance;
+  let resolverInstance;
+  let owner = accounts[0];
+  let user01 = accounts[1];
+  let user02 = accounts[2];
+  let feeAddress = accounts[3];
+  let addr00 = "0x0000000000000000000000000000000000000000";
+  let decimal = 18;
+  let decimals = web3.utils.toBN(Math.pow(10,decimal));
+  let supply = web3.utils.toWei("1000", "ether");
+  let approveAmount = web3.utils.toWei("100", "ether");
+  let exchangeRate = 1;
+  let dataSource = 'NASDAQ';
+  let underlying = 'SPY';
+  let oracleService = 'Self';
+  let endpoint = 'https://www.nasdaq.com/symbol/spy';
+  let path = '';
+  let oracleTokenAddress;
+  let oraclePrice = web3.utils.toBN(27000); //including hundreth of a cent
   let zeroNonce = web3.utils.toBN(0)
+  let one = web3.utils.toBN(1)
+  let three = web3.utils.toBN(3)
 
   const DEFAULT_FEE_PERCENT = web3.utils.toBN(50)
   const DEFAULT_FEE_RESOLUTION = web3.utils.toBN(10000)
@@ -418,6 +418,7 @@ contract ('SmartPiggies', function(accounts) {
       currentBlock = web3.utils.toBN(0)
       origExpiry = web3.utils.toBN(0)
       let origToken, tokenSplit1, tokenSplit2
+      let splitAmount = web3.utils.toBN(1 * decimals)
 
       params = [collateralERC,dataResolver,addr00,collateral,
         lotSize,strikePrice,expiry,isEuro,isPut,isRequest]
@@ -432,7 +433,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.isTrue(result.receipt.status, "create did not return true")
         origExpiry = result.logs[0].args.ints[4]
         origToken = result.logs[0].args.ints[0]
-        return piggyInstance.splitPiggy(origToken, {from: owner})
+        return piggyInstance.splitPiggy(origToken, splitAmount, {from: owner})
       })
       .then(result => {
         //console.log(result.logs[0].args)
@@ -445,7 +446,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.addresses[2], dataResolver, "Event log from create didn't return correct resolver")
         assert.strictEqual(result.logs[0].args.addresses[3], addr00, "Event log from create didn't return correct arbiter")
         assert.strictEqual(result.logs[0].args.ints[0].toString(), "2", "Event log from create didn't return correct tokenId")
-        assert.strictEqual(result.logs[0].args.ints[1].toString(), collateral.sub(collateral.div(web3.utils.toBN(2))).toString(), "Event log from create didn't return correct collateral")
+        assert.strictEqual(result.logs[0].args.ints[1].toString(), collateral.sub(splitAmount).toString(), "Event log from create didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.ints[2].toString(), lotSize.toString(), "Event log from create didn't return correct lotSize")
         assert.strictEqual(result.logs[0].args.ints[3].toString(), strikePrice.toString(), "Event log from create didn't return correct strike")
         assert.strictEqual(result.logs[0].args.ints[4].toString(), origExpiry.toString(), "Event log from create didn't return correct expiry")
@@ -460,7 +461,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.addresses[2], dataResolver, "Event log from create didn't return correct resolver")
         assert.strictEqual(result.logs[0].args.addresses[3], addr00, "Event log from create didn't return correct arbiter")
         assert.strictEqual(result.logs[1].args.ints[0].toString(), "3", "Event log from create didn't return correct tokenId")
-        assert.strictEqual(result.logs[1].args.ints[1].toString(), collateral.div(web3.utils.toBN(2)).toString(), "Event log from create didn't return correct collateral")
+        assert.strictEqual(result.logs[1].args.ints[1].toString(), splitAmount.toString(), "Event log from create didn't return correct collateral")
         assert.strictEqual(result.logs[1].args.ints[2].toString(), lotSize.toString(), "Event log from create didn't return correct lotSize")
         assert.strictEqual(result.logs[1].args.ints[3].toString(), strikePrice.toString(), "Event log from create didn't return correct strike")
         assert.strictEqual(result.logs[1].args.ints[4].toString(), origExpiry.toString(), "Event log from create didn't return correct expiry")
@@ -490,7 +491,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].holderProposedNewArbiter, addr00, "Details should have correct holderProposedNewArbiter address.")
 
         //check DetailUints
-        assert.strictEqual(result[1].collateral, collateral.sub(collateral.div(web3.utils.toBN(2))).toString(), "Details should have correct collateral amount.")
+        assert.strictEqual(result[1].collateral, collateral.sub(splitAmount).toString(), "Details should have correct collateral amount.")
         assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
         assert.strictEqual(result[1].strikePrice, strikePrice.toString(), "Details should have correct strikePrice amount.")
         assert.strictEqual(result[1].expiry, origExpiry.toString(), "Details should have correct expiry amount.")
@@ -528,7 +529,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].holderProposedNewArbiter, addr00, "Details should have correct holderProposedNewArbiter address.")
 
         //check DetailUints
-        assert.strictEqual(result[1].collateral, collateral.div(web3.utils.toBN(2)).toString(), "Details should have correct collateral amount.")
+        assert.strictEqual(result[1].collateral, splitAmount.toString(), "Details should have correct collateral amount.")
         assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
         assert.strictEqual(result[1].strikePrice, strikePrice.toString(), "Details should have correct strikePrice amount.")
         assert.strictEqual(result[1].expiry, origExpiry.toString(), "Details should have correct expiry amount.")
@@ -597,7 +598,7 @@ contract ('SmartPiggies', function(accounts) {
     it("Should split a token with low amount", function() {
       collateralERC = tokenInstance.address
       dataResolver = resolverInstance.address
-      collateral = web3.utils.toBN(1) // 1 wei
+      collateral = web3.utils.toBN(5) // 5 wei
       lotSize = 10
       strikePrice = 28000
       expiry = web3.utils.toBN(500)
@@ -608,6 +609,7 @@ contract ('SmartPiggies', function(accounts) {
       currentBlock = web3.utils.toBN(0)
       origExpiry = web3.utils.toBN(0)
       let origToken, tokenSplit1, tokenSplit2
+      let splitAmount = collateral.div(three)
 
       params = [collateralERC,dataResolver,addr00,collateral,
         lotSize,strikePrice,expiry,isEuro,isPut,isRequest]
@@ -622,7 +624,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.isTrue(result.receipt.status, "create did not return true")
         origExpiry = result.logs[0].args.ints[4]
         origToken = result.logs[0].args.ints[0]
-        return piggyInstance.splitPiggy(origToken, {from: owner})
+        return piggyInstance.splitPiggy(origToken, splitAmount, {from: owner})
       })
       .then(result => {
         //console.log(result.logs[0].args)
@@ -635,7 +637,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.addresses[2], dataResolver, "Event log from create didn't return correct resolver")
         assert.strictEqual(result.logs[0].args.addresses[3], addr00, "Event log from create didn't return correct arbiter")
         assert.strictEqual(result.logs[0].args.ints[0].toString(), "2", "Event log from create didn't return correct tokenId")
-        assert.strictEqual(result.logs[0].args.ints[1].toString(), collateral.sub(collateral.div(web3.utils.toBN(2))).toString(), "Event log from create didn't return correct collateral")
+        assert.strictEqual(result.logs[0].args.ints[1].toString(), collateral.sub(splitAmount).toString(), "Event log from create didn't return correct collateral")
         assert.strictEqual(result.logs[0].args.ints[2].toString(), lotSize.toString(), "Event log from create didn't return correct lotSize")
         assert.strictEqual(result.logs[0].args.ints[3].toString(), strikePrice.toString(), "Event log from create didn't return correct strike")
         assert.strictEqual(result.logs[0].args.ints[4].toString(), origExpiry.toString(), "Event log from create didn't return correct expiry")
@@ -648,7 +650,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].args.addresses[1], collateralERC, "Event log from create didn't return collateral address")
         assert.strictEqual(result.logs[0].args.addresses[2], dataResolver, "Event log from create didn't return correct resolver")
         assert.strictEqual(result.logs[1].args.ints[0].toString(), "3", "Event log from create didn't return correct tokenId")
-        assert.strictEqual(result.logs[1].args.ints[1].toString(), collateral.div(web3.utils.toBN(2)).toString(), "Event log from create didn't return correct collateral")
+        assert.strictEqual(result.logs[1].args.ints[1].toString(), splitAmount.toString(), "Event log from create didn't return correct collateral")
         assert.strictEqual(result.logs[1].args.ints[2].toString(), lotSize.toString(), "Event log from create didn't return correct lotSize")
         assert.strictEqual(result.logs[1].args.ints[3].toString(), strikePrice.toString(), "Event log from create didn't return correct strike")
         assert.strictEqual(result.logs[1].args.ints[4].toString(), origExpiry.toString(), "Event log from create didn't return correct expiry")
@@ -678,7 +680,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].holderProposedNewArbiter, addr00, "Details should have correct holderProposedNewArbiter address.")
 
         //check DetailUints
-        assert.strictEqual(result[1].collateral, collateral.sub(collateral.div(web3.utils.toBN(2))).toString(), "Details should have correct collateral amount.")
+        assert.strictEqual(result[1].collateral, collateral.sub(splitAmount).toString(), "Details should have correct collateral amount.")
         assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
         assert.strictEqual(result[1].strikePrice, strikePrice.toString(), "Details should have correct strikePrice amount.")
         assert.strictEqual(result[1].expiry, origExpiry.toString(), "Details should have correct expiry amount.")
@@ -716,7 +718,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result[0].holderProposedNewArbiter, addr00, "Details should have correct holderProposedNewArbiter address.")
 
         //check DetailUints
-        assert.strictEqual(result[1].collateral, collateral.div(web3.utils.toBN(2)).toString(), "Details should have correct collateral amount.")
+        assert.strictEqual(result[1].collateral, splitAmount.toString(), "Details should have correct collateral amount.")
         assert.strictEqual(result[1].lotSize, lotSize.toString(), "Details should have correct lotSize amount.")
         assert.strictEqual(result[1].strikePrice, strikePrice.toString(), "Details should have correct strikePrice amount.")
         assert.strictEqual(result[1].expiry, origExpiry.toString(), "Details should have correct expiry amount.")
@@ -798,6 +800,7 @@ contract ('SmartPiggies', function(accounts) {
       isEuro = false
       isPut = true
       isRequest = false
+      splitAmount = collateral.div(three)
     })
 
     it("Should fail to split a token if tokenId is 0", function() {
@@ -822,6 +825,65 @@ contract ('SmartPiggies', function(accounts) {
         return expectedExceptionPromise(
             () => piggyInstance.splitPiggy(
               tokenId.sub(web3.utils.toBN(1)),
+              splitAmount,
+              {from: owner, gas: 8000000 }), //sending tokenId 0 should fail
+            3000000);
+      })
+      //end test
+    });
+
+    it("Should fail to split if split amount equals collateral", function() {
+
+      params = [collateralERC,dataResolver,addr00,collateral,
+        lotSize,strikePrice,expiry,isEuro,isPut,isRequest]
+
+      return piggyInstance.createPiggy(
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],
+        params[8],params[9],
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner})
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+
+        return expectedExceptionPromise(
+            () => piggyInstance.splitPiggy(
+              tokenId,
+              collateral, // cannot split amount == collateral
+              {from: owner, gas: 8000000 }), //sending tokenId 0 should fail
+            3000000);
+      })
+      //end test
+    });
+
+    it("Should fail to split if split amount exceeds collateral", function() {
+
+      params = [collateralERC,dataResolver,addr00,collateral,
+        lotSize,strikePrice,expiry,isEuro,isPut,isRequest]
+
+      return piggyInstance.createPiggy(
+        params[0],params[1],params[2],params[3],
+        params[4],params[5],params[6],params[7],
+        params[8],params[9],
+        {from: owner}
+      )
+      .then(result => {
+        assert.isTrue(result.receipt.status, "create did not return true")
+        return piggyInstance.tokenId({from: owner})
+      })
+      .then(result => {
+        //use last tokenId created
+        tokenId = result
+
+        return expectedExceptionPromise(
+            () => piggyInstance.splitPiggy(
+              tokenId,
+              collateral.add(one), // cannot split amount == collateral
               {from: owner, gas: 8000000 }), //sending tokenId 0 should fail
             3000000);
       })
@@ -854,6 +916,7 @@ contract ('SmartPiggies', function(accounts) {
         return expectedExceptionPromise(
             () => piggyInstance.splitPiggy(
               tokenId,
+              splitAmount,
               {from: owner, gas: 8000000 }), //splitting RFP should fail
             3000000);
       })
@@ -886,6 +949,7 @@ contract ('SmartPiggies', function(accounts) {
         return expectedExceptionPromise(
             () => piggyInstance.splitPiggy(
               tokenId,
+              splitAmount,
               {from: user01, gas: 8000000 }), //splitting from a non-holder should fail
             3000000);
       })
@@ -940,6 +1004,7 @@ contract ('SmartPiggies', function(accounts) {
         return expectedExceptionPromise(
             () => piggyInstance.splitPiggy(
               tokenId,
+              splitAmount,
               {from: owner, gas: 8000000 }), //splitting an expired token should fail
             3000000);
       })
@@ -991,6 +1056,7 @@ contract ('SmartPiggies', function(accounts) {
         return expectedExceptionPromise(
             () => piggyInstance.splitPiggy(
               tokenId,
+              splitAmount,
               {from: owner, gas: 8000000 }), //splitting a token on auction should fail
             3000000);
       })
@@ -1032,6 +1098,7 @@ contract ('SmartPiggies', function(accounts) {
         return expectedExceptionPromise(
             () => piggyInstance.splitPiggy(
               tokenId,
+              splitAmount,
               {from: owner, gas: 8000000 }), //splitting a token that has been cleared should fail
             3000000);
       })

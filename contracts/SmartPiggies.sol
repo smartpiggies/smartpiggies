@@ -555,9 +555,6 @@ contract SmartPiggies is UsingCooldown {
 
     // assuming all checks have passed:
 
-    //calculate collateral split
-    //uint256 splitCollateral = piggies[tokenId].uintDetails.collateral.sub(_amount);
-
     // remove current token ID
     _removeTokenFromOwnedPiggies(msg.sender, _tokenId); // i.e. piggies[_tokenId].addresses.holder
 
@@ -566,7 +563,7 @@ contract SmartPiggies is UsingCooldown {
         piggies[_tokenId].addresses.collateralERC,
         piggies[_tokenId].addresses.dataResolver,
         piggies[_tokenId].addresses.arbiter,
-        piggies[tokenId].uintDetails.collateral.sub(_amount), // piggy with collateral less the amount
+        piggies[_tokenId].uintDetails.collateral.sub(_amount), // piggy with collateral less the amount
         piggies[_tokenId].uintDetails.lotSize,
         piggies[_tokenId].uintDetails.strikePrice,
         piggies[_tokenId].uintDetails.expiry,

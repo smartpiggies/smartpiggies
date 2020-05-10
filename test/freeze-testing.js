@@ -203,6 +203,7 @@ contract ('SmartPiggies', function(accounts) {
       isRequest = false
       zeroParam = 0
       currentBlock = web3.utils.toBN(0)
+      let splitAmount = collateral.sub(web3.utils.toBN(1 * decimals))
 
       params = [collateralERC,dataResolver,addr00,collateral,
         lotSize,strikePrice,expiry,isEuro,isPut,isRequest];
@@ -217,7 +218,7 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(piggyInstance.createPiggy(
           params[0],params[1],params[2],params[3],
           params[4],params[5],params[6],params[7],
-          params[8], {from: owner})), // [3]
+          params[8], params[9], {from: owner})), // [3]
       ])
       .then(result => {
         assert.isTrue(result[2].receipt.status, "create status did not return true");
@@ -225,7 +226,8 @@ contract ('SmartPiggies', function(accounts) {
 
         tokenId01 = result[2].logs[0].args.ints[0];
         tokenId02 = result[3].logs[0].args.ints[0];
-        return piggyInstance.splitPiggy(tokenId01, {from: owner});
+
+        return piggyInstance.splitPiggy(tokenId01, splitAmount, {from: owner});
       })
       .then(result => {
         assert.isTrue(result.receipt.status, "split status did not return true");
@@ -237,10 +239,11 @@ contract ('SmartPiggies', function(accounts) {
       .then(result => {
         assert.isNotTrue(result[1], "isNotFrozen did not return false");
 
-        /* this should revert */
+        // this should revert on frozen contract
         return expectedExceptionPromise(
           () => piggyInstance.splitPiggy(
             tokenId02,
+            splitAmount,
             {from: owner, gas: 8000000 }),
             3000000);
       })

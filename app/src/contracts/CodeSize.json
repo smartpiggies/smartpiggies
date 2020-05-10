@@ -1,0 +1,468 @@
+{
+  "contractName": "CodeSize",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_address",
+          "type": "address"
+        }
+      ],
+      "name": "getSize",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "metadata": "{\"compiler\":{\"version\":\"0.5.17+commit.d19bba13\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"constant\":true,\"inputs\":[{\"internalType\":\"address\",\"name\":\"_address\",\"type\":\"address\"}],\"name\":\"getSize\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"methods\":{}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/home/vagrant/DAPPS/smartpiggiesGithub/smartpiggies/contracts/CodeSize.sol\":\"CodeSize\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"optimizer\":{\"enabled\":true,\"runs\":5},\"remappings\":[]},\"sources\":{\"/home/vagrant/DAPPS/smartpiggiesGithub/smartpiggies/contracts/CodeSize.sol\":{\"keccak256\":\"0x6778ecbc2d367824f338d3c84755763701f9da55f9db884f5da802c4bd96a8aa\",\"urls\":[\"bzz-raw://164a87a9f9f5e19a46fb80d2c27c11e7878b4c97594c1f001a1a6424d03a03f5\",\"dweb:/ipfs/QmR5oADjb464tvbptnL4xj4hNg61X8sNZL48TNxQQwKVhu\"]}},\"version\":1}",
+  "bytecode": "0x6080604052348015600f57600080fd5b50609b8061001e6000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063504f167114602d575b600080fd5b605060048036036020811015604157600080fd5b50356001600160a01b03166062565b60408051918252519081900360200190f35b3b9056fea265627a7a723158200aff9f6c342ad10a0cfff67c58fc20c96038e197407b04e7c2c38d63804e64bd64736f6c63430005110032",
+  "deployedBytecode": "0x6080604052348015600f57600080fd5b506004361060285760003560e01c8063504f167114602d575b600080fd5b605060048036036020811015604157600080fd5b50356001600160a01b03166062565b60408051918252519081900360200190f35b3b9056fea265627a7a723158200aff9f6c342ad10a0cfff67c58fc20c96038e197407b04e7c2c38d63804e64bd64736f6c63430005110032",
+  "sourceMap": "27:212:9:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;27:212:9;;;;;;;",
+  "deployedSourceMap": "27:212:9:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;27:212:9;;;;;;;;;;;;;;;;;;;52:185;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;-1:-1;52:185:9;-1:-1:-1;;;;;52:185:9;;:::i;:::-;;;;;;;;;;;;;;;;;187:21;;52:185::o",
+  "source": "pragma solidity >=0.5.15;\n\ncontract CodeSize {\n\n    function getSize(address _address)\n      public\n      view\n      returns (uint256)\n    {\n        uint size;\n        assembly { size := extcodesize(_address) }\n        return size;\n    }\n}\n",
+  "sourcePath": "/home/vagrant/DAPPS/smartpiggiesGithub/smartpiggies/contracts/CodeSize.sol",
+  "ast": {
+    "absolutePath": "/home/vagrant/DAPPS/smartpiggiesGithub/smartpiggies/contracts/CodeSize.sol",
+    "exportedSymbols": {
+      "CodeSize": [
+        6167
+      ]
+    },
+    "id": 6168,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 6152,
+        "literals": [
+          "solidity",
+          ">=",
+          "0.5",
+          ".15"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:25:9"
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": null,
+        "fullyImplemented": true,
+        "id": 6167,
+        "linearizedBaseContracts": [
+          6167
+        ],
+        "name": "CodeSize",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "body": {
+              "id": 6165,
+              "nodeType": "Block",
+              "src": "139:98:9",
+              "statements": [
+                {
+                  "assignments": [
+                    6160
+                  ],
+                  "declarations": [
+                    {
+                      "constant": false,
+                      "id": 6160,
+                      "name": "size",
+                      "nodeType": "VariableDeclaration",
+                      "scope": 6165,
+                      "src": "149:9:9",
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      },
+                      "typeName": {
+                        "id": 6159,
+                        "name": "uint",
+                        "nodeType": "ElementaryTypeName",
+                        "src": "149:4:9",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      },
+                      "value": null,
+                      "visibility": "internal"
+                    }
+                  ],
+                  "id": 6161,
+                  "initialValue": null,
+                  "nodeType": "VariableDeclarationStatement",
+                  "src": "149:9:9"
+                },
+                {
+                  "externalReferences": [
+                    {
+                      "size": {
+                        "declaration": 6160,
+                        "isOffset": false,
+                        "isSlot": false,
+                        "src": "179:4:9",
+                        "valueSize": 1
+                      }
+                    },
+                    {
+                      "_address": {
+                        "declaration": 6154,
+                        "isOffset": false,
+                        "isSlot": false,
+                        "src": "199:8:9",
+                        "valueSize": 1
+                      }
+                    }
+                  ],
+                  "id": 6162,
+                  "nodeType": "InlineAssembly",
+                  "operations": "{ size := extcodesize(_address) }",
+                  "src": "168:42:9"
+                },
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 6163,
+                    "name": "size",
+                    "nodeType": "Identifier",
+                    "overloadedDeclarations": [],
+                    "referencedDeclaration": 6160,
+                    "src": "226:4:9",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "functionReturnParameters": 6158,
+                  "id": 6164,
+                  "nodeType": "Return",
+                  "src": "219:11:9"
+                }
+              ]
+            },
+            "documentation": null,
+            "id": 6166,
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "getSize",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 6155,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 6154,
+                  "name": "_address",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 6166,
+                  "src": "69:16:9",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 6153,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "69:7:9",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "68:18:9"
+            },
+            "returnParameters": {
+              "id": 6158,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 6157,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 6166,
+                  "src": "126:7:9",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 6156,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "126:7:9",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "125:9:9"
+            },
+            "scope": 6167,
+            "src": "52:185:9",
+            "stateMutability": "view",
+            "superFunction": null,
+            "visibility": "public"
+          }
+        ],
+        "scope": 6168,
+        "src": "27:212:9"
+      }
+    ],
+    "src": "0:240:9"
+  },
+  "legacyAST": {
+    "absolutePath": "/home/vagrant/DAPPS/smartpiggiesGithub/smartpiggies/contracts/CodeSize.sol",
+    "exportedSymbols": {
+      "CodeSize": [
+        6167
+      ]
+    },
+    "id": 6168,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 6152,
+        "literals": [
+          "solidity",
+          ">=",
+          "0.5",
+          ".15"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:25:9"
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": null,
+        "fullyImplemented": true,
+        "id": 6167,
+        "linearizedBaseContracts": [
+          6167
+        ],
+        "name": "CodeSize",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "body": {
+              "id": 6165,
+              "nodeType": "Block",
+              "src": "139:98:9",
+              "statements": [
+                {
+                  "assignments": [
+                    6160
+                  ],
+                  "declarations": [
+                    {
+                      "constant": false,
+                      "id": 6160,
+                      "name": "size",
+                      "nodeType": "VariableDeclaration",
+                      "scope": 6165,
+                      "src": "149:9:9",
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      },
+                      "typeName": {
+                        "id": 6159,
+                        "name": "uint",
+                        "nodeType": "ElementaryTypeName",
+                        "src": "149:4:9",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      },
+                      "value": null,
+                      "visibility": "internal"
+                    }
+                  ],
+                  "id": 6161,
+                  "initialValue": null,
+                  "nodeType": "VariableDeclarationStatement",
+                  "src": "149:9:9"
+                },
+                {
+                  "externalReferences": [
+                    {
+                      "size": {
+                        "declaration": 6160,
+                        "isOffset": false,
+                        "isSlot": false,
+                        "src": "179:4:9",
+                        "valueSize": 1
+                      }
+                    },
+                    {
+                      "_address": {
+                        "declaration": 6154,
+                        "isOffset": false,
+                        "isSlot": false,
+                        "src": "199:8:9",
+                        "valueSize": 1
+                      }
+                    }
+                  ],
+                  "id": 6162,
+                  "nodeType": "InlineAssembly",
+                  "operations": "{ size := extcodesize(_address) }",
+                  "src": "168:42:9"
+                },
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 6163,
+                    "name": "size",
+                    "nodeType": "Identifier",
+                    "overloadedDeclarations": [],
+                    "referencedDeclaration": 6160,
+                    "src": "226:4:9",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "functionReturnParameters": 6158,
+                  "id": 6164,
+                  "nodeType": "Return",
+                  "src": "219:11:9"
+                }
+              ]
+            },
+            "documentation": null,
+            "id": 6166,
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "getSize",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 6155,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 6154,
+                  "name": "_address",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 6166,
+                  "src": "69:16:9",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 6153,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "69:7:9",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "68:18:9"
+            },
+            "returnParameters": {
+              "id": 6158,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 6157,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 6166,
+                  "src": "126:7:9",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 6156,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "126:7:9",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "125:9:9"
+            },
+            "scope": 6167,
+            "src": "52:185:9",
+            "stateMutability": "view",
+            "superFunction": null,
+            "visibility": "public"
+          }
+        ],
+        "scope": 6168,
+        "src": "27:212:9"
+      }
+    ],
+    "src": "0:240:9"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.5.17+commit.d19bba13.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "3.1.0",
+  "updatedAt": "2020-05-10T02:18:08.309Z",
+  "devdoc": {
+    "methods": {}
+  },
+  "userdoc": {
+    "methods": {}
+  }
+}

@@ -106,7 +106,6 @@ contract ResolverSelfAttack {
       );
       didAttack = success;
       attackReturn = string(data);
-      price++;
     }
 
     bytes32 requestId = generateId();
@@ -118,6 +117,8 @@ contract ResolverSelfAttack {
       });
     callers[requestId] = msg.sender;
     getPriceCallback(requestId, price);
+
+    price++; // inc price if we make it here
 
     // Pay the oracle
     (success, data) = address(oracleTokenAddress).call(

@@ -8,7 +8,7 @@ var AttackTokenEndAuctionV2 = artifacts.require("./AttackTokenEndAuctionV2.sol")
 var AttackTokenSatisfyAuction = artifacts.require("./AttackTokenSatisfyAuction.sol");
 var AttackTokenClaim = artifacts.require("./AttackTokenClaim.sol");
 var TestnetLINK = artifacts.require("./TestnetLINK.sol");
-var SmartPiggies = artifacts.require("./SmartPiggies.sol");
+var SmartPiggies = artifacts.require("./SmartPiggiesReentry.sol");
 var Resolver = artifacts.require("./ResolverSelfReturn.sol");
 var ResolverAttack = artifacts.require("./ResolverSelfAttack.sol");
 
@@ -19,7 +19,7 @@ if (typeof web3.eth.getAccountsPromise === "undefined") {
     Promise.promisifyAll(web3.eth, { suffix: "Promise" });
 }
 
-contract ('SmartPiggies', function(accounts) {
+contract ('SmartPiggiesReentry', function(accounts) {
 
   let tokenInstance;
   let tokenCreateInstance;
@@ -170,7 +170,7 @@ contract ('SmartPiggies', function(accounts) {
     });
   });
 
-  describe("Test attack on createPiggy function", function() {
+  describe("Test attack on createPiggy function w/o reentrancy guard", function() {
 
     it("Should call attack on token contract, and make 3 piggies", function() {
       //American call
@@ -482,7 +482,7 @@ contract ('SmartPiggies', function(accounts) {
   }); // end describe
 
 
-  describe("Test attack on reclaimAndBurn function", function() {
+  describe("Test attack on reclaimAndBurn function w/o reentrantcy guard", function() {
 
     it("Should call attack on reclaimAndBurn but execute correctly", function() {
       //American call
@@ -592,7 +592,7 @@ contract ('SmartPiggies', function(accounts) {
     }); // end test
   }); // end describe
 
-  describe("Test an attack on startAuction", function() {
+  describe("Test an attack on startAuction w/o reentrancy guard", function() {
 
     it("Should call attack on startAuction but execute correctly", function() {
       //American call
@@ -655,7 +655,7 @@ contract ('SmartPiggies', function(accounts) {
     }); // end test
   }); // end describe
 
-  describe("Test an attack on endAuction", function() {
+  describe("Test an attack on endAuction w/o reentrancy guard", function() {
 
     it("Should attack with transferFrom on endAuction but execute correctly", function() {
       //American call
@@ -787,7 +787,7 @@ contract ('SmartPiggies', function(accounts) {
     }); // end test
   }); // end describe
 
-  describe("Testing attack on satisfyAuction", function() {
+  describe("Testing attack on satisfyAuctio w/o reentrancy guard", function() {
 
     it("Should attack satisfyAuction but execute correctly", function() {
       //American call
@@ -1028,7 +1028,7 @@ contract ('SmartPiggies', function(accounts) {
     }); // end test
   }); // end describe
 
-  describe("Testing attack on requestSettlementPrice", function() {
+  describe("Testing attack on requestSettlementPrice w/o reentrancy guard", function() {
 
     it("Should fail to attack if resolver calls requestSettlementPrice", function() {
       //American put
@@ -1091,11 +1091,11 @@ contract ('SmartPiggies', function(accounts) {
         // attack should fail as the contract is the sender to the function call, but not the holder of the piggy
         assert.isNotTrue(result[6], "attack did not return false");
         assert.isTrue(result[10][2].hasBeenCleared, "token is not cleared");
-        assert.strictEqual(result[10][1].settlementPrice.toString(), oraclePrice.add(one).toString(), "settlement price did not return correctly");
+        assert.strictEqual(result[10][1].settlementPrice.toString(), oraclePrice.toString(), "settlement price did not return correctly");
       })
     }); // end test
 
-    it("Should attack if resolver calls requestSettlementPrice but execute correctly", function() {
+    it("Should only clear the price once", function() {
       //American put
       collateralERC = tokenInstance.address
       dataResolver = resolverAttackInstance.address
@@ -1168,14 +1168,13 @@ contract ('SmartPiggies', function(accounts) {
         console.log("price: ", result[7][1].settlementPrice.toString())
         **/
 
-        /**
         assert.strictEqual(result[8].toString(), count.add(one).toString(), "count did not return correctly");
-        // attack should fail as the contract is the sender to the function call, but not the holder of the piggy
-        assert.isNotTrue(result[9], "attack did not return false");
+        // piggy should be cleared
         assert.isTrue(result[7][2].hasBeenCleared, "token is not cleared");
-        assert.strictEqual(result[7][1].settlementPrice.toString(), oraclePrice.add(one).toString(), "settlement price did not return correctly");
-        **/
-        console.log("***Resolver can callback and update a price multiple times***")
+        assert.strictEqual(result[7][1].settlementPrice.toString(), oraclePrice.toString(), "settlement price did not return correctly");
+        // attack fails, callback fails if piggy is cleared
+        assert.isNotTrue(result[9], "attack did not return false");
+
       })
     }); // end test
 
@@ -1254,10 +1253,10 @@ contract ('SmartPiggies', function(accounts) {
         console.log("price: ", result[7][1].settlementPrice.toString())
         **/
 
-        // should attack, and update appropriately
-        assert.isTrue(result[9], "attack did not return true");
+        // attack fails, cannot callback multiple times
+        assert.isNotTrue(result[9], "attack did not return false");
         assert.isTrue(result[7][2].hasBeenCleared, "token is not cleared");
-        assert.strictEqual(result[7][1].settlementPrice.toString(), oraclePrice.add(one).add(one).toString(), "settlement price did not return correctly");
+        assert.strictEqual(result[7][1].settlementPrice.toString(), oraclePrice.toString(), "settlement price did not return correctly");
 
         // Piggy should be reset
         assert.isNotTrue(result[18][2].hasBeenCleared, "token is not cleared");
@@ -1279,7 +1278,7 @@ contract ('SmartPiggies', function(accounts) {
 
   }); // end describe
 
-  describe("Test attacking claimPayout", function() {
+  describe("Test attacking claimPayout w/o reentrantcy guard", function() {
 
     it.skip("magic test that will trip the satisfyAuction mutex", function() {
       // tripped when AttackTokenClaim was not set appropriately in housekeeping
@@ -1349,7 +1348,7 @@ contract ('SmartPiggies', function(accounts) {
       })
     }); // end test
 
-    it("Should attack if resolver calls requestSettlementPrice but execute correctly", function() {
+    it("Should attack if resolver calls claimPayout but execute correctly", function() {
       //American put
       collateralERC = tokenClaimInstance.address
       dataResolver = resolverInstance.address

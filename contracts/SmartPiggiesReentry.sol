@@ -237,9 +237,11 @@ contract UsingCooldown is Serviced {
 }
 
 
-/** @title SmartPiggies: A Smart Option Standard
+/**
+ * @title SmartPiggies: A Smart Option Standard
+ * Contract for testing without reentrantcy guard
 */
-contract SmartPiggies is UsingCooldown {
+contract SmartPiggiesReentry is UsingCooldown {
   using SafeMath for uint256;
 
   bytes32 constant TX_SUCCESS = bytes32(0x0000000000000000000000000000000000000000000000000000000000000001);

@@ -8,7 +8,7 @@ var AttackTokenEndAuctionV2 = artifacts.require("./AttackTokenEndAuctionV2.sol")
 var AttackTokenSatisfyAuction = artifacts.require("./AttackTokenSatisfyAuction.sol");
 var AttackTokenClaim = artifacts.require("./AttackTokenClaim.sol");
 var TestnetLINK = artifacts.require("./TestnetLINK.sol");
-var SmartPiggies = artifacts.require("./SmartPiggiesReentry.sol");
+var SmartPiggies = artifacts.require("./SmartPiggies.sol");
 var Resolver = artifacts.require("./ResolverSelfReturn.sol");
 var ResolverAttack = artifacts.require("./ResolverSelfAttack.sol");
 
@@ -19,7 +19,7 @@ if (typeof web3.eth.getAccountsPromise === "undefined") {
     Promise.promisifyAll(web3.eth, { suffix: "Promise" });
 }
 
-contract ('SmartPiggiesReentry', function(accounts) {
+contract ('SmartPiggies', function(accounts) {
 
   let tokenInstance;
   let tokenCreateInstance;
@@ -170,7 +170,7 @@ contract ('SmartPiggiesReentry', function(accounts) {
     });
   });
 
-  describe("Test attack on createPiggy function w/o reentrancy guard", function() {
+  describe("Test attack on createPiggy function", function() {
 
     it("Should call attack on token contract, and make 3 piggies", function() {
       //American call
@@ -592,7 +592,7 @@ contract ('SmartPiggiesReentry', function(accounts) {
     }); // end test
   }); // end describe
 
-  describe("Test an attack on startAuction w/o reentrancy guard", function() {
+  describe("Test an attack on startAuction", function() {
 
     it("Should call attack on startAuction but execute correctly", function() {
       //American call
@@ -655,7 +655,7 @@ contract ('SmartPiggiesReentry', function(accounts) {
     }); // end test
   }); // end describe
 
-  describe("Test an attack on endAuction w/o reentrancy guard", function() {
+  describe("Test an attack on endAuction", function() {
 
     it("Should attack with transferFrom on endAuction but execute correctly", function() {
       //American call
@@ -787,7 +787,7 @@ contract ('SmartPiggiesReentry', function(accounts) {
     }); // end test
   }); // end describe
 
-  describe("Testing attack on satisfyAuctio w/o reentrancy guard", function() {
+  describe("Testing attack on satisfyAuction", function() {
 
     it("Should attack satisfyAuction but execute correctly", function() {
       //American call
@@ -1028,7 +1028,7 @@ contract ('SmartPiggiesReentry', function(accounts) {
     }); // end test
   }); // end describe
 
-  describe("Testing attack on requestSettlementPrice w/o reentrancy guard", function() {
+  describe("Testing attack on requestSettlementPrice", function() {
 
     it("Should fail to attack if resolver calls requestSettlementPrice", function() {
       //American put

@@ -8,7 +8,8 @@ var AttackTokenEndAuctionV2 = artifacts.require("./AttackTokenEndAuctionV2.sol")
 var AttackTokenSatisfyAuction = artifacts.require("./AttackTokenSatisfyAuction.sol");
 var AttackTokenClaim = artifacts.require("./AttackTokenClaim.sol");
 var TestnetLINK = artifacts.require("./TestnetLINK.sol");
-var SmartPiggies = artifacts.require("./SmartPiggies.sol");
+//var SmartPiggies = artifacts.require("./SmartPiggies.sol");
+var SmartPiggies = artifacts.require("./SmartPiggiesReentry.sol");
 var Resolver = artifacts.require("./ResolverSelfReturn.sol");
 var ResolverAttack = artifacts.require("./ResolverSelfAttack.sol");
 
@@ -219,14 +220,16 @@ contract ('SmartPiggies', function(accounts) {
           () => Promise.resolve(piggyInstance.getDetails(tokenId.add(one), {from: owner})),
           () => Promise.resolve(piggyInstance.getDetails(tokenId.add(two), {from: owner})),
           () => Promise.resolve(tokenInstance.balanceOf.call(tokenInstance.address, {from: owner})),
-          () => Promise.resolve(tokenInstance.balanceOf.call(piggyInstance.address, {from: owner}))
+          () => Promise.resolve(tokenInstance.balanceOf.call(piggyInstance.address, {from: owner})),
+          () => Promise.resolve(piggyInstance._guardCounter({from: owner})),
         ])
       })
       .then(result => {
         assert.strictEqual(result[0].toString(), tokenId.add(two).toString(), "tokenId did not return correct ID number");
         assert.strictEqual(result[1].toString(), one.add(two).toString(), "attack counter did not return correctly");
         assert.isTrue(result[2], "attack bool did not return true");
-        //assert.strictEqual(result[3].toString(), two.toString(), "attack counter did not return correctly");
+        //make sure guard counter is triggering
+        assert.isAtLeast(result[8].toNumber(), 3, "guard counter did not return a high enough count");
 
         /*
         ** result.address = result[0]

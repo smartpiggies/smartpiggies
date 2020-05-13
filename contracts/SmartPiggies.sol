@@ -1366,10 +1366,12 @@ contract SmartPiggies is UsingCooldown {
    * suggested visibility external, set to interanl as other internal functions
    * use this
    *
+   * Note: this function calls an external function and does NOT have a
+   * reentrantcy guard, as create will trigger the guard
+   *
    */
   function _getERC20Decimals(address _ERC20)
     internal
-    nonReentrant
     returns (uint8)
   {
     // *** warning untrusted function call ***

@@ -20,28 +20,28 @@ if (typeof web3.eth.getAccountsPromise === "undefined") {
 
 contract ('SmartPiggies', function(accounts) {
 
-  var tokenInstance
-  var linkInstance
-  var piggyInstance
-  var resolverInstance
-  var owner = accounts[0]
-  var user01 = accounts[1]
-  var user02 = accounts[2]
-  var feeAddress = accounts[3]
-  var addr00 = "0x0000000000000000000000000000000000000000"
-  var decimal = 18
-  var decimals = web3.utils.toBN(Math.pow(10,decimal))
-  var supply = web3.utils.toWei("1000", "ether")
-  var approveAmount = web3.utils.toWei("100", "ether")
-  var exchangeRate = 1
-  var dataSource = 'NASDAQ'
-  var underlying = 'SPY'
-  var oracleService = 'Self'
-  var endpoint = 'https://www.nasdaq.com/symbol/spy'
-  var path = ''
-  var oracleTokenAddress
-  var oraclePrice = web3.utils.toBN(27000) //including hundreth of a cent
-
+  let tokenInstance
+  let linkInstance
+  let piggyInstance
+  let resolverInstance
+  let owner = accounts[0]
+  let user01 = accounts[1]
+  let user02 = accounts[2]
+  let feeAddress = accounts[3]
+  let addr00 = "0x0000000000000000000000000000000000000000"
+  let decimal = 18
+  let decimals = web3.utils.toBN(Math.pow(10,decimal))
+  let supply = web3.utils.toWei("1000", "ether")
+  let approveAmount = web3.utils.toWei("100", "ether")
+  let exchangeRate = 1
+  let dataSource = 'NASDAQ'
+  let underlying = 'SPY'
+  let oracleService = 'Self'
+  let endpoint = 'https://www.nasdaq.com/symbol/spy'
+  let path = ''
+  let oracleTokenAddress
+  let oraclePrice = web3.utils.toBN(27000) //including hundreth of a cent
+  let tokenId = web3.utils.toBN(0)
 
   const DEFAULT_FEE_PERCENT = web3.utils.toBN(50)
   const DEFAULT_FEE_RESOLUTION = web3.utils.toBN(10000)
@@ -91,7 +91,7 @@ contract ('SmartPiggies', function(accounts) {
   describe("Create and Settle Piggies", function() {
     const count = 200
     let strike = 26500
-    for (let i = 0; i < count; i++) {
+    for (let i = 1; i <= count; i++) {
       it("Should create an American Put piggy with strike: " + (strike + (i*5)), function() {
         collateralERC = tokenInstance.address
         dataResolver = resolverInstance.address
@@ -102,7 +102,6 @@ contract ('SmartPiggies', function(accounts) {
         isEuro = false
         isPut = true
         isRequest = false
-        tokenId = 0
         oracleFee = web3.utils.toBN('1000000000000000000')
         strikePriceBN = web3.utils.toBN(strikePrice)
         settlementPriceBN = web3.utils.toBN('0')
@@ -144,6 +143,7 @@ contract ('SmartPiggies', function(accounts) {
         .then(result => {
           //use last tokenId created
           tokenId = result
+
           return piggyInstance.transferFrom(user01, user02, tokenId, {from: user01});
         })
         .then(result => {

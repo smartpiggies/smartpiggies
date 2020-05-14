@@ -191,7 +191,7 @@ contract ('SmartPiggies', function(accounts) {
       });
     }); //end test block
 
-    it("Should freeze create piggy functionality", function() {
+    it("Should freeze split piggy functionality", function() {
       collateralERC = tokenInstance.address
       dataResolver = resolverInstance.address
       collateral = web3.utils.toBN(10 * decimals)

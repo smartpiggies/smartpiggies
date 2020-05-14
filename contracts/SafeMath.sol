@@ -54,12 +54,4 @@ library SafeMath {
         return c;
     }
 
-    /**
-     * @dev Divides two unsigned integers and returns the remainder (unsigned integer modulo),
-     * reverts when dividing by zero.
-     */
-    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b != 0, "SafeMath failed");
-        return a % b;
-    }
 }

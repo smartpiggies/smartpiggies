@@ -408,7 +408,7 @@ contract AttackTokenReclaim is ERC20 {
     // remove allowance check
     return true;
   }
-  
+
   function attack()
     public
   {

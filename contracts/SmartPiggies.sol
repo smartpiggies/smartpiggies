@@ -446,7 +446,8 @@ contract SmartPiggies is UsingCooldown {
   }
 
   modifier nonReentrant() {
-    _guardCounter.add(1);
+    // guard counter should be allowed to overflow
+    _guardCounter += 1;
     uint256 localCounter = _guardCounter;
     _;
     require(localCounter == _guardCounter, "re-entered");
@@ -1289,7 +1290,8 @@ contract SmartPiggies is UsingCooldown {
   {
     // assuming all checks have passed:
     uint256 tokenExpiry;
-    tokenId = tokenId.add(1);
+    // tokenId should be allowed to overflow
+    ++tokenId;
 
     // write the values to storage, including _isRequest flag
     Piggy storage p = piggies[tokenId];
@@ -1360,13 +1362,16 @@ contract SmartPiggies is UsingCooldown {
   }
 
   /**
-      make sure the ERC-20 contract for collateral correctly reports decimals
-      suggested visibility external, set to interanl as other internal fucntions
-      use this
+   * make sure the ERC-20 contract for collateral correctly reports decimals
+   * suggested visibility external, set to interanl as other internal functions
+   * use this
+   *
+   * Note: this function calls an external function and does NOT have a
+   * reentrantcy guard, as create will trigger the guard
+   *
    */
   function _getERC20Decimals(address _ERC20)
     internal
-    nonReentrant
     returns (uint8)
   {
     // *** warning untrusted function call ***

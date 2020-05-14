@@ -420,7 +420,7 @@ contract ('SmartPiggies', function(accounts) {
 
   describe("Test attack on reclaimAndBurn function with reentrantcy guard", function() {
 
-    it.only("Should attack reclaimAndBurn in transferFrom, create without sending tokens", function() {
+    it("Should fail to attack reclaimAndBurn while reentering transferFrom", function() {
       //American call
       collateralERC = tokenReclaimInstance.address
       dataResolver = resolverInstance.address
@@ -455,7 +455,7 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: user01})),
       ])
       .then(result => {
-
+        /**
         console.log("attacker: ", attacker)
         console.log("holder #1:   ", result[4].addresses.holder.toString())
         console.log("owned: ", result[5].length)
@@ -474,7 +474,7 @@ contract ('SmartPiggies', function(accounts) {
         console.log("holder #1:   ", result[19].addresses.holder.toString())
         console.log("sp mid:  ", result[7].toString())
         console.log("sp after:  ", result[18].toString())
-
+        **/
         let balanceBefore = web3.utils.toBN(result[0])
         let balanceMid = web3.utils.toBN(result[6])
         let balanceAfter = web3.utils.toBN(result[17])
@@ -515,30 +515,29 @@ contract ('SmartPiggies', function(accounts) {
         assert.isNotTrue(result[19].flags.isPut, "isPut did not return false");
 
         // make sure the create executed on the attack contract
-        //assert.isTrue(result[10], "create did not return true");
+        assert.isTrue(result[9], "create did not return true");
 
         // make sure the reclaim on first piggy failed executed on the attack contract
-        //assert.isTrue(result[11], "reclaim did not return true");
+        assert.isTrue(result[10], "reclaim did not return true");
 
         // attack fails to executed on the attack contract, trips guard
-        //assert.isNotTrue(result[12], "attack did not return true");
+        assert.isNotTrue(result[12], "attack did not return true");
 
         // Check that no funds were lost
-        //assert.strictEqual(balanceAfter.toString(), balanceBefore.toString(), "balance after did not match balance before");
+        assert.strictEqual(balanceAfter.toString(), balanceBefore.toString(), "balance after did not match balance before");
 
-        //assert.strictEqual(result[5].length, 1, "owned piggies did not return correctly");
+        assert.strictEqual(result[5].length, 1, "owned piggies did not return correctly");
 
         // check tokenId count should reflect two piggies being created
-        //assert.strictEqual(result[13].toString(), tokenId.add(one).toString(), "tokenId did not return correctly");
-
+        assert.strictEqual(result[13].toString(), tokenId.toString(), "tokenId did not return correctly");
       })
 
     }); // end test
   }); // end describe
 
-  describe("Test an attack on startAuction", function() {
+  describe("Test an attack on startAuction with reentrantcy guard", function() {
 
-    it("Should call attack on startAuction but execute correctly", function() {
+    it("Should fail to attack startAuction while reentering transferFrom", function() {
       //American call
       collateralERC = tokenSAuctionInstance.address
       dataResolver = resolverInstance.address
@@ -575,33 +574,35 @@ contract ('SmartPiggies', function(accounts) {
         console.log("return: ", result[11].toString())
         **/
 
-        // make sure the contract address is the owner of the created piggy
-        assert.strictEqual(attacker, result[3].addresses.holder.toString(), "created piggy holder address did not match");
+        // piggy failed to be created
+        assert.strictEqual(result[3].addresses.holder, addr00, "created piggy holder address did not match");
 
-        // make sure the create executed on the attack contract
-        assert.isTrue(result[7], "create did not return true");
+        // make sure the create failed to executed on the attack contract
+        assert.isNotTrue(result[7], "create did not return false");
 
-        // make sure attack executed on attack contract
-        assert.isTrue(result[8], "attack did not return true");
+        // make sure attack failed to executed on attack contract
+        assert.isNotTrue(result[8], "attack did not return false");
 
-        // make sure the auction executed on the attack contract
-        assert.isTrue(result[9].auctionActive, "auction did not return true");
+        // make sure the auction failed to executed on the attack contract
+        assert.isNotTrue(result[9].auctionActive, "auction did not return false");
 
         // check owned piggies accounting
-        assert.strictEqual(result[4].length, 1, "owned piggies did not return correctly");
+        assert.strictEqual(result[4].length, 0, "owned piggies did not return correctly");
 
         // check tokenId count
-        assert.strictEqual(result[10].toString(), tokenId.toString(), "tokenId did not return correctly");
+        assert.strictEqual(result[10].toString(), zeroParam.toString(), "tokenId did not return correctly");
 
-        // make sure balance after is balance before minus collateral
-        assert.strictEqual(result[5].toString(), result[0].sub(collateral).toString(), "balance comparision is not correct");
+        let balanceBefore = web3.utils.toBN(result[0])
+        let balanceAfter = web3.utils.toBN(result[5])
+        // make sure balance after equals balance before
+        assert.strictEqual(balanceAfter.toString(), balanceBefore.toString(), "balance comparision is not correct");
       })
     }); // end test
   }); // end describe
 
   describe("Test an attack on endAuction", function() {
 
-    it("Should attack with transferFrom on endAuction but execute correctly", function() {
+    it("Should fail to attack endAuction while reentering with transferFrom", function() {
       //American call
       collateralERC = tokenEAuctionInstance.address
       dataResolver = resolverInstance.address
@@ -638,30 +639,32 @@ contract ('SmartPiggies', function(accounts) {
         console.log("return: ", result[11].toString())
         **/
 
-        // make sure the contract address is the owner of the created piggy
-        assert.strictEqual(attacker, result[3].addresses.holder.toString(), "created piggy holder address did not match");
+        // create failed
+        assert.strictEqual(result[3].addresses.holder, addr00, "created piggy holder address did not match");
 
-        // make sure the create executed on the attack contract
-        assert.isTrue(result[7], "create did not return true");
+        // create failed
+        assert.isNotTrue(result[7], "create did not return false");
 
-        // make sure attack executed on attack contract
-        assert.isTrue(result[8], "attack did not return true");
+        // attack failed
+        assert.isNotTrue(result[8], "attack did not return false");
 
-        // make sure the auction is now not active, executed endAuction successfully
-        assert.isNotTrue(result[9].auctionActive, "auction did not return true");
+        // auction failed
+        assert.isNotTrue(result[9].auctionActive, "auction did not return false");
 
         // check owned piggies accounting
-        assert.strictEqual(result[4].length, 1, "owned piggies did not return correctly");
+        assert.strictEqual(result[4].length, 0, "owned piggies did not return correctly");
 
         // check tokenId count
-        assert.strictEqual(result[10].toString(), tokenId.toString(), "tokenId did not return correctly");
+        assert.strictEqual(result[10].toString(), zeroParam.toString(), "tokenId did not return correctly");
 
-        // make sure balance after is balance before minus collateral
-        assert.strictEqual(result[5].toString(), result[0].sub(collateral).toString(), "balance comparision is not correct");
+        let balanceBefore = web3.utils.toBN(result[0])
+        let balanceAfter = web3.utils.toBN(result[5])
+        // make sure balance after is balance before
+        assert.strictEqual(balanceBefore.toString(), balanceAfter.toString(), "balance comparision is not correct");
       })
     }); // end test
 
-    it("Should attack with transfer on endAuction with RFP but execute correctly", function() {
+    it("Should fail to reenter endAuction with RFP while reentering with transfer", function() {
       //American call
       collateralERC = tokenEAuctionInstance2.address
       dataResolver = resolverInstance.address
@@ -725,15 +728,17 @@ contract ('SmartPiggies', function(accounts) {
         // check tokenId count
         assert.strictEqual(result[12].toString(), tokenId.toString(), "tokenId did not return correctly");
 
-        // make sure balance after equals balance before
-        assert.strictEqual(result[7].toString(), result[0].toString(), "balance comparision is not correct");
+        let balanceBefore = web3.utils.toBN(result[0])
+        let balanceAfter = web3.utils.toBN(result[7])
+        // make sure balance after is balance before
+        assert.strictEqual(balanceBefore.toString(), balanceAfter.toString(), "balance comparision is not correct");
       })
     }); // end test
   }); // end describe
 
   describe("Testing attack on satisfyAuction", function() {
 
-    it("Should attack satisfyAuction but execute correctly", function() {
+    it("Should fail to reenter on satisfyAuction while reentering in transferFrom", function() {
       //American call
       collateralERC = tokenSatisfyInstance.address
       dataResolver = resolverInstance.address
@@ -802,9 +807,10 @@ contract ('SmartPiggies', function(accounts) {
         /**
         console.log("user01:   ", user01)
         console.log("attacker: ", attacker)
-        console.log("holder:   ", result[1].addresses.holder.toString())
-        console.log("holder:   ", result[5].addresses.holder.toString())
-        console.log("owned: ", result[7].length)
+        console.log("holder before:   ", result[1].addresses.holder.toString())
+        console.log("holder after:   ", result[5].addresses.holder.toString())
+        console.log("user owned: ", result[6].length)
+        console.log("attk owned: ", result[7].length)
         console.log("bal before: ", userBalanceBefore.toString())
         console.log("bal after:  ", result[8].toString())
         console.log("create:  ", result[10].toString())
@@ -816,13 +822,13 @@ contract ('SmartPiggies', function(accounts) {
         console.log("xfer: ", result[15].toString())
         **/
 
-        // make sure the user is the owner of the created piggy
+        // make sure the user first owns created piggy
         assert.strictEqual(result[1].addresses.holder.toString(), user01,"created piggy holder address did return correctly");
 
-        // make sure the contract address is the owner of the created piggy
+        // make sure the contract address owns piggy after autction
         assert.strictEqual(result[5].addresses.holder.toString(), attacker,"created piggy holder address did not return correctly");
 
-        // make sure attack executed on attack contract
+        // attack is true because it is explicitly called
         assert.isTrue(result[11], "attack did not return true");
 
         // make sure the auction is now not active, executed endAuction successfully
@@ -848,7 +854,7 @@ contract ('SmartPiggies', function(accounts) {
       })
     }); // end test
 
-    it("Should attack with transfer on satisfyAuction with RFP but execute correctly", function() {
+    it("Should fail to reenter on satisfyAuction with RFP when reentering on transfer", function() {
       //American call
       collateralERC = tokenSatisfyInstance.address
       dataResolver = resolverInstance.address
@@ -972,7 +978,7 @@ contract ('SmartPiggies', function(accounts) {
     }); // end test
   }); // end describe
 
-  describe("Testing attack on requestSettlementPrice", function() {
+  describe("Testing attack on requestSettlementPrice with reentrantcy guard", function() {
 
     it("Should fail to attack if resolver calls requestSettlementPrice", function() {
       //American put
@@ -1222,7 +1228,7 @@ contract ('SmartPiggies', function(accounts) {
 
   }); // end describe
 
-  describe("Test attacking claimPayout w/o reentrantcy guard", function() {
+  describe("Test attacking claimPayout with reentrantcy guard", function() {
 
     it.skip("magic test that will trip the satisfyAuction mutex", function() {
       // tripped when AttackTokenClaim was not set appropriately in housekeeping
@@ -1292,7 +1298,7 @@ contract ('SmartPiggies', function(accounts) {
       })
     }); // end test
 
-    it("Should attack if resolver calls claimPayout but execute correctly", function() {
+    it("Should fail to reenter claimPayout while reentering on transfer", function() {
       //American put
       collateralERC = tokenClaimInstance.address
       dataResolver = resolverInstance.address

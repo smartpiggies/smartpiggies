@@ -1,8 +1,9 @@
 Promise = require("bluebird");
-var StableToken = artifacts.require("./StableToken.sol");
-var TestnetLINK = artifacts.require("./TestnetLINK.sol");
-var SmartPiggies = artifacts.require("./SmartPiggies.sol");
-var Resolver = artifacts.require("./ResolverSelfReturn.sol");
+const StableToken = artifacts.require("./StableToken.sol");
+const TestnetLINK = artifacts.require("./TestnetLINK.sol");
+const PiggyHelper = artifacts.require("./PiggyHelper.sol");
+const SmartPiggies = artifacts.require("./SmartPiggies.sol");
+const Resolver = artifacts.require("./ResolverSelfReturn.sol");
 
 const expectedExceptionPromise = require("../utils/expectedException.js");
 const sequentialPromise = require("../utils/sequentialPromise.js");
@@ -16,28 +17,26 @@ if (typeof web3.eth.getAccountsPromise === "undefined") {
 
 contract ('SmartPiggies', function(accounts) {
 
-  var tokenInstance;
-  var linkInstance;
-  var piggyInstance;
-  var resolverInstance;
-  var owner = accounts[0];
-  var user01 = accounts[1];
-  var user02 = accounts[2];
-  var addr00 = "0x0000000000000000000000000000000000000000";
-  var decimal = 18;
-  //multiply a BN
-  //var aNum = web3.utils.toBN(decimals).mul(web3.utils.toBN('1000'))
-  var decimals = web3.utils.toBN(Math.pow(10,decimal));
-  var supply = web3.utils.toWei("1000", "ether");
-  var approveAmount = web3.utils.toWei("100", "ether");
-  var exchangeRate = 1;
-  var dataSource = 'NASDAQ';
-  var underlying = 'SPY';
-  var oracleService = 'Self';
-  var endpoint = 'https://www.nasdaq.com/symbol/spy';
-  var path = '';
-  var oracleTokenAddress;
-  var oraclePrice = web3.utils.toBN(27000); //including hundreth of a cent
+  let tokenInstance;
+  let linkInstance;
+  let piggyInstance;
+  let resolverInstance;
+  let owner = accounts[0];
+  let user01 = accounts[1];
+  let user02 = accounts[2];
+  let addr00 = "0x0000000000000000000000000000000000000000";
+  let decimal = 18;
+  let decimals = web3.utils.toBN(Math.pow(10,decimal));
+  let supply = web3.utils.toWei("1000", "ether");
+  let approveAmount = web3.utils.toWei("100", "ether");
+  let exchangeRate = 1;
+  let dataSource = 'NASDAQ';
+  let underlying = 'SPY';
+  let oracleService = 'Self';
+  let endpoint = 'https://www.nasdaq.com/symbol/spy';
+  let path = '';
+  let oracleTokenAddress;
+  let oraclePrice = web3.utils.toBN(27000); //including hundreth of a cent
 
   beforeEach(function() {
     //console.log(JSON.stringify("symbol: " + result, null, 4));
@@ -61,7 +60,11 @@ contract ('SmartPiggies', function(accounts) {
     })
     .then(instance => {
       resolverInstance = instance;
-      return SmartPiggies.new({from: owner, gas: 8000000, gasPrice: 1100000000});
+      return PiggyHelper.new({from: owner});
+    })
+    .then(instance => {
+      helperInstance = instance;
+      return SmartPiggies.new(helperInstance.address, {from: owner, gas: 8000000, gasPrice: 1100000000});
     })
     .then(instance => {
       piggyInstance = instance;
@@ -81,7 +84,7 @@ contract ('SmartPiggies', function(accounts) {
   describe("Testing Freezeable functionality", function() {
 
     it("Should start not frozen", function() {
-      return piggyInstance.isNotFrozen({from: owner})
+      return piggyInstance.notFrozen.call({from: owner})
       .then(result => {
         assert.isTrue(result, "contract did not start not frozen");
       });
@@ -94,7 +97,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].event, "Frozen", "event did not return correct name");
         assert.strictEqual(result.logs[0].args.from, owner,  "event did not return correct sender");
 
-        return piggyInstance.isNotFrozen({from: user01}); // should be publicly visible
+        return piggyInstance.notFrozen.call({from: user01}); // should be publicly visible
       })
       .then(result => {
         assert.isNotTrue(result, "contract did not start not frozen");
@@ -106,11 +109,11 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(piggyInstance.addAdministrator(user01, {from: owner})), // [0]
         () => Promise.resolve(piggyInstance.isAdministrator(user01, {from: owner})), // [1]
         () => Promise.resolve(piggyInstance.freeze({from: user01})), // [2]
-        () => Promise.resolve(piggyInstance.isNotFrozen({from: user01})), // [3]
+        () => Promise.resolve(piggyInstance.notFrozen.call({from: user01})), // [3]
       ])
       .then(result => {
         assert.isTrue(result[1], "isAdmin did not return true");
-        assert.isNotTrue(result[3], "isNotFrozen did not return false");
+        assert.isNotTrue(result[3], "notFrozen did not return false");
       });
     }); //end test block
 
@@ -118,7 +121,7 @@ contract ('SmartPiggies', function(accounts) {
       return piggyInstance.freeze({from: owner})
       .then(result => {
         assert.isTrue(result.receipt.status, "function did not return successfully");
-        return piggyInstance.isNotFrozen({from: user02}); // should be publicly visible
+        return piggyInstance.notFrozen.call({from: user02}); // should be publicly visible
       })
       .then(result => {
         assert.isNotTrue(result, "notFrozen did not return false");
@@ -129,7 +132,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.isTrue(result.receipt.status, "function did not return successfully");
         assert.strictEqual(result.logs[0].event, "Unfrozen", "event did not return correct name");
         assert.strictEqual(result.logs[0].args.from, owner,  "event did not return correct sender");
-        return piggyInstance.isNotFrozen({from: owner});
+        return piggyInstance.notFrozen.call({from: owner});
       })
       .then(result => {
         assert.isTrue(result, "notFrozen did not return true");
@@ -175,10 +178,10 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(piggyInstance.addAdministrator(user01, {from: owner})), // [0]
         () => Promise.resolve(piggyInstance.isAdministrator(user01, {from: owner})), // [1]
         () => Promise.resolve(piggyInstance.freeze({from: user01})), // [2]
-        () => Promise.resolve(piggyInstance.isNotFrozen({from: user01})), // [3]
+        () => Promise.resolve(piggyInstance.notFrozen.call({from: user01})), // [3]
       ])
       .then(result => {
-        assert.isNotTrue(result[3], "isNotFrozen did not return false");
+        assert.isNotTrue(result[3], "notFrozen did not return false");
 
         /* this should revert */
         return expectedExceptionPromise(
@@ -233,11 +236,11 @@ contract ('SmartPiggies', function(accounts) {
         assert.isTrue(result.receipt.status, "split status did not return true");
         return sequentialPromise([
           () => Promise.resolve(piggyInstance.freeze({from: user01})), // [0]
-          () => Promise.resolve(piggyInstance.isNotFrozen({from: user01})), // [1]
+          () => Promise.resolve(piggyInstance.notFrozen.call({from: user01})), // [1]
         ])
       })
       .then(result => {
-        assert.isNotTrue(result[1], "isNotFrozen did not return false");
+        assert.isNotTrue(result[1], "notFrozen did not return false");
 
         // this should revert on frozen contract
         return expectedExceptionPromise(

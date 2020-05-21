@@ -1,8 +1,9 @@
 Promise = require("bluebird");
-var StableToken = artifacts.require("./StableToken.sol");
-var TestnetLINK = artifacts.require("./TestnetLINK.sol");
-var SmartPiggies = artifacts.require("./SmartPiggies.sol");
-var Resolver = artifacts.require("./ResolverSelfReturn.sol");
+const StableToken = artifacts.require("./StableToken.sol");
+const TestnetLINK = artifacts.require("./TestnetLINK.sol");
+const PiggyHelper = artifacts.require("./PiggyHelper.sol");
+const SmartPiggies = artifacts.require("./SmartPiggies.sol");
+const Resolver = artifacts.require("./ResolverSelfReturn.sol");
 
 const expectedExceptionPromise = require("../utils/expectedException.js");
 const sequentialPromise = require("../utils/sequentialPromise.js");
@@ -20,27 +21,28 @@ contract ('SmartPiggies', function(accounts) {
   //conditional testing
   condition = true
 
-  var tokenInstance;
-  var linkInstance;
-  var piggyInstance;
-  var resolverInstance;
-  var owner = accounts[0];
-  var user01 = accounts[1];
-  var user02 = accounts[2];
-  var feeAddress = accounts[3];
-  var addr00 = "0x0000000000000000000000000000000000000000";
-  var decimal = 18;
-  var decimals = web3.utils.toBN(Math.pow(10,decimal));
-  var supply = web3.utils.toWei("1000", "ether");
-  var approveAmount = web3.utils.toWei("100", "ether");
-  var exchangeRate = 1;
-  var dataSource = 'NASDAQ';
-  var underlying = 'SPY';
-  var oracleService = 'Self';
-  var endpoint = 'https://www.nasdaq.com/symbol/spy';
-  var path = '';
-  var oracleTokenAddress;
-  var oraclePrice = web3.utils.toBN(27000); //including hundreth of a cent
+  let tokenInstance;
+  let linkInstance;
+  let helperInstance;
+  let piggyInstance;
+  let resolverInstance;
+  let owner = accounts[0];
+  let user01 = accounts[1];
+  let user02 = accounts[2];
+  let feeAddress = accounts[3];
+  let addr00 = "0x0000000000000000000000000000000000000000";
+  let decimal = 18;
+  let decimals = web3.utils.toBN(Math.pow(10,decimal));
+  let supply = web3.utils.toWei("1000", "ether");
+  let approveAmount = web3.utils.toWei("100", "ether");
+  let exchangeRate = 1;
+  let dataSource = 'NASDAQ';
+  let underlying = 'SPY';
+  let oracleService = 'Self';
+  let endpoint = 'https://www.nasdaq.com/symbol/spy';
+  let path = '';
+  let oracleTokenAddress;
+  let oraclePrice = web3.utils.toBN(27000); //including hundreth of a cent
   /* default feePercent param = 50 */
   const DEFAULT_FEE_PERCENT = web3.utils.toBN(50);
   /* default feePercent param = 10,000 */
@@ -68,7 +70,11 @@ contract ('SmartPiggies', function(accounts) {
     })
     .then(instance => {
       resolverInstance = instance;
-      return SmartPiggies.new({from: owner, gas: 8000000, gasPrice: 1100000000});
+      return PiggyHelper.new({from: owner});
+    })
+    .then(instance => {
+      helperInstance = instance;
+      return SmartPiggies.new(helperInstance.address, {from: owner, gas: 8000000, gasPrice: 1100000000});
     })
     .then(instance => {
       piggyInstance = instance;
@@ -90,7 +96,7 @@ contract ('SmartPiggies', function(accounts) {
   describe("Testing service fee parameters", function() {
 
     it("Should set default fee paramaters correclty", function() {
-      return piggyInstance.getFeeAddress({from: owner})
+      return piggyInstance.feeAddress.call({from: owner})
       .then(result => {
         assert.strictEqual(result, owner, "feeAddress did not return correct address");
         return piggyInstance.feePercent.call({from: owner});
@@ -113,7 +119,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].event, "FeeAddressSet", "setFeeAddress event did not return correct name");
         assert.strictEqual(result.logs[0].args.from, owner, "setFeeAddress event did not return correct sender");
         assert.strictEqual(result.logs[0].args.newAddress, feeAddress, "setFeeAddress event did not return correct feeAddress");
-        return piggyInstance.getFeeAddress({from: owner})
+        return piggyInstance.feeAddress.call({from: owner})
       })
       .then(result => {
         assert.strictEqual(result, feeAddress, "feeAddress did not return correct address");

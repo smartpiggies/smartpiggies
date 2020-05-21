@@ -1,17 +1,18 @@
 Promise = require("bluebird");
-var AttackToken = artifacts.require("./AttackToken.sol");
-var AttackTokenCreate = artifacts.require("./AttackTokenCreate.sol");
-var AttackTokenReclaim = artifacts.require("./AttackTokenReclaim.sol");
-var AttackTokenStartAuction = artifacts.require("./AttackTokenStartAuction.sol");
-var AttackTokenEndAuction = artifacts.require("./AttackTokenEndAuction.sol");
-var AttackTokenEndAuctionV2 = artifacts.require("./AttackTokenEndAuctionV2.sol");
-var AttackTokenSatisfyAuction = artifacts.require("./AttackTokenSatisfyAuction.sol");
-var AttackTokenClaim = artifacts.require("./AttackTokenClaim.sol");
-var TestnetLINK = artifacts.require("./TestnetLINK.sol");
-//var SmartPiggies = artifacts.require("./SmartPiggies.sol");
-var SmartPiggies = artifacts.require("./SmartPiggiesReentry.sol");
-var Resolver = artifacts.require("./ResolverSelfReturn.sol");
-var ResolverAttack = artifacts.require("./ResolverSelfAttack.sol");
+const AttackToken = artifacts.require("./AttackToken.sol");
+const AttackTokenCreate = artifacts.require("./AttackTokenCreate.sol");
+const AttackTokenReclaim = artifacts.require("./AttackTokenReclaim.sol");
+const AttackTokenStartAuction = artifacts.require("./AttackTokenStartAuction.sol");
+const AttackTokenEndAuction = artifacts.require("./AttackTokenEndAuction.sol");
+const AttackTokenEndAuctionV2 = artifacts.require("./AttackTokenEndAuctionV2.sol");
+const AttackTokenSatisfyAuction = artifacts.require("./AttackTokenSatisfyAuction.sol");
+const AttackTokenClaim = artifacts.require("./AttackTokenClaim.sol");
+const TestnetLINK = artifacts.require("./TestnetLINK.sol");
+const PiggyHelper = artifacts.require("./PiggyHelper.sol");
+//const SmartPiggies = artifacts.require("./SmartPiggies.sol");
+const SmartPiggies = artifacts.require("./SmartPiggiesReentry.sol");
+const Resolver = artifacts.require("./ResolverSelfReturn.sol");
+const ResolverAttack = artifacts.require("./ResolverSelfAttack.sol");
 
 const expectedExceptionPromise = require("../utils/expectedException.js");
 const sequentialPromise = require("../utils/sequentialPromise.js");
@@ -31,6 +32,7 @@ contract ('SmartPiggies', function(accounts) {
   let tokenSatisfyInstance;
   let tokenClaimInstance;
   let linkInstance;
+  let helperInstance;
   let piggyInstance;
   let resolverInstance;
   let owner = accounts[0];
@@ -125,7 +127,11 @@ contract ('SmartPiggies', function(accounts) {
     })
     .then(instance => {
       resolverAttackInstance = instance;
-      return SmartPiggies.new({from: owner, gas: 8000000, gasPrice: 1100000000});
+      return PiggyHelper.new({from: owner});
+    })
+    .then(instance => {
+      helperInstance = instance;
+      return SmartPiggies.new(helperInstance.address, {from: owner, gas: 8000000, gasPrice: 1100000000});
     })
     .then(instance => {
       piggyInstance = instance;

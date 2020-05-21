@@ -1,3 +1,4 @@
+const PiggyHelper = artifacts.require("./PiggyHelper.sol");
 const SmartPiggies = artifacts.require('SmartPiggies');
 const StableToken = artifacts.require('StableToken');
 const TestnetLINK = artifacts.require('TestnetLINK');
@@ -14,9 +15,14 @@ var oracleTokenAddress
 var oraclePrice = 27000
 
 module.exports = function(deployer) {
-  deployer.deploy(SmartPiggies, {gas: 8000000, gasPrice: 1100000000, overwrite: false});
   deployer.deploy(StableToken, {gas: 3000000, gasPrice: 1100000000, overwrite: false});
   deployer.deploy(StableTokenFaucet, {gas: 3000000, gasPrice: 1100000000, overwrite: false});
+
+  deployer.deploy(PiggyHelper, {gas: 8000000, gasPrice: 1100000000, overwrite: false})
+  .then(() => {
+    return deployer.deploy(SmartPiggies, PiggyHelper.address, {gas: 8000000, gasPrice: 1100000000, overwrite: false});
+  });
+  
   deployer.deploy(TestnetLINK, {gas: 3000000, gasPrice: 1100000000, overwrite: false})
   .then(() => {
     return deployer.deploy(ResolverSelfReturn,

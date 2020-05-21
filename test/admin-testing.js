@@ -1,8 +1,9 @@
 Promise = require("bluebird");
-var StableToken = artifacts.require("./StableToken.sol");
-var TestnetLINK = artifacts.require("./TestnetLINK.sol");
-var SmartPiggies = artifacts.require("./SmartPiggies.sol");
-var Resolver = artifacts.require("./ResolverSelfReturn.sol");
+const StableToken = artifacts.require("./StableToken.sol");
+const TestnetLINK = artifacts.require("./TestnetLINK.sol");
+const PiggyHelper = artifacts.require("./PiggyHelper.sol");
+const SmartPiggies = artifacts.require("./SmartPiggies.sol");
+const Resolver = artifacts.require("./ResolverSelfReturn.sol");
 
 const expectedExceptionPromise = require("../utils/expectedException.js");
 const sequentialPromise = require("../utils/sequentialPromise.js");
@@ -16,28 +17,27 @@ if (typeof web3.eth.getAccountsPromise === "undefined") {
 
 contract ('SmartPiggies', function(accounts) {
 
-  var tokenInstance;
-  var linkInstance;
-  var piggyInstance;
-  var resolverInstance;
-  var owner = accounts[0];
-  var user01 = accounts[1];
-  var user02 = accounts[2];
-  var addr00 = "0x0000000000000000000000000000000000000000";
-  var decimal = 18;
-  //multiply a BN
-  //var aNum = web3.utils.toBN(decimals).mul(web3.utils.toBN('1000'))
-  var decimals = web3.utils.toBN(Math.pow(10,decimal));
-  var supply = web3.utils.toWei("1000", "ether");
-  var approveAmount = web3.utils.toWei("100", "ether");
-  var exchangeRate = 1;
-  var dataSource = 'NASDAQ';
-  var underlying = 'SPY';
-  var oracleService = 'Self';
-  var endpoint = 'https://www.nasdaq.com/symbol/spy';
-  var path = '';
-  var oracleTokenAddress;
-  var oraclePrice = web3.utils.toBN(27000); //including hundreth of a cent
+  let tokenInstance;
+  let linkInstance;
+  let helperInstance
+  let piggyInstance;
+  let resolverInstance;
+  let owner = accounts[0];
+  let user01 = accounts[1];
+  let user02 = accounts[2];
+  let addr00 = "0x0000000000000000000000000000000000000000";
+  let decimal = 18;
+  let decimals = web3.utils.toBN(Math.pow(10,decimal));
+  let supply = web3.utils.toWei("1000", "ether");
+  let approveAmount = web3.utils.toWei("100", "ether");
+  let exchangeRate = 1;
+  let dataSource = 'NASDAQ';
+  let underlying = 'SPY';
+  let oracleService = 'Self';
+  let endpoint = 'https://www.nasdaq.com/symbol/spy';
+  let path = '';
+  let oracleTokenAddress;
+  let oraclePrice = web3.utils.toBN(27000); //including hundreth of a cent
 
   beforeEach(function() {
     //console.log(JSON.stringify("symbol: " + result, null, 4));
@@ -61,7 +61,11 @@ contract ('SmartPiggies', function(accounts) {
     })
     .then(instance => {
       resolverInstance = instance;
-      return SmartPiggies.new({from: owner, gas: 8000000, gasPrice: 1100000000});
+      return PiggyHelper.new({from: owner});
+    })
+    .then(instance => {
+      helperInstance = instance;
+      return SmartPiggies.new(helperInstance.address, {from: owner, gas: 8000000, gasPrice: 1100000000});
     })
     .then(instance => {
       piggyInstance = instance;
@@ -81,7 +85,7 @@ contract ('SmartPiggies', function(accounts) {
   describe("Testing ownership functionality", function() {
 
     it("Should have correct owner", function() {
-      return piggyInstance.getOwner({from: owner})
+      return piggyInstance.owner.call({from: owner})
       .then(result => {
         assert.strictEqual(result, owner, "owner did not return correctly");
       });
@@ -94,7 +98,7 @@ contract ('SmartPiggies', function(accounts) {
         assert.strictEqual(result.logs[0].event, "ChangedOwner", "Event logs did not return correct event name");
         assert.strictEqual(result.logs[0].args.from, owner, "Event log from changeOwner didn't return correct sender");
         assert.strictEqual(result.logs[0].args.newOwner, user01, "Event log from changeOwner didn't return correct sender");
-        return piggyInstance.getOwner({from: owner});
+        return piggyInstance.owner.call({from: owner});
       })
       .then(result => {
         assert.strictEqual(result, user01, "new owner did not return correctly");

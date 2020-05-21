@@ -237,9 +237,23 @@ contract UsingCooldown is Serviced {
 }
 
 
+contract UsingAHelper is UsingCooldown {
+  address public helperAddress;
+
+  function setHelper(address _newAddress)
+    public
+    onlyAdmin
+    returns (bool)
+  {
+    helperAddress = _newAddress;
+    return true;
+  }
+}
+
+
 /** @title SmartPiggies: A Smart Option Standard
 */
-contract SmartPiggiesReentry is UsingCooldown {
+contract SmartPiggiesReentry is UsingAHelper {
   using SafeMath for uint256;
 
   bytes32 constant TX_SUCCESS = bytes32(0x0000000000000000000000000000000000000000000000000000000000000001);
@@ -310,6 +324,7 @@ contract SmartPiggiesReentry is UsingCooldown {
   }
 
   mapping (address => mapping(address => uint256)) private ERC20balances;
+  mapping (address => uint256) private bidBalances;
   mapping (address => uint256[]) private ownedPiggies;
   mapping (uint256 => uint256) private ownedPiggiesIndex;
   mapping (uint256 => Piggy) private piggies;
@@ -436,12 +451,13 @@ contract SmartPiggiesReentry is UsingCooldown {
     also should throw if the contract is not delegated an amount of collateral designated
     in the reference ERC-20 which is >= the collateral value of the piggy
   */
-  constructor()
+  constructor(address _piggyHelper)
     public
     Administered(msg.sender)
     Serviced(msg.sender)
   {
     //declarations here
+    helperAddress = _piggyHelper;
     _guardCounter = 1;
   }
 

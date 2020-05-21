@@ -37,10 +37,6 @@ contract Owned {
     _;
   }
 
-  function getOwner() public view returns (address) {
-    return owner;
-  }
-
   function changeOwner(address payable _newOwner)
     public
     onlyOwner
@@ -114,14 +110,6 @@ contract Freezable is Administered {
   _;
   }
 
-  function isNotFrozen()
-    public
-    view
-    returns (bool)
-  {
-    return notFrozen;
-  }
-
   function freeze()
     public
     onlyAdmin
@@ -161,14 +149,6 @@ contract Serviced is Freezable {
     feeAddress = _feeAddress;
     feePercent = 50;
     feeResolution = 10**4;
-  }
-
-  function getFeeAddress()
-    public
-    view
-    returns (address)
-  {
-    return feeAddress;
   }
 
   function setFeeAddress(address payable _newAddress)
@@ -237,11 +217,26 @@ contract UsingCooldown is Serviced {
 }
 
 
+contract UsingAHelper is UsingCooldown {
+  address public helperAddress;
+
+  function setHelper(address _newAddress)
+    public
+    onlyAdmin
+    returns (bool)
+  {
+    helperAddress = _newAddress;
+    return true;
+  }
+}
+
+
 /** @title SmartPiggies: A Smart Option Standard
 */
-contract SmartPiggies is UsingCooldown {
+contract SmartPiggies is UsingAHelper {
   using SafeMath for uint256;
 
+  bytes32 constant RTN_FALSE = bytes32(0x0000000000000000000000000000000000000000000000000000000000000000);
   bytes32 constant TX_SUCCESS = bytes32(0x0000000000000000000000000000000000000000000000000000000000000001);
   uint256 public tokenId;
 
@@ -310,6 +305,7 @@ contract SmartPiggies is UsingCooldown {
   }
 
   mapping (address => mapping(address => uint256)) private ERC20balances;
+  mapping (address => uint256) private bidBalances;
   mapping (address => uint256[]) private ownedPiggies;
   mapping (uint256 => uint256) private ownedPiggiesIndex;
   mapping (uint256 => Piggy) private piggies;
@@ -436,12 +432,13 @@ contract SmartPiggies is UsingCooldown {
     also should throw if the contract is not delegated an amount of collateral designated
     in the reference ERC-20 which is >= the collateral value of the piggy
   */
-  constructor()
+  constructor(address _piggyHelper)
     public
     Administered(msg.sender)
     Serviced(msg.sender)
   {
     //declarations here
+    helperAddress = _piggyHelper;
     _guardCounter = 1;
   }
 
@@ -624,56 +621,13 @@ contract SmartPiggies is UsingCooldown {
     whenNotFrozen
     returns (bool)
   {
-    require(piggies[_tokenId].addresses.holder == msg.sender, "sender must be the holder");
-    require(piggies[_tokenId].flags.isRequest, "you can only update an RFP");
-    require(!auctions[_tokenId].satisfyInProgress, "auction in process of being satisfied");
-    uint256 expiryBlock;
-    if (_collateralERC != address(0)) {
-      piggies[_tokenId].addresses.collateralERC = _collateralERC;
-    }
-    if (_dataResolver != address(0)) {
-      piggies[_tokenId].addresses.dataResolver = _dataResolver;
-    }
-    if (_arbiter != address(0)) {
-      piggies[_tokenId].addresses.arbiter = _arbiter;
-    }
-    if (_reqCollateral != 0) {
-      piggies[_tokenId].uintDetails.reqCollateral = _reqCollateral;
-    }
-    if (_lotSize != 0) {
-      piggies[_tokenId].uintDetails.lotSize = _lotSize;
-    }
-    if (_strikePrice != 0 ) {
-      piggies[_tokenId].uintDetails.strikePrice = _strikePrice;
-    }
-    if (_expiry != 0) {
-      // recalculate expiry calculation
-      expiryBlock = _expiry.add(block.number);
-      piggies[_tokenId].uintDetails.expiry = expiryBlock;
-    }
-    // Both must be specified
-    piggies[_tokenId].flags.isEuro = _isEuro;
-    piggies[_tokenId].flags.isPut = _isPut;
-
-    // increment update nonce
-    // protects fulfiller from auction front running
-    ++piggies[_tokenId].uintDetails.rfpNonce;
-
-    emit UpdateRFP(
-      msg.sender,
-      _tokenId,
-      piggies[_tokenId].uintDetails.rfpNonce,
-      _collateralERC,
-      _dataResolver,
-      _arbiter,
-      _reqCollateral,
-      _lotSize,
-      _strikePrice,
-      expiryBlock,
-      _isEuro,
-      _isPut
-    );
-
+    bytes memory payload = abi.encodeWithSignature("updateRFP(uint256,address,address,address,uint256,uint256,uint256,uint256,bool,bool)",
+      _tokenId,_collateralERC,_dataResolver,_arbiter,
+      _reqCollateral,_lotSize,_strikePrice,_expiry,
+      _isEuro,_isPut);
+    (bool success, bytes memory result) = address(helperAddress).delegatecall(payload);
+    bytes32 txCheck = abi.decode(result, (bytes32));
+    require(success && txCheck == TX_SUCCESS, "update rfp failed");
     return true;
   }
 
@@ -1023,48 +977,10 @@ contract SmartPiggies is UsingCooldown {
      public
      returns (bool)
    {
-     require(msg.sender != address(0));
-     require(_tokenId != 0, "tokenId cannot be zero");
-     // require a settlement price to be returned from an oracle
-     require(piggies[_tokenId].flags.hasBeenCleared, "piggy is not cleared");
-
-     // check if arbitratin is set, cooldown has passed
-     if (piggies[_tokenId].addresses.arbiter != address(0)) {
-       require(piggies[_tokenId].uintDetails.arbitrationLock <= block.number, "arbiter set, locked for cooldown period");
-     }
-
-     uint256 payout;
-
-     if(piggies[_tokenId].flags.isEuro) {
-       require(piggies[_tokenId].uintDetails.expiry <= block.number, "european must be expired");
-     }
-     payout = _calculateLongPayout(_tokenId);
-
-     // set the balances of the two counterparties based on the payout
-     address _writer = piggies[_tokenId].addresses.writer;
-     address _holder = piggies[_tokenId].addresses.holder;
-     address _collateralERC = piggies[_tokenId].addresses.collateralERC;
-
-     uint256 collateral = piggies[_tokenId].uintDetails.collateral;
-     if (payout > collateral) {
-       payout = collateral;
-     }
-     // extract the service fee
-     uint256 fee = _getFee(payout);
-     ERC20balances[feeAddress][_collateralERC] = ERC20balances[feeAddress][_collateralERC].add(fee);
-     ERC20balances[_holder][_collateralERC] = ERC20balances[_holder][_collateralERC].add(payout).sub(fee);
-     ERC20balances[_writer][_collateralERC] = ERC20balances[_writer][_collateralERC].add(collateral).sub(payout);
-
-     emit SettlePiggy(
-       msg.sender,
-       _tokenId,
-       payout.sub(fee),
-       piggies[_tokenId].uintDetails.collateral.sub(payout)
-     );
-
-     _removeTokenFromOwnedPiggies(_holder, _tokenId);
-     // clean up piggyId
-     _resetPiggy(_tokenId);
+     bytes memory payload = abi.encodeWithSignature("settlePiggy(uint256)",_tokenId);
+     (bool success, bytes memory result) = address(helperAddress).delegatecall(payload);
+     bytes32 txCheck = abi.decode(result, (bytes32));
+     require(success && txCheck == TX_SUCCESS, "settle failed");
      return true;
    }
 
@@ -1106,31 +1022,12 @@ contract SmartPiggies is UsingCooldown {
     public
     returns (bool)
   {
-    require(_newArbiter != address(0), "arbiter address cannot be zero");
-    require(!auctions[_tokenId].auctionActive, "token cannot be on auction");
-    address _holder = piggies[_tokenId].addresses.holder;
-    address _writer = piggies[_tokenId].addresses.writer;
-    require(msg.sender == _holder || msg.sender == _writer, "only writer or holder can propose a new arbiter");
-    if (msg.sender == _holder) {
-      piggies[_tokenId].flags.holderHasProposedNewArbiter = true;
-      piggies[_tokenId].addresses.holderProposedNewArbiter = _newArbiter;
-    }
-    if (msg.sender == _writer) {
-      piggies[_tokenId].flags.writerHasProposedNewArbiter = true;
-      piggies[_tokenId].addresses.writerProposedNewArbiter = _newArbiter;
-    }
-    if (piggies[_tokenId].flags.holderHasProposedNewArbiter && piggies[_tokenId].flags.writerHasProposedNewArbiter) {
-      if (piggies[_tokenId].addresses.holderProposedNewArbiter == piggies[_tokenId].addresses.writerProposedNewArbiter) {
-        piggies[_tokenId].addresses.arbiter = _newArbiter;
-        emit ArbiterSet(msg.sender, _newArbiter, _tokenId);
-        return true;
-      } else {
-        // new arbiter address did not match
-        return false;
-      }
-    }
-    // missing a proposal from one party
-    return false;
+    bytes memory payload = abi.encodeWithSignature("updateArbiter(uint256,address)",_tokenId,_newArbiter);
+    (bool success, bytes memory result) = address(helperAddress).delegatecall(payload);
+    bytes32 txCheck = abi.decode(result, (bytes32));
+    require(success, "arbiter update failed");
+    require(txCheck == TX_SUCCESS || txCheck == RTN_FALSE);
+    return (txCheck == TX_SUCCESS) ? true : false;
   }
 
   function confirmArbiter(uint256 _tokenId)
@@ -1149,81 +1046,12 @@ contract SmartPiggies is UsingCooldown {
     public
     returns (bool)
   {
-    // make sure address can't call as an unset arbiter
-    require(msg.sender != address(0));
-    // require that arbitration has not received agreement
-    require(!piggies[_tokenId].flags.arbitrationAgreement, "arbitration has agreement");
-    // if piggy did not cleared a price, i.e. oracle didn't return
-    // require that piggy is expired to settle via arbitration
-    if(block.number < piggies[_tokenId].uintDetails.expiry) {
-      require(piggies[_tokenId].flags.hasBeenCleared);
-    }
-
-    // set internal address references for convenience
-    address _holder = piggies[_tokenId].addresses.holder;
-    address _writer = piggies[_tokenId].addresses.writer;
-    address _arbiter = piggies[_tokenId].addresses.arbiter;
-
-    // check which party the sender is (of the 3 valid ones, else fail)
-    require(msg.sender == _holder || msg.sender == _writer || msg.sender == _arbiter, "sender must be holder, writer, or arbiter");
-
-    // set flag for proposed share for that party
-    if (msg.sender == _holder) {
-      piggies[_tokenId].uintDetails.holderProposedPrice = _proposedPrice;
-      piggies[_tokenId].flags.holderHasProposedPrice = true;
-      emit PriceProposed(msg.sender, _tokenId, _proposedPrice);
-    }
-    if (msg.sender == _writer) {
-      piggies[_tokenId].uintDetails.writerProposedPrice = _proposedPrice;
-      piggies[_tokenId].flags.writerHasProposedPrice = true;
-      emit PriceProposed(msg.sender, _tokenId, _proposedPrice);
-    }
-    if (msg.sender == _arbiter) {
-      piggies[_tokenId].uintDetails.arbiterProposedPrice = _proposedPrice;
-      piggies[_tokenId].flags.arbiterHasProposedPrice = true;
-      emit PriceProposed(msg.sender, _tokenId, _proposedPrice);
-    }
-
-    // see if 2 of 3 parties have proposed a share
-    if (piggies[_tokenId].flags.holderHasProposedPrice && piggies[_tokenId].flags.writerHasProposedPrice ||
-      piggies[_tokenId].flags.holderHasProposedPrice && piggies[_tokenId].flags.arbiterHasProposedPrice ||
-      piggies[_tokenId].flags.writerHasProposedPrice && piggies[_tokenId].flags.arbiterHasProposedPrice)
-    {
-      // if so, see if 2 of 3 parties have proposed the same amount
-      uint256 _settlementPrice = 0;
-      bool _agreement = false;
-      // check if holder has gotten agreement with either other party
-      if (piggies[_tokenId].uintDetails.holderProposedPrice == piggies[_tokenId].uintDetails.writerProposedPrice ||
-        piggies[_tokenId].uintDetails.holderProposedPrice == piggies[_tokenId].uintDetails.arbiterProposedPrice)
-      {
-        _settlementPrice = piggies[_tokenId].uintDetails.holderProposedPrice;
-        _agreement = true;
-      }
-
-      // check if the two non-holder parties agree
-      if (piggies[_tokenId].uintDetails.writerProposedPrice == piggies[_tokenId].uintDetails.arbiterProposedPrice)
-      {
-        _settlementPrice = piggies[_tokenId].uintDetails.writerProposedPrice;
-        _agreement = true;
-      }
-
-      if (_agreement) {
-        // arbitration has come to an agreement
-        piggies[_tokenId].flags.arbitrationAgreement = true;
-        // update settlement price
-        piggies[_tokenId].uintDetails.settlementPrice = _settlementPrice;
-        piggies[_tokenId].flags.hasBeenCleared = true;
-        // emit settlement event
-        emit ArbiterSettled(msg.sender, _arbiter, _tokenId, _settlementPrice);
-
-        return (true);
-      } else {
-        // no agreement
-        return false;
-      }
-    }
-    // 2 of 3 have not proposed
-    return false;
+    bytes memory payload = abi.encodeWithSignature("thirdPartyArbitrationSettlement(uint256,uint256)",_tokenId,_proposedPrice);
+    (bool success, bytes memory result) = address(helperAddress).delegatecall(payload);
+    bytes32 txCheck = abi.decode(result, (bytes32));
+    require(success, "arbiter update failed");
+    require(txCheck == TX_SUCCESS || txCheck == RTN_FALSE);
+    return (txCheck == TX_SUCCESS) ? true : false;
   }
 
   /** Helper functions
@@ -1288,76 +1116,13 @@ contract SmartPiggies is UsingCooldown {
     internal
     returns (bool)
   {
-    // assuming all checks have passed:
-    uint256 tokenExpiry;
-    // tokenId should be allowed to overflow
-    ++tokenId;
-
-    // write the values to storage, including _isRequest flag
-    Piggy storage p = piggies[tokenId];
-    p.addresses.holder = msg.sender;
-    p.addresses.collateralERC = _collateralERC;
-    p.addresses.dataResolver = _dataResolver;
-    p.addresses.arbiter = _arbiter;
-    p.uintDetails.lotSize = _lotSize;
-    p.uintDetails.strikePrice = _strikePrice;
-    p.flags.isEuro = _isEuro;
-    p.flags.isPut = _isPut;
-    p.flags.isRequest = _isRequest;
-
-    // conditional state variable assignments based on _isRequest:
-    if (_isRequest) {
-      tokenExpiry = _expiry.add(block.number);
-      p.uintDetails.reqCollateral = _collateral;
-      p.uintDetails.collateralDecimals = _getERC20Decimals(_collateralERC);
-      p.uintDetails.expiry = tokenExpiry;
-    } else if (_isSplit) {
-      require(_splitTokenId != 0, "tokenId cannot be zero");
-      require(!piggies[_splitTokenId].flags.isRequest, "token cannot be an RFP");
-      require(piggies[_splitTokenId].addresses.holder == msg.sender, "only the holder can split");
-      require(block.number < piggies[_splitTokenId].uintDetails.expiry, "cannot split expired token");
-      require(!auctions[_splitTokenId].auctionActive, "cannot split token on auction");
-      require(!piggies[_splitTokenId].flags.hasBeenCleared, "cannot split cleared token");
-      tokenExpiry = piggies[_splitTokenId].uintDetails.expiry;
-      p.addresses.writer = piggies[_splitTokenId].addresses.writer;
-      p.uintDetails.collateral = _collateral;
-      p.uintDetails.collateralDecimals = piggies[_splitTokenId].uintDetails.collateralDecimals;
-      p.uintDetails.expiry = tokenExpiry;
-    } else {
-      require(!_isSplit, "split cannot be true when creating a piggy");
-      tokenExpiry = _expiry.add(block.number);
-      p.addresses.writer = msg.sender;
-      p.uintDetails.collateral = _collateral;
-      p.uintDetails.collateralDecimals = _getERC20Decimals(_collateralERC);
-      p.uintDetails.expiry = tokenExpiry;
-    }
-
-    _addTokenToOwnedPiggies(msg.sender, tokenId);
-
-    address[] memory a = new address[](4);
-    a[0] = msg.sender;
-    a[1] = _collateralERC;
-    a[2] = _dataResolver;
-    a[3] = _arbiter;
-
-    uint256[] memory i = new uint256[](5);
-    i[0] = tokenId;
-    i[1] = _collateral;
-    i[2] = _lotSize;
-    i[3] = _strikePrice;
-    i[4] = tokenExpiry;
-
-    bool[] memory b = new bool[](3);
-    b[0] = _isEuro;
-    b[1] = _isPut;
-    b[2] = _isRequest;
-
-    emit CreatePiggy(
-      a,
-      i,
-      b
-    );
-
+    bytes memory payload = abi.encodeWithSignature("_constructPiggy(address,address,address,uint256,uint256,uint256,uint256,uint256,bool,bool,bool,bool)",
+      _collateralERC,_dataResolver,_arbiter,_collateral,
+      _lotSize,_strikePrice,_expiry,_splitTokenId,
+      _isEuro,_isPut,_isRequest,_isSplit);
+    (bool success, bytes memory result) = address(helperAddress).delegatecall(payload);
+    bytes32 txCheck = abi.decode(result, (bytes32));
+    require(success && txCheck == TX_SUCCESS, "piggy create failed");
     return true;
   }
 

@@ -3,10 +3,11 @@
 //var expectedExceptionPromise = require("./utils/expectedException.js");
 
 Promise = require("bluebird");
-var StableToken = artifacts.require("./StableToken.sol");
-var TestnetLINK = artifacts.require("./TestnetLINK.sol");
-var SmartPiggies = artifacts.require("./SmartPiggies.sol");
-var Resolver = artifacts.require("./ResolverSelfReturn.sol");
+const StableToken = artifacts.require("./StableToken.sol");
+const TestnetLINK = artifacts.require("./TestnetLINK.sol");
+const PiggyHelper = artifacts.require("./PiggyHelper.sol");
+const SmartPiggies = artifacts.require("./SmartPiggies.sol");
+const Resolver = artifacts.require("./ResolverSelfReturn.sol");
 
 const expectedExceptionPromise = require("../utils/expectedException.js");
 const sequentialPromise = require("../utils/sequentialPromise.js");
@@ -22,6 +23,7 @@ contract ('SmartPiggies', function(accounts) {
 
   let tokenInstance
   let linkInstance
+  let helperInstance
   let piggyInstance
   let resolverInstance
   let owner = accounts[0]
@@ -68,8 +70,12 @@ contract ('SmartPiggies', function(accounts) {
       )
     })
     .then(instance => {
-      resolverInstance = instance
-      return SmartPiggies.new({from: owner, gas: 8000000, gasPrice: 1100000000})
+      resolverInstance = instance;
+      return PiggyHelper.new({from: owner});
+    })
+    .then(instance => {
+      helperInstance = instance;
+      return SmartPiggies.new(helperInstance.address, {from: owner, gas: 8000000, gasPrice: 1100000000});
     })
     .then(instance => {
       piggyInstance = instance

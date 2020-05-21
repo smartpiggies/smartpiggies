@@ -1,8 +1,9 @@
 Promise = require("bluebird");
-var StableToken = artifacts.require("./StableToken.sol");
-var TestnetLINK = artifacts.require("./TestnetLINK.sol");
-var SmartPiggies = artifacts.require("./SmartPiggies.sol");
-var Resolver = artifacts.require("./ResolverSelfReturn.sol");
+const StableToken = artifacts.require("./StableToken.sol");
+const TestnetLINK = artifacts.require("./TestnetLINK.sol");
+const PiggyHelper = artifacts.require("./PiggyHelper.sol");
+const SmartPiggies = artifacts.require("./SmartPiggies.sol");
+const Resolver = artifacts.require("./ResolverSelfReturn.sol");
 
 const expectedExceptionPromise = require("../utils/expectedException.js");
 const sequentialPromise = require("../utils/sequentialPromise.js");
@@ -16,34 +17,33 @@ if (typeof web3.eth.getAccountsPromise === "undefined") {
 
 contract ('SmartPiggies', function(accounts) {
 
-  var tokenInstance;
-  var linkInstance;
-  var piggyInstance;
-  var resolverInstanceZero;
-  var resolverInstanceBad;
-  var owner = accounts[0];
-  var user01 = accounts[1];
-  var user02 = accounts[2];
-  var user03 = accounts[3];
-  var user04 = accounts[4];
-  var user05 = accounts[5];
-  var arbiter = accounts[6];
-  var feeAddress = accounts[7];
-  var addr00 = "0x0000000000000000000000000000000000000000";
-  var decimal = 18;
-  //multiply a BN
-  //var aNum = web3.utils.toBN(decimals).mul(web3.utils.toBN('1000'))
-  var decimals = web3.utils.toBN(Math.pow(10,decimal));
-  var supply = web3.utils.toWei("1000", "ether");
-  var approveAmount = web3.utils.toWei("100", "ether");
-  var exchangeRate = 1;
-  var dataSource = 'NASDAQ';
-  var underlying = 'SPY';
-  var oracleService = 'Self';
-  var endpoint = 'https://www.nasdaq.com/symbol/spy';
-  var path = '';
-  var oracleTokenAddress;
-  var oraclePrice = web3.utils.toBN(0); // return price from oracle
+  let tokenInstance;
+  let linkInstance;
+  let helperInstance;
+  let piggyInstance;
+  let resolverInstanceZero;
+  let resolverInstanceBad;
+  let owner = accounts[0];
+  let user01 = accounts[1];
+  let user02 = accounts[2];
+  let user03 = accounts[3];
+  let user04 = accounts[4];
+  let user05 = accounts[5];
+  let arbiter = accounts[6];
+  let feeAddress = accounts[7];
+  let addr00 = "0x0000000000000000000000000000000000000000";
+  let decimal = 18;
+  let decimals = web3.utils.toBN(Math.pow(10,decimal));
+  let supply = web3.utils.toWei("1000", "ether");
+  let approveAmount = web3.utils.toWei("100", "ether");
+  let exchangeRate = 1;
+  let dataSource = 'NASDAQ';
+  let underlying = 'SPY';
+  let oracleService = 'Self';
+  let endpoint = 'https://www.nasdaq.com/symbol/spy';
+  let path = '';
+  let oracleTokenAddress;
+  let oraclePrice = web3.utils.toBN(0); // return price from oracle
   let zeroNonce = web3.utils.toBN(0)
 
   /* default feePercent param = 50 */
@@ -83,10 +83,14 @@ contract ('SmartPiggies', function(accounts) {
         "-1",
         {from: owner});
       })
-    .then(instance => {
-      resolverInstanceBad = instance;
-      return SmartPiggies.new({from: owner, gas: 8000000, gasPrice: 1100000000});
-    })
+      .then(instance => {
+        resolverInstanceBad = instance;
+        return PiggyHelper.new({from: owner});
+      })
+      .then(instance => {
+        helperInstance = instance;
+        return SmartPiggies.new(helperInstance.address, {from: owner, gas: 8000000, gasPrice: 1100000000});
+      })
     .then(instance => {
       piggyInstance = instance;
 

@@ -1,8 +1,9 @@
 Promise = require("bluebird");
-var StableToken = artifacts.require("./StableToken.sol");
-var TestnetLINK = artifacts.require("./TestnetLINK.sol");
-var SmartPiggies = artifacts.require("./SmartPiggies.sol");
-var Resolver = artifacts.require("./ResolverSelfReturn.sol");
+const StableToken = artifacts.require("./StableToken.sol");
+const TestnetLINK = artifacts.require("./TestnetLINK.sol");
+const PiggyHelper = artifacts.require("./PiggyHelper.sol");
+const SmartPiggies = artifacts.require("./SmartPiggies.sol");
+const Resolver = artifacts.require("./ResolverSelfReturn.sol");
 
 const expectedExceptionPromise = require("../utils/expectedException.js");
 const sequentialPromise = require("../utils/sequentialPromise.js");
@@ -18,6 +19,7 @@ contract ('SmartPiggies', function(accounts) {
 
   var tokenInstance;
   var linkInstance;
+  let helperInstance
   var piggyInstance;
   var resolverInstance;
   var owner = accounts[0];
@@ -70,7 +72,11 @@ contract ('SmartPiggies', function(accounts) {
     })
     .then(instance => {
       resolverInstance = instance;
-      return SmartPiggies.new({from: owner, gas: 8000000, gasPrice: 1100000000});
+      return PiggyHelper.new({from: owner});
+    })
+    .then(instance => {
+      helperInstance = instance;
+      return SmartPiggies.new(helperInstance.address, {from: owner, gas: 8000000, gasPrice: 1100000000});
     })
     .then(instance => {
       piggyInstance = instance;
@@ -188,7 +194,7 @@ contract ('SmartPiggies', function(accounts) {
         () => Promise.resolve(piggyInstance.satisfyAuction(tokenId, "0", {from: user01})), //[5]
         () => Promise.resolve(piggyInstance.requestSettlementPrice(tokenId, oracleFee, {from: user01})), //[6]
         () => Promise.resolve(piggyInstance.settlePiggy(tokenId, {from: owner})), //[7]
-        () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: owner})) //[8]
+        () => Promise.resolve(piggyInstance.getDetails(tokenId, {from: owner})), //[8]
       ])
       .then(result => {
         assert.isTrue(result[3].flags.arbiterHasConfirmed, "arbiterHasConfirmed did not return true")

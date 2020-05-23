@@ -113,6 +113,8 @@ contract ('SmartPiggies', function(accounts) {
       auctionLength = 100
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
+      limitPrice = web3.utils.toBN(0)
+      limitBool = false;
 
       startBlock = web3.utils.toBN(0)
       auctionPrice = web3.utils.toBN(0)
@@ -140,6 +142,7 @@ contract ('SmartPiggies', function(accounts) {
         return piggyInstance.startAuction(
           tokenId,startPrice,reservePrice,
           auctionLength,timeStep,priceStep,
+          limitPrice,limitBool,
           {from: owner})
       })
       .then(result => {
@@ -208,6 +211,8 @@ contract ('SmartPiggies', function(accounts) {
       auctionLength = 100
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
+      limitPrice = web3.utils.toBN(0)
+      limitBool = false;
 
       startBlock = web3.utils.toBN(0)
       auctionPrice = web3.utils.toBN(0)
@@ -235,6 +240,7 @@ contract ('SmartPiggies', function(accounts) {
         return piggyInstance.startAuction(
           tokenId,startPrice,reservePrice,
           auctionLength,timeStep,priceStep,
+          limitPrice,limitBool,
           {from: owner})
       })
       .then(result => {
@@ -326,6 +332,8 @@ contract ('SmartPiggies', function(accounts) {
       auctionLength = 100
       timeStep = web3.utils.toBN(1)
       priceStep = web3.utils.toBN(100)
+      limitPrice = web3.utils.toBN(0)
+      limitBool = false;
 
       startBlock = web3.utils.toBN(0)
       auctionPrice = web3.utils.toBN(0)
@@ -353,6 +361,7 @@ contract ('SmartPiggies', function(accounts) {
         return piggyInstance.startAuction(
           tokenId,startPrice,reservePrice,
           auctionLength,timeStep,priceStep,
+          limitPrice,limitBool,
           {from: owner})
       })
       .then(result => {

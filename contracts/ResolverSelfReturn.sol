@@ -19,6 +19,7 @@ contract ResolverSelfReturn {
     address requester;
     address payee;
     uint256 tokenId;
+    uint8 requestType;
   }
 
   mapping(bytes32 => Request) public requests;
@@ -46,7 +47,7 @@ contract ResolverSelfReturn {
     oracleTokenAddress = _oracleTokenAddress;
   }
 
-  function fetchData(address _funder, uint256 _oracleFee, uint256 _tokenId)
+  function fetchData(address _funder, uint256 _oracleFee, uint256 _tokenId, uint8 _requestType)
     public
     returns (bool)
   {
@@ -70,7 +71,8 @@ contract ResolverSelfReturn {
     requests[requestId] = Request({
       requester: msg.sender,
       payee: _funder,
-      tokenId: _tokenId
+      tokenId: _tokenId,
+      requestType: _requestType
       });
     callers[requestId] = msg.sender;
     getPriceCallback(requestId, price);
@@ -86,9 +88,10 @@ contract ResolverSelfReturn {
     lastPrice = _price;
     (bool success, ) = address(requests[_requestId].requester).call(
       abi.encodeWithSignature(
-        "_callback(uint256,uint256)",
+        "_callback(uint256,uint256,uint8)",
         requests[_requestId].tokenId,
-        _price
+        _price,
+        requests[_requestId].requestType
       )
     );
     require(success);

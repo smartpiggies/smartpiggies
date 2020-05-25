@@ -23,50 +23,17 @@ pragma experimental ABIEncoderV2;
 // thank you openzeppelin for SafeMath
 import "./SafeMath.sol";
 
-contract Owned {
-  address payable public owner;
-  constructor() public {
-    owner = msg.sender;
-  }
 
-  event ChangedOwner(address indexed from, address indexed newOwner);
-
-  modifier onlyOwner() {
-    require(msg.sender != address(0));
-    require(msg.sender == owner);
-    _;
-  }
-
-  function getOwner() public view returns (address) {
-    return owner;
-  }
-
-  function changeOwner(address payable _newOwner)
-    public
-    onlyOwner
-    returns (bool)
-  {
-    require(msg.sender != address(0));
-    owner = _newOwner;
-    emit ChangedOwner(msg.sender, _newOwner);
-    return true;
-  }
-}
-
-
-contract Administered is Owned {
+contract Administered {
   mapping(address => bool) private administrators;
   constructor(address _admin) public {
     administrators[_admin] = true;
   }
 
-  event AddedAdmin(address indexed from, address indexed newAdmin);
-  event DeletedAdmin(address indexed from, address indexed oldAdmin);
-
   modifier onlyAdmin() {
     // admin is an administrator or owner
     require(msg.sender != address(0));
-    require(administrators[msg.sender] || msg.sender == owner);
+    require(administrators[msg.sender]);
     _;
   }
 
@@ -84,7 +51,6 @@ contract Administered is Owned {
     returns (bool)
   {
     administrators[_newAdmin] = true;
-    emit AddedAdmin(msg.sender, _newAdmin);
     return true;
   }
 
@@ -94,7 +60,6 @@ contract Administered is Owned {
     returns (bool)
   {
     administrators[_admin] = false;
-    emit DeletedAdmin(msg.sender, _admin);
     return true;
   }
 }
@@ -151,10 +116,6 @@ contract Serviced is Freezable {
   uint8   public feePercent;
   uint16  public feeResolution;
 
-  event FeeAddressSet(address indexed from, address indexed newAddress);
-  event FeeSet(address indexed from, uint8 indexed newFee);
-  event ResolutionSet(address indexed from, uint16 newResolution);
-
   constructor(address payable _feeAddress)
     public
   {
@@ -177,7 +138,6 @@ contract Serviced is Freezable {
     returns (bool)
   {
     feeAddress = _newAddress;
-    emit FeeAddressSet(msg.sender, _newAddress);
     return true;
   }
 
@@ -187,7 +147,6 @@ contract Serviced is Freezable {
     returns (bool)
   {
     feePercent = _newFee;
-    emit FeeSet(msg.sender, _newFee);
     return true;
   }
 
@@ -198,7 +157,6 @@ contract Serviced is Freezable {
   {
     require(_newResolution != 0);
     feeResolution = _newResolution;
-    emit ResolutionSet(msg.sender, _newResolution);
     return true;
   }
 
@@ -216,8 +174,6 @@ contract Serviced is Freezable {
 contract UsingCooldown is Serviced {
   uint256 public cooldown;
 
-  event CooldownSet(address indexed from, uint256 _newCooldown);
-
   constructor()
     public
   {
@@ -231,7 +187,20 @@ contract UsingCooldown is Serviced {
     returns (bool)
   {
     cooldown = _newCooldown;
-    emit CooldownSet(msg.sender, _newCooldown);
+    return true;
+  }
+}
+
+
+contract UsingAHelper is UsingCooldown {
+  address public helperAddress;
+
+  function setHelper(address _newAddress)
+    public
+    onlyAdmin
+    returns (bool)
+  {
+    helperAddress = _newAddress;
     return true;
   }
 }
@@ -239,9 +208,11 @@ contract UsingCooldown is Serviced {
 
 /** @title SmartPiggies: A Smart Option Standard
 */
-contract SmartPiggies is UsingCooldown {
+contract SmartPiggies is UsingAHelper {
   using SafeMath for uint256;
 
+  enum RequestType { Bid, Settlement }
+  bytes32 constant RTN_FALSE = bytes32(0x0000000000000000000000000000000000000000000000000000000000000000);
   bytes32 constant TX_SUCCESS = bytes32(0x0000000000000000000000000000000000000000000000000000000000000001);
   uint256 public tokenId;
 
@@ -299,7 +270,15 @@ contract SmartPiggies is UsingCooldown {
     uint256 reservePrice;
     uint256 timeStep;
     uint256 priceStep;
+    uint256 limitPrice;
+    uint256 oraclePrice;
+    uint256 auctionPremium;
+    uint256 cooldown;
+    address activeBidder;
+    uint8 rfpNonce;
     bool auctionActive;
+    bool bidLimitSet;
+    bool bidCleared;
     bool satisfyInProgress;  // mutex guard to disallow ending an auction if a transaction to satisfy is in progress
   }
 
@@ -310,6 +289,7 @@ contract SmartPiggies is UsingCooldown {
   }
 
   mapping (address => mapping(address => uint256)) private ERC20balances;
+  mapping (address => mapping(uint256 => uint256)) private bidBalances;
   mapping (address => uint256[]) private ownedPiggies;
   mapping (uint256 => uint256) private ownedPiggiesIndex;
   mapping (uint256 => Piggy) private piggies;
@@ -382,10 +362,18 @@ contract SmartPiggies is UsingCooldown {
     address dataResolver
   );
 
+  event CheckLimitPrice(
+    address indexed feePayer,
+    uint256 indexed tokenId,
+    uint256 oracleFee,
+    address dataResolver
+  );
+
   event OracleReturned(
     address indexed resolver,
     uint256 indexed tokenId,
-    uint256 indexed price
+    uint256 indexed price,
+    uint8 requestType
   );
 
   event SettlePiggy(
@@ -436,12 +424,13 @@ contract SmartPiggies is UsingCooldown {
     also should throw if the contract is not delegated an amount of collateral designated
     in the reference ERC-20 which is >= the collateral value of the piggy
   */
-  constructor()
+  constructor(address _piggyHelper)
     public
     Administered(msg.sender)
     Serviced(msg.sender)
   {
     //declarations here
+    helperAddress = _piggyHelper;
     _guardCounter = 1;
   }
 
@@ -546,10 +535,10 @@ contract SmartPiggies is UsingCooldown {
   {
     require(_tokenId != 0, "tokenId cannot be zero");
     require(_amount != 0, "amount cannot be zero");
-    require(_amount < piggies[_tokenId].uintDetails.collateral, "amount must be less than collateral");
+    require(_amount < piggies[_tokenId].uintDetails.collateral, "amount not less than collateral");
     require(!piggies[_tokenId].flags.isRequest, "cannot be an RFP");
     require(piggies[_tokenId].uintDetails.collateral > 0, "collateral must be greater than zero");
-    require(piggies[_tokenId].addresses.holder == msg.sender, "only the holder can split");
+    require(piggies[_tokenId].addresses.holder == msg.sender, "sender must be holder");
     require(block.number < piggies[_tokenId].uintDetails.expiry, "cannot split expired token");
     require(!auctions[_tokenId].auctionActive, "cannot split token on auction");
     require(!piggies[_tokenId].flags.hasBeenCleared, "cannot split cleared token");
@@ -604,7 +593,7 @@ contract SmartPiggies is UsingCooldown {
   function transferFrom(address _from, address _to, uint256 _tokenId)
     public
   {
-    require(msg.sender == piggies[_tokenId].addresses.holder, "sender must be the holder");
+    require(msg.sender == piggies[_tokenId].addresses.holder, "sender must be holder");
     _internalTransfer(_from, _to, _tokenId);
   }
 
@@ -624,56 +613,13 @@ contract SmartPiggies is UsingCooldown {
     whenNotFrozen
     returns (bool)
   {
-    require(piggies[_tokenId].addresses.holder == msg.sender, "sender must be the holder");
-    require(piggies[_tokenId].flags.isRequest, "you can only update an RFP");
-    require(!auctions[_tokenId].satisfyInProgress, "auction in process of being satisfied");
-    uint256 expiryBlock;
-    if (_collateralERC != address(0)) {
-      piggies[_tokenId].addresses.collateralERC = _collateralERC;
-    }
-    if (_dataResolver != address(0)) {
-      piggies[_tokenId].addresses.dataResolver = _dataResolver;
-    }
-    if (_arbiter != address(0)) {
-      piggies[_tokenId].addresses.arbiter = _arbiter;
-    }
-    if (_reqCollateral != 0) {
-      piggies[_tokenId].uintDetails.reqCollateral = _reqCollateral;
-    }
-    if (_lotSize != 0) {
-      piggies[_tokenId].uintDetails.lotSize = _lotSize;
-    }
-    if (_strikePrice != 0 ) {
-      piggies[_tokenId].uintDetails.strikePrice = _strikePrice;
-    }
-    if (_expiry != 0) {
-      // recalculate expiry calculation
-      expiryBlock = _expiry.add(block.number);
-      piggies[_tokenId].uintDetails.expiry = expiryBlock;
-    }
-    // Both must be specified
-    piggies[_tokenId].flags.isEuro = _isEuro;
-    piggies[_tokenId].flags.isPut = _isPut;
-
-    // increment update nonce
-    // protects fulfiller from auction front running
-    ++piggies[_tokenId].uintDetails.rfpNonce;
-
-    emit UpdateRFP(
-      msg.sender,
-      _tokenId,
-      piggies[_tokenId].uintDetails.rfpNonce,
-      _collateralERC,
-      _dataResolver,
-      _arbiter,
-      _reqCollateral,
-      _lotSize,
-      _strikePrice,
-      expiryBlock,
-      _isEuro,
-      _isPut
-    );
-
+    bytes memory payload = abi.encodeWithSignature("updateRFP(uint256,address,address,address,uint256,uint256,uint256,uint256,bool,bool)",
+      _tokenId,_collateralERC,_dataResolver,_arbiter,
+      _reqCollateral,_lotSize,_strikePrice,_expiry,
+      _isEuro,_isPut);
+    (bool success, bytes memory result) = address(helperAddress).delegatecall(payload);
+    bytes32 txCheck = abi.decode(result, (bytes32));
+    require(success && txCheck == TX_SUCCESS, "update rfp failed");
     return true;
   }
 
@@ -685,7 +631,7 @@ contract SmartPiggies is UsingCooldown {
     nonReentrant
     returns (bool)
   {
-    require(msg.sender == piggies[_tokenId].addresses.holder, "sender must be the holder");
+    require(msg.sender == piggies[_tokenId].addresses.holder, "sender must be holder");
     require(!auctions[_tokenId].auctionActive, "token cannot be on auction");
 
     emit ReclaimAndBurn(msg.sender, _tokenId, piggies[_tokenId].flags.isRequest);
@@ -693,26 +639,19 @@ contract SmartPiggies is UsingCooldown {
     _removeTokenFromOwnedPiggies(piggies[_tokenId].addresses.holder, _tokenId);
 
     if (!piggies[_tokenId].flags.isRequest) {
-      require(msg.sender == piggies[_tokenId].addresses.writer, "sender must own collateral to reclaim it");
+      require(msg.sender == piggies[_tokenId].addresses.writer, "sender must own collateral to reclaim");
 
       // keep collateralERC address
       address collateralERC = piggies[_tokenId].addresses.collateralERC;
       // keep collateral
       uint256 collateral = piggies[_tokenId].uintDetails.collateral;
+
+      ERC20balances[msg.sender][collateralERC] = ERC20balances[msg.sender][collateralERC].add(collateral);
+
       // burn the token (zero out storage fields)
       _resetPiggy(_tokenId);
 
-      // *** warning untrusted function call ***
-      // return the collateral to sender
-      (bool success, bytes memory result) = address(collateralERC).call(
-        abi.encodeWithSignature(
-          "transfer(address,uint256)",
-          msg.sender,
-          collateral
-        )
-      );
-      bytes32 txCheck = abi.decode(result, (bytes32));
-      require(success && txCheck == TX_SUCCESS, "token transfer failed");
+
     }
     // burn the token (zero out storage fields)
     _resetPiggy(_tokenId);
@@ -725,7 +664,9 @@ contract SmartPiggies is UsingCooldown {
     uint256 _reservePrice,
     uint256 _auctionLength,
     uint256 _timeStep,
-    uint256 _priceStep
+    uint256 _priceStep,
+    uint256 _limitPrice,
+    bool _bidLimitSet
   )
     external
     whenNotFrozen
@@ -733,10 +674,10 @@ contract SmartPiggies is UsingCooldown {
     returns (bool)
   {
     uint256 _auctionExpiry = block.number.add(_auctionLength);
-    require(piggies[_tokenId].addresses.holder == msg.sender, "sender must be the holder");
+    require(piggies[_tokenId].addresses.holder == msg.sender, "sender must be holder");
     require(piggies[_tokenId].uintDetails.expiry > block.number, "token must not be expired");
     require(piggies[_tokenId].uintDetails.expiry > _auctionExpiry, "auction cannot expire after token expiry");
-    require(!piggies[_tokenId].flags.hasBeenCleared, "token cannot be cleared");
+    require(!piggies[_tokenId].flags.hasBeenCleared, "piggy cleared");
     require(!auctions[_tokenId].auctionActive, "auction cannot be running");
 
     // if we made it past the various checks, set the auction metadata up in auctions mapping
@@ -747,6 +688,11 @@ contract SmartPiggies is UsingCooldown {
     auctions[_tokenId].timeStep = _timeStep;
     auctions[_tokenId].priceStep = _priceStep;
     auctions[_tokenId].auctionActive = true;
+
+    auctions[_tokenId].limitPrice = _limitPrice;
+    if (_bidLimitSet) {
+      auctions[_tokenId].bidLimitSet = true;
+    }
 
     if (piggies[_tokenId].flags.isRequest) {
       // *** warning untrusted function call ***
@@ -778,158 +724,457 @@ contract SmartPiggies is UsingCooldown {
     nonReentrant
     returns (bool)
   {
-    require(piggies[_tokenId].addresses.holder == msg.sender, "sender must be the holder");
+    require(piggies[_tokenId].addresses.holder == msg.sender, "sender must be holder");
     require(auctions[_tokenId].auctionActive, "auction must be active");
-    require(!auctions[_tokenId].satisfyInProgress, "auction in process of being satisfied");  // this should be added to other functions as well
+    require(!auctions[_tokenId].satisfyInProgress, "auction is being satisfied");  // this should be added to other functions as well
 
-    if (piggies[_tokenId].flags.isRequest) {
-      uint256 _premiumToReturn = auctions[_tokenId].reservePrice;
-      _clearAuctionDetails(_tokenId);
-
-      // *** warning untrusted function call ***
-      // refund the _reservePrice premium
-      (bool success, bytes memory result) = address(piggies[_tokenId].addresses.collateralERC).call(
-        abi.encodeWithSignature(
-          "transfer(address,uint256)",
-          msg.sender,
-          _premiumToReturn
-        )
-      );
-      bytes32 txCheck = abi.decode(result, (bytes32));
-      require(success && txCheck == TX_SUCCESS, "token transfer failed");
-    }
+    uint256 premiumToReturn = auctions[_tokenId].reservePrice;
+    address bidder = auctions[_tokenId].activeBidder;
+    address collateralERC = piggies[_tokenId].addresses.collateralERC;
 
     _clearAuctionDetails(_tokenId);
+
+    if (bidder != address(0)) {
+     if (piggies[_tokenId].flags.isRequest) {
+       // reset bidding balances
+       bidBalances[bidder][_tokenId] = 0;
+       bidBalances[msg.sender][_tokenId] = 0;
+
+       // return requested collateral to filler
+       ERC20balances[bidder][collateralERC] =
+         ERC20balances[bidder][collateralERC].add(piggies[_tokenId].uintDetails.reqCollateral);
+
+       // if RFP get back your reserve
+       ERC20balances[msg.sender][collateralERC] =
+         ERC20balances[msg.sender][collateralERC].add(premiumToReturn);
+       }
+     // not RFP, return auction premium to bidder
+     else {
+       // reset premiumToReturn to bid balance
+       premiumToReturn = bidBalances[bidder][_tokenId]; // <- make this: auctions[_tokenId].details[8]
+       bidBalances[bidder][_tokenId] = 0;
+       //return auction premium to bidder
+       ERC20balances[bidder][collateralERC] =
+         ERC20balances[bidder][collateralERC].add(premiumToReturn);
+     }
+   }
+   // if not on bid and RFP
+   else if (piggies[_tokenId].flags.isRequest) {
+     // refund the _reservePrice premium
+     ERC20balances[msg.sender][collateralERC] =
+       ERC20balances[msg.sender][collateralERC].add(premiumToReturn);
+   }
     emit EndAuction(msg.sender, _tokenId, piggies[_tokenId].flags.isRequest);
     return true;
   }
 
-  function satisfyAuction(uint256 _tokenId, uint8 _rfpNonce)
-    external
-    whenNotFrozen
-    nonReentrant
-    returns (bool)
-  {
-    require(!auctions[_tokenId].satisfyInProgress, "auction in process of being satisfied");
-    require(piggies[_tokenId].addresses.holder != msg.sender, "cannot satisfy your auction; use endAuction");
-    require(auctions[_tokenId].auctionActive, "auction must be active to satisfy");
-    // if auction is "active" according to state but has expired, change state
-    if (auctions[_tokenId].expiryBlock < block.number) {
-      _clearAuctionDetails(_tokenId);
-      return false;
-    }
-    // get linear auction premium; reserve price should be a ceiling or floor depending on whether this is an RFP or an option, respectively
-    uint256 _auctionPremium = _getAuctionPrice(_tokenId);
+  function bidOnPiggyAuction(
+     uint256 _tokenId,
+     uint256 _oralceFee
+   )
+     external
+     whenNotFrozen
+     nonReentrant
+     returns (bool)
+   {
+     // require token on auction
+     require(auctions[_tokenId].auctionActive, "auction must be running");
+     require(piggies[_tokenId].addresses.holder != msg.sender, "cannot bid on your auction");
+     require(!auctions[_tokenId].satisfyInProgress, "auction is being satisfied");
+     //require(!auctions[_tokenId].flags[2], "auction bidding locked");
+     require(auctions[_tokenId].activeBidder == address(0), "auction bidding locked");
 
-    // lock mutex
-    auctions[_tokenId].satisfyInProgress = true;
+     // set bidder
+     auctions[_tokenId].activeBidder = msg.sender;
+     // lock bidding
+     //auctions[_tokenId].flags[2] = true;
+     // set cooldown
+     auctions[_tokenId].cooldown = block.number.add(cooldown);
 
-    bool success; // return bool from a token transfer
-    bytes memory result; // return data from a token transfer
-    bytes32 txCheck; // bytes32 check from a token transfer
+     // get linear auction premium; reserve price should be a ceiling or floor depending on whether this is an RFP or an option, respectively
+     uint256 auctionPremium = _getAuctionPrice(_tokenId);
 
-    if (piggies[_tokenId].flags.isRequest) {
-      // check RFP Nonce against auction front running
-      require(_rfpNonce == piggies[_tokenId].uintDetails.rfpNonce, "RFP Nonce failed match");
+     // calculate the adjusted premium based on reservePrice
+     uint256 adjPremium = auctionPremium;
+     if (adjPremium < auctions[_tokenId].reservePrice) {
+       adjPremium = auctions[_tokenId].reservePrice;
+     }
 
-      // *** warning untrusted function call ***
-      // msg.sender needs to delegate reqCollateral
-      (success, result) = attemptPaymentTransfer(
-        piggies[_tokenId].addresses.collateralERC,
-        msg.sender,
-        address(this),
-        piggies[_tokenId].uintDetails.reqCollateral
-      );
-      txCheck = abi.decode(result, (bytes32));
-      if (!success || txCheck != TX_SUCCESS) {
-        auctions[_tokenId].satisfyInProgress = false;
-        return false;
-      }
-      // if the collateral transfer succeeded, reqCollateral gets set to collateral
-      piggies[_tokenId].uintDetails.collateral = piggies[_tokenId].uintDetails.reqCollateral;
-      // calculate adjusted premium (based on reservePrice) + possible change due back to current holder
-      uint256 _change = 0;
-      uint256 _adjPremium = _auctionPremium;
-      if (_adjPremium > auctions[_tokenId].reservePrice) {
-        _adjPremium = auctions[_tokenId].reservePrice;
-      } else {
-        _change = auctions[_tokenId].reservePrice.sub(_adjPremium);
-      }
-      // *** warning untrusted function call ***
-      // current holder pays premium (via amount already delegated to this contract in startAuction)
-      (success, result) = address(piggies[_tokenId].addresses.collateralERC).call(
-        abi.encodeWithSignature(
-          "transfer(address,uint256)",
-          msg.sender,
-          _adjPremium
-        )
-      );
-      txCheck = abi.decode(result, (bytes32));
-      require(success && txCheck == TX_SUCCESS, "token transfer failed");
+     // save auction premium paid
+     auctions[_tokenId].auctionPremium = adjPremium;
+     // update bidder's balance
+     bidBalances[msg.sender][_tokenId] = bidBalances[msg.sender][_tokenId].add(adjPremium);
 
-      // current holder receives any change due
-      if (_change > 0) {
-        // *** warning untrusted function call ***
-        (success, result) = address(piggies[_tokenId].addresses.collateralERC).call(
-          abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            piggies[_tokenId].addresses.holder,
-            _change
-          )
-        );
-        txCheck = abi.decode(result, (bytes32));
-        require(success && txCheck == TX_SUCCESS, "token transfer failed");
-      }
-      // isRequest becomes false
-      piggies[_tokenId].flags.isRequest = false;
-      // msg.sender becomes writer
-      piggies[_tokenId].addresses.writer = msg.sender;
+     // *** warning untrusted function call ***
+     // msg.sender pays (adjusted) premium
+     (bool success, bytes memory result) = attemptPaymentTransfer(
+       piggies[_tokenId].addresses.collateralERC,
+       msg.sender,
+       address(this),
+       adjPremium
+     );
+     bytes32 txCheck = abi.decode(result, (bytes32));
+     require(success && txCheck == TX_SUCCESS, "token transfer failed");
 
-      emit SatisfyAuction(
-        msg.sender,
-        _tokenId,
-        _adjPremium,
-        _change,
-        _auctionPremium
-      );
+     checkLimitPrice(_tokenId, _oralceFee);
 
-    } else {
-      // calculate the adjusted premium based on reservePrice
-      uint256 _adjPremium = _auctionPremium;
-      if (_adjPremium < auctions[_tokenId].reservePrice) {
-        _adjPremium = auctions[_tokenId].reservePrice;
-      }
-      // *** warning untrusted function call ***
-      // msg.sender pays (adjusted) premium
-      (success, result) = attemptPaymentTransfer(
-        piggies[_tokenId].addresses.collateralERC,
-        msg.sender,
-        piggies[_tokenId].addresses.holder,
-        _adjPremium
-      );
-      txCheck = abi.decode(result, (bytes32));
-      if (!success || txCheck != TX_SUCCESS) {
-        auctions[_tokenId].satisfyInProgress = false;
-        return false;
-      }
-      // msg.sender becomes holder
-      _internalTransfer(piggies[_tokenId].addresses.holder, msg.sender, _tokenId);
+     return true;
+   }
 
-      emit SatisfyAuction(
-        msg.sender,
-        _tokenId,
-        _adjPremium,
-        0,
-        _auctionPremium
-      );
+   function bidOnRequestAuction(
+     uint256 _tokenId,
+     uint256 _oralceFee
+   )
+     external
+     whenNotFrozen
+     nonReentrant
+     returns (bool)
+   {
+     // require token on auction
+     require(auctions[_tokenId].auctionActive, "auction must be running");
+     require(piggies[_tokenId].addresses.holder != msg.sender, "cannot bid on your auction");
+     require(!auctions[_tokenId].satisfyInProgress, "auction is being satisfied");
+     //require(!auctions[_tokenId].flags[2], "auction bidding locked");
+     require(auctions[_tokenId].activeBidder == address(0), "auction bidding locked");
 
-    }
-    // auction is ended
-    _clearAuctionDetails(_tokenId);
-    // mutex released
-    auctions[_tokenId].satisfyInProgress = false;
-    return true;
-  }
+     // set bidder
+     auctions[_tokenId].activeBidder = msg.sender;
+     // lock bidding
+     //auctions[_tokenId].flags[2] = true;
+     // set cooldown
+     auctions[_tokenId].cooldown = block.number.add(cooldown);
+     // record current RFP nonce
+     auctions[_tokenId].rfpNonce = piggies[_tokenId].uintDetails.rfpNonce;
+
+     // get linear auction premium; reserve price should be a ceiling or floor depending on whether this is an RFP or an option, respectively
+     uint256 adjPremium = _getAuctionPrice(_tokenId);
+     uint256 change = 0;
+
+     // set bidder's balance to collateral sent to contract to collateralize piggy
+     bidBalances[msg.sender][_tokenId] = piggies[_tokenId].uintDetails.reqCollateral;
+
+     // calculate adjusted premium (based on reservePrice) + possible change due back to current holder
+     if (adjPremium > auctions[_tokenId].reservePrice) {
+       adjPremium = auctions[_tokenId].reservePrice;
+     } else {
+       change = auctions[_tokenId].reservePrice.sub(adjPremium);
+     }
+     // update bidder's balance with owed premium
+     bidBalances[msg.sender][_tokenId] = bidBalances[msg.sender][_tokenId].add(adjPremium);
+
+     // set current holder's balance with the change
+     bidBalances[piggies[_tokenId].addresses.holder][_tokenId] = change;
+
+     // save auction premium paid
+     auctions[_tokenId].auctionPremium = adjPremium;
+
+     bool success; // return bool from a token transfer
+     bytes memory result; // return data from a token transfer
+     bytes32 txCheck; // bytes32 check from a token transfer
+
+     // *** warning untrusted function call ***
+     // msg.sender needs to delegate reqCollateral
+     (success, result) = attemptPaymentTransfer(
+       piggies[_tokenId].addresses.collateralERC,
+       msg.sender,
+       address(this),
+       piggies[_tokenId].uintDetails.reqCollateral
+     );
+     txCheck = abi.decode(result, (bytes32));
+     require(success && txCheck == TX_SUCCESS, "token transfer failed");
+
+     checkLimitPrice(_tokenId, _oralceFee);
+
+     return true;
+   }
+
+   function reclaimBid(uint256 _tokenId)
+     external
+     returns (bool)
+   {
+     // sender must be bidder on auction, implicit check that bid is locked
+     require(msg.sender == auctions[_tokenId].activeBidder, "sender not bidder");
+     // oracle didn't return
+     require(!auctions[_tokenId].bidCleared, "bid cleared");
+     // past cooldown
+     require(auctions[_tokenId].cooldown < block.number, "cooldown still active");
+
+     // *** warning untrusted function call ***
+     // refund the _reservePrice premium
+     uint256 bidAmount = bidBalances[msg.sender][_tokenId];
+     bidBalances[msg.sender][_tokenId] = 0;
+
+     address collateralERC = piggies[_tokenId].addresses.collateralERC;
+
+     ERC20balances[msg.sender][collateralERC] =
+     ERC20balances[msg.sender][collateralERC].add(bidAmount);
+
+     // clean up token bid
+     _clearBid(_tokenId);
+
+     return true;
+   }
+
+   function satisfyPiggyAuction(uint256 _tokenId)
+     external
+     whenNotFrozen
+     nonReentrant
+     returns (bool)
+   {
+     require(!auctions[_tokenId].satisfyInProgress, "auction is being satisfied"); // mutex MUST be first
+     require(piggies[_tokenId].addresses.holder != msg.sender, "cannot satisfy your auction; use endAuction");
+     require(auctions[_tokenId].auctionActive, "auction must be active to satisfy");
+     //use satisfyRFPAuction for RFP auctions
+     require(!piggies[_tokenId].flags.isRequest, "cannot satisfy auction; check piggy type");
+
+     // if auction is "active" according to state but has expired, change state
+     if (auctions[_tokenId].expiryBlock < block.number) {
+       _clearAuctionDetails(_tokenId);
+       return false;
+     }
+
+     // lock mutex
+     auctions[_tokenId].satisfyInProgress = true;
+
+     uint256 auctionPremium = 0;
+     uint256 adjPremium = 0;
+     address previousHolder = piggies[_tokenId].addresses.holder;
+
+     if (auctions[_tokenId].bidLimitSet) {
+       require(auctions[_tokenId].bidCleared, "auction must receive price check");
+
+       // check price limit condition
+       _checkBidPrice(
+         piggies[_tokenId].flags.isPut,
+         auctions[_tokenId].limitPrice,
+         auctions[_tokenId].oraclePrice
+       );
+
+       // bidder becomes holder
+       _internalTransfer(previousHolder, auctions[_tokenId].activeBidder, _tokenId);
+
+       // included for event logging
+       adjPremium = adjPremium = auctions[_tokenId].auctionPremium;
+       // update bidder's balance
+       bidBalances[auctions[_tokenId].activeBidder][_tokenId] = 0;
+
+       // optimistic clean up assuming no revert
+       _clearAuctionDetails(_tokenId);
+
+       address collateralERC = piggies[_tokenId].addresses.collateralERC;
+       // previous holder/writer receives (adjusted) auction premium
+       ERC20balances[previousHolder][collateralERC] =
+       ERC20balances[previousHolder][collateralERC].add(adjPremium);
+     }
+     // auction didn't go through a bidding process
+     else {
+       auctionPremium = _getAuctionPrice(_tokenId);
+       adjPremium = auctionPremium;
+
+       if (adjPremium < auctions[_tokenId].reservePrice) {
+         adjPremium = auctions[_tokenId].reservePrice;
+       }
+
+       // msg.sender becomes holder
+       _internalTransfer(previousHolder, msg.sender, _tokenId);
+
+       // optimistic clean up assuming no revert
+       _clearAuctionDetails(_tokenId);
+
+       // *** warning untrusted function call ***
+       // msg.sender pays (adjusted) premium
+       (bool success, bytes memory result) = attemptPaymentTransfer(
+         piggies[_tokenId].addresses.collateralERC,
+         msg.sender,
+         previousHolder,
+         adjPremium
+       );
+       bytes32 txCheck = abi.decode(result, (bytes32));
+       require(success && txCheck == TX_SUCCESS, "token transfer failed");
+     }
+
+       emit SatisfyAuction(
+         msg.sender,
+         _tokenId,
+         adjPremium,
+         0,
+         auctionPremium
+       );
+
+     // mutex released
+     auctions[_tokenId].satisfyInProgress = false;
+     return true;
+   }
+
+   function satisfyRFPBidAuction(uint256 _tokenId)
+     external
+     whenNotFrozen
+     nonReentrant
+     returns (bool)
+   {
+     require(!auctions[_tokenId].bidCleared, "auction is being satisfied"); // mutex MUST be first
+     require(piggies[_tokenId].addresses.holder != msg.sender, "cannot satisfy your auction; use endAuction");
+     require(auctions[_tokenId].auctionActive, "auction must be active to satisfy");
+     //use satisfyPiggyAuction for piggy auctions
+     require(piggies[_tokenId].flags.isRequest, "cannot satisfy auction; check piggy type");
+     require(auctions[_tokenId].bidLimitSet, "bid auction not set");
+     require(auctions[_tokenId].bidCleared, "auction must receive price check");
+     // make sure current rfpNonce matches rfpNonce for bid
+     require(piggies[_tokenId].uintDetails.rfpNonce == auctions[_tokenId].rfpNonce, "RFP Nonce failed match");
+
+     // if auction is "active" according to state but has expired, change state
+     if (auctions[_tokenId].expiryBlock < block.number) {
+       _clearAuctionDetails(_tokenId);
+       return false;
+     }
+
+     // check price limit condition
+     _checkBidPrice(
+       piggies[_tokenId].flags.isPut,
+       auctions[_tokenId].limitPrice,
+       auctions[_tokenId].oraclePrice
+     );
+
+     // lock mutex
+     auctions[_tokenId].satisfyInProgress = true;
+
+     uint256 adjPremium;
+     uint256 change;
+     address holder = piggies[_tokenId].addresses.holder;
+     uint256 reserve = auctions[_tokenId].reservePrice;
+     address bidder = auctions[_tokenId].activeBidder;
+
+     // optimistic clean up assuming no revert
+     _clearAuctionDetails(_tokenId);
+
+     // collateral transfer SHOULD succeed, reqCollateral gets set to collateral
+     piggies[_tokenId].uintDetails.collateral = piggies[_tokenId].uintDetails.reqCollateral;
+     // isRequest becomes false
+     piggies[_tokenId].flags.isRequest = false;
+
+
+     // active bidder becomes writer
+     piggies[_tokenId].addresses.writer = bidder;
+
+     adjPremium = auctions[_tokenId].auctionPremium;
+
+     // update bidBalances:
+     // requested collateral moves to collateral, adjusted premium -> bidder
+     bidBalances[bidder][_tokenId] = 0;
+     // holder's premium -> bidder
+     bidBalances[holder][_tokenId] = 0; // was -> bidBalances[holder][_tokenId].sub(adjPremium)
+
+       // current holder pays premium (via amount already delegated to this contract in startAuction)
+ address collateralERC = piggies[_tokenId].addresses.collateralERC;
+       ERC20balances[bidder][collateralERC] =
+         ERC20balances[bidder][collateralERC].add(adjPremium);
+
+       // return any change to current holder
+       if(adjPremium < reserve) {
+         // return any change during the bidding process
+         ERC20balances[holder][collateralERC] =
+           ERC20balances[holder][collateralERC].add(reserve.sub(adjPremium));
+       }
+
+     emit SatisfyAuction(
+       msg.sender,
+       _tokenId,
+       adjPremium,
+       change,
+       adjPremium.add(change)
+     );
+
+     // mutex released
+     auctions[_tokenId].satisfyInProgress = false;
+     return true;
+   }
+
+   function satisfyRFPSpotAuction(uint256 _tokenId, uint8 _rfpNonce)
+     external
+     whenNotFrozen
+     nonReentrant
+     returns (bool)
+   {
+     require(!auctions[_tokenId].satisfyInProgress, "auction is being satisfied");
+     require(piggies[_tokenId].addresses.holder != msg.sender, "cannot satisfy your auction; use endAuction");
+     require(auctions[_tokenId].auctionActive, "auction must be active to satisfy");
+
+     //use satisfyPiggyAuction for piggy auctions
+     require(piggies[_tokenId].flags.isRequest, "cannot satisfy auction; check piggy type");
+
+     // if auction is "active" according to state but has expired, change state
+     if (auctions[_tokenId].expiryBlock < block.number) {
+       _clearAuctionDetails(_tokenId);
+       return false;
+     }
+
+     // lock mutex
+     auctions[_tokenId].satisfyInProgress = true;
+
+     uint256 adjPremium;
+     uint256 change;
+
+     // collateral transfer SHOULD succeed, reqCollateral gets set to collateral
+     piggies[_tokenId].uintDetails.collateral = piggies[_tokenId].uintDetails.reqCollateral;
+     // isRequest becomes false
+     piggies[_tokenId].flags.isRequest = false;
+
+     // auction didn't go through a bidding process
+
+       // make sure rfpNonce matches
+       require(_rfpNonce == piggies[_tokenId].uintDetails.rfpNonce, "RFP Nonce failed match");
+
+       // msg.sender becomes writer
+       piggies[_tokenId].addresses.writer = msg.sender;
+
+       adjPremium = _getAuctionPrice(_tokenId);
+
+       // calculate adjusted premium (based on reservePrice) + possible change due back to current holder
+       if (adjPremium > auctions[_tokenId].reservePrice) {
+         adjPremium = auctions[_tokenId].reservePrice;
+       } else {
+         change = auctions[_tokenId].reservePrice.sub(adjPremium);
+       }
+
+       // optimistic clean up assuming nothing reverts
+       _clearAuctionDetails(_tokenId);
+
+       // *** warning untrusted function call ***
+       // msg.sender needs to delegate reqCollateral
+       (bool success, bytes memory result) = attemptPaymentTransfer(
+         piggies[_tokenId].addresses.collateralERC,
+         msg.sender,
+         address(this),
+         piggies[_tokenId].uintDetails.reqCollateral
+       );
+       bytes32 txCheck = abi.decode(result, (bytes32));
+       require(success && txCheck == TX_SUCCESS, "token transfer failed");
+
+       address collateralERC = piggies[_tokenId].addresses.collateralERC;
+
+     // current holder pays premium (via amount already delegated to this contract in startAuction)
+     ERC20balances[msg.sender][collateralERC] =
+       ERC20balances[msg.sender][collateralERC].add(adjPremium);
+
+     // current holder receives any change due
+     if (change > 0) {
+       address holder = piggies[_tokenId].addresses.holder;
+       ERC20balances[holder][collateralERC] =
+         ERC20balances[holder][collateralERC].add(change);
+     }
+
+     emit SatisfyAuction(
+       msg.sender,
+       _tokenId,
+       adjPremium,
+       change,
+       adjPremium.add(change)
+     );
+
+     // mutex released
+     auctions[_tokenId].satisfyInProgress = false;
+     return true;
+   }
 
   /** @notice Call the oracle to fetch the settlement price
       @dev Throws if `_tokenId` is not a valid token.
@@ -957,7 +1202,7 @@ contract SmartPiggies is UsingCooldown {
   {
     require(msg.sender != address(0));
     require(!auctions[_tokenId].auctionActive, "cannot clear while auction is active");
-    require(!piggies[_tokenId].flags.hasBeenCleared, "token has been cleared");
+    require(!piggies[_tokenId].flags.hasBeenCleared, "piggy cleared");
     require(_tokenId != 0, "tokenId cannot be zero");
 
     // check if Euro require past expiry
@@ -967,7 +1212,7 @@ contract SmartPiggies is UsingCooldown {
     // check if American and less than expiry, only holder can call
     if (!piggies[_tokenId].flags.isEuro && (block.number < piggies[_tokenId].uintDetails.expiry))
     {
-      require(msg.sender == piggies[_tokenId].addresses.holder, "only the holder can settle American before expiry");
+      require(msg.sender == piggies[_tokenId].addresses.holder, "only holder can settle American before expiry");
     }
 
     address dataResolver = piggies[_tokenId].addresses.dataResolver;
@@ -988,31 +1233,72 @@ contract SmartPiggies is UsingCooldown {
     return true;
   }
 
-  function _callback(
-    uint256 _tokenId,
-    uint256 _price
-  )
-    public
+  function checkLimitPrice(uint256 _tokenId, uint256 _oracleFee)
+    internal // declared as interanal else not visible to bid functions
+    nonReentrant
+    returns (bool)
   {
     require(msg.sender != address(0));
-    // MUST restrict a call to only the resolver address
-    require(msg.sender == piggies[_tokenId].addresses.dataResolver, "resolver callback address failed match");
-    require(!piggies[_tokenId].flags.hasBeenCleared, "piggy already cleared");
-    piggies[_tokenId].uintDetails.settlementPrice = _price;
-    piggies[_tokenId].flags.hasBeenCleared = true;
+    require(_tokenId != 0, "tokenId cannot be zero");
+    require(auctions[_tokenId].auctionActive, "auction must be active");
+    require(!piggies[_tokenId].flags.hasBeenCleared, "piggy cleared");
+    require(!auctions[_tokenId].bidCleared, "bid cleared");
 
-    // if abitration is set, lock piggy for cooldown period
-    if (piggies[_tokenId].addresses.arbiter != address(0)) {
-      piggies[_tokenId].uintDetails.arbitrationLock = block.number.add(cooldown);
-    }
+    address dataResolver = piggies[_tokenId].addresses.dataResolver;
+    uint8 requestType = uint8 (RequestType.Bid);
+    // *** warning untrusted function call ***
+    bytes memory payload = abi.encodeWithSignature(
+      "fetchData(address,uint256,uint256,uint8)",
+      msg.sender, _oracleFee, _tokenId, requestType
+    );
+    (bool success, bytes memory result) = address(dataResolver).call(payload);
+    bytes32 txCheck = abi.decode(result, (bytes32));
+    require(success && txCheck == TX_SUCCESS, "call to resolver failed");
 
-    emit OracleReturned(
+    emit CheckLimitPrice(
       msg.sender,
       _tokenId,
-      _price
+      _oracleFee,
+      dataResolver
     );
 
   }
+
+  function _callback(
+     uint256 _tokenId,
+     uint256 _price,
+     uint8 _requestType
+   )
+     public
+   {
+     require(msg.sender != address(0));
+     // MUST restrict a call to only the resolver address
+     require(msg.sender == piggies[_tokenId].addresses.dataResolver, "resolver callback address failed match");
+     require(!piggies[_tokenId].flags.hasBeenCleared, "piggy cleared");
+
+     // select request type
+     if(_requestType == uint8 (RequestType.Settlement)) {
+       piggies[_tokenId].uintDetails.settlementPrice = _price;
+       piggies[_tokenId].flags.hasBeenCleared = true;
+
+       // if abitration is set, lock piggy for cooldown period
+       if (piggies[_tokenId].addresses.arbiter != address(0)) {
+         piggies[_tokenId].uintDetails.arbitrationLock = block.number.add(cooldown);
+       }
+     }
+     if (_requestType == uint8 (RequestType.Bid)) {
+       require(!auctions[_tokenId].bidCleared, "bid cleared");
+       auctions[_tokenId].oraclePrice = _price;
+       auctions[_tokenId].bidCleared = true;
+     }
+
+     emit OracleReturned(
+       msg.sender,
+       _tokenId,
+       _price,
+       _requestType
+     );
+   }
 
   /** @notice Calculate the settlement of ownership of option collateral
       @dev Throws if `_tokenId` is not a valid ERC-59 token.
@@ -1023,48 +1309,10 @@ contract SmartPiggies is UsingCooldown {
      public
      returns (bool)
    {
-     require(msg.sender != address(0));
-     require(_tokenId != 0, "tokenId cannot be zero");
-     // require a settlement price to be returned from an oracle
-     require(piggies[_tokenId].flags.hasBeenCleared, "piggy is not cleared");
-
-     // check if arbitratin is set, cooldown has passed
-     if (piggies[_tokenId].addresses.arbiter != address(0)) {
-       require(piggies[_tokenId].uintDetails.arbitrationLock <= block.number, "arbiter set, locked for cooldown period");
-     }
-
-     uint256 payout;
-
-     if(piggies[_tokenId].flags.isEuro) {
-       require(piggies[_tokenId].uintDetails.expiry <= block.number, "european must be expired");
-     }
-     payout = _calculateLongPayout(_tokenId);
-
-     // set the balances of the two counterparties based on the payout
-     address _writer = piggies[_tokenId].addresses.writer;
-     address _holder = piggies[_tokenId].addresses.holder;
-     address _collateralERC = piggies[_tokenId].addresses.collateralERC;
-
-     uint256 collateral = piggies[_tokenId].uintDetails.collateral;
-     if (payout > collateral) {
-       payout = collateral;
-     }
-     // extract the service fee
-     uint256 fee = _getFee(payout);
-     ERC20balances[feeAddress][_collateralERC] = ERC20balances[feeAddress][_collateralERC].add(fee);
-     ERC20balances[_holder][_collateralERC] = ERC20balances[_holder][_collateralERC].add(payout).sub(fee);
-     ERC20balances[_writer][_collateralERC] = ERC20balances[_writer][_collateralERC].add(collateral).sub(payout);
-
-     emit SettlePiggy(
-       msg.sender,
-       _tokenId,
-       payout.sub(fee),
-       piggies[_tokenId].uintDetails.collateral.sub(payout)
-     );
-
-     _removeTokenFromOwnedPiggies(_holder, _tokenId);
-     // clean up piggyId
-     _resetPiggy(_tokenId);
+     bytes memory payload = abi.encodeWithSignature("settlePiggy(uint256)",_tokenId);
+     (bool success, bytes memory result) = address(helperAddress).delegatecall(payload);
+     bytes32 txCheck = abi.decode(result, (bytes32));
+     require(success && txCheck == TX_SUCCESS, "settle failed");
      return true;
    }
 
@@ -1106,31 +1354,12 @@ contract SmartPiggies is UsingCooldown {
     public
     returns (bool)
   {
-    require(_newArbiter != address(0), "arbiter address cannot be zero");
-    require(!auctions[_tokenId].auctionActive, "token cannot be on auction");
-    address _holder = piggies[_tokenId].addresses.holder;
-    address _writer = piggies[_tokenId].addresses.writer;
-    require(msg.sender == _holder || msg.sender == _writer, "only writer or holder can propose a new arbiter");
-    if (msg.sender == _holder) {
-      piggies[_tokenId].flags.holderHasProposedNewArbiter = true;
-      piggies[_tokenId].addresses.holderProposedNewArbiter = _newArbiter;
-    }
-    if (msg.sender == _writer) {
-      piggies[_tokenId].flags.writerHasProposedNewArbiter = true;
-      piggies[_tokenId].addresses.writerProposedNewArbiter = _newArbiter;
-    }
-    if (piggies[_tokenId].flags.holderHasProposedNewArbiter && piggies[_tokenId].flags.writerHasProposedNewArbiter) {
-      if (piggies[_tokenId].addresses.holderProposedNewArbiter == piggies[_tokenId].addresses.writerProposedNewArbiter) {
-        piggies[_tokenId].addresses.arbiter = _newArbiter;
-        emit ArbiterSet(msg.sender, _newArbiter, _tokenId);
-        return true;
-      } else {
-        // new arbiter address did not match
-        return false;
-      }
-    }
-    // missing a proposal from one party
-    return false;
+    bytes memory payload = abi.encodeWithSignature("updateArbiter(uint256,address)",_tokenId,_newArbiter);
+   (bool success, bytes memory result) = address(helperAddress).delegatecall(payload);
+   bytes32 txCheck = abi.decode(result, (bytes32));
+   require(success, "arbiter update failed");
+   require(txCheck == TX_SUCCESS || txCheck == RTN_FALSE);
+   return (txCheck == TX_SUCCESS) ? true : false;
   }
 
   function confirmArbiter(uint256 _tokenId)
@@ -1138,7 +1367,7 @@ contract SmartPiggies is UsingCooldown {
     returns (bool)
   {
     require(msg.sender != address(0));
-    require(msg.sender == piggies[_tokenId].addresses.arbiter, "sender must be the arbiter");
+    require(msg.sender == piggies[_tokenId].addresses.arbiter, "sender must be arbiter");
     piggies[_tokenId].flags.arbiterHasConfirmed = true;
 
     emit ArbiterConfirmed(msg.sender, _tokenId);
@@ -1149,81 +1378,12 @@ contract SmartPiggies is UsingCooldown {
     public
     returns (bool)
   {
-    // make sure address can't call as an unset arbiter
-    require(msg.sender != address(0));
-    // require that arbitration has not received agreement
-    require(!piggies[_tokenId].flags.arbitrationAgreement, "arbitration has agreement");
-    // if piggy did not cleared a price, i.e. oracle didn't return
-    // require that piggy is expired to settle via arbitration
-    if(block.number < piggies[_tokenId].uintDetails.expiry) {
-      require(piggies[_tokenId].flags.hasBeenCleared);
-    }
-
-    // set internal address references for convenience
-    address _holder = piggies[_tokenId].addresses.holder;
-    address _writer = piggies[_tokenId].addresses.writer;
-    address _arbiter = piggies[_tokenId].addresses.arbiter;
-
-    // check which party the sender is (of the 3 valid ones, else fail)
-    require(msg.sender == _holder || msg.sender == _writer || msg.sender == _arbiter, "sender must be holder, writer, or arbiter");
-
-    // set flag for proposed share for that party
-    if (msg.sender == _holder) {
-      piggies[_tokenId].uintDetails.holderProposedPrice = _proposedPrice;
-      piggies[_tokenId].flags.holderHasProposedPrice = true;
-      emit PriceProposed(msg.sender, _tokenId, _proposedPrice);
-    }
-    if (msg.sender == _writer) {
-      piggies[_tokenId].uintDetails.writerProposedPrice = _proposedPrice;
-      piggies[_tokenId].flags.writerHasProposedPrice = true;
-      emit PriceProposed(msg.sender, _tokenId, _proposedPrice);
-    }
-    if (msg.sender == _arbiter) {
-      piggies[_tokenId].uintDetails.arbiterProposedPrice = _proposedPrice;
-      piggies[_tokenId].flags.arbiterHasProposedPrice = true;
-      emit PriceProposed(msg.sender, _tokenId, _proposedPrice);
-    }
-
-    // see if 2 of 3 parties have proposed a share
-    if (piggies[_tokenId].flags.holderHasProposedPrice && piggies[_tokenId].flags.writerHasProposedPrice ||
-      piggies[_tokenId].flags.holderHasProposedPrice && piggies[_tokenId].flags.arbiterHasProposedPrice ||
-      piggies[_tokenId].flags.writerHasProposedPrice && piggies[_tokenId].flags.arbiterHasProposedPrice)
-    {
-      // if so, see if 2 of 3 parties have proposed the same amount
-      uint256 _settlementPrice = 0;
-      bool _agreement = false;
-      // check if holder has gotten agreement with either other party
-      if (piggies[_tokenId].uintDetails.holderProposedPrice == piggies[_tokenId].uintDetails.writerProposedPrice ||
-        piggies[_tokenId].uintDetails.holderProposedPrice == piggies[_tokenId].uintDetails.arbiterProposedPrice)
-      {
-        _settlementPrice = piggies[_tokenId].uintDetails.holderProposedPrice;
-        _agreement = true;
-      }
-
-      // check if the two non-holder parties agree
-      if (piggies[_tokenId].uintDetails.writerProposedPrice == piggies[_tokenId].uintDetails.arbiterProposedPrice)
-      {
-        _settlementPrice = piggies[_tokenId].uintDetails.writerProposedPrice;
-        _agreement = true;
-      }
-
-      if (_agreement) {
-        // arbitration has come to an agreement
-        piggies[_tokenId].flags.arbitrationAgreement = true;
-        // update settlement price
-        piggies[_tokenId].uintDetails.settlementPrice = _settlementPrice;
-        piggies[_tokenId].flags.hasBeenCleared = true;
-        // emit settlement event
-        emit ArbiterSettled(msg.sender, _arbiter, _tokenId, _settlementPrice);
-
-        return (true);
-      } else {
-        // no agreement
-        return false;
-      }
-    }
-    // 2 of 3 have not proposed
-    return false;
+    bytes memory payload = abi.encodeWithSignature("thirdPartyArbitrationSettlement(uint256,uint256)",_tokenId,_proposedPrice);
+    (bool success, bytes memory result) = address(helperAddress).delegatecall(payload);
+    bytes32 txCheck = abi.decode(result, (bytes32));
+    require(success, "arbiter update failed");
+    require(txCheck == TX_SUCCESS || txCheck == RTN_FALSE);
+    return (txCheck == TX_SUCCESS) ? true : false;
   }
 
   /** Helper functions
@@ -1288,76 +1448,13 @@ contract SmartPiggies is UsingCooldown {
     internal
     returns (bool)
   {
-    // assuming all checks have passed:
-    uint256 tokenExpiry;
-    // tokenId should be allowed to overflow
-    ++tokenId;
-
-    // write the values to storage, including _isRequest flag
-    Piggy storage p = piggies[tokenId];
-    p.addresses.holder = msg.sender;
-    p.addresses.collateralERC = _collateralERC;
-    p.addresses.dataResolver = _dataResolver;
-    p.addresses.arbiter = _arbiter;
-    p.uintDetails.lotSize = _lotSize;
-    p.uintDetails.strikePrice = _strikePrice;
-    p.flags.isEuro = _isEuro;
-    p.flags.isPut = _isPut;
-    p.flags.isRequest = _isRequest;
-
-    // conditional state variable assignments based on _isRequest:
-    if (_isRequest) {
-      tokenExpiry = _expiry.add(block.number);
-      p.uintDetails.reqCollateral = _collateral;
-      p.uintDetails.collateralDecimals = _getERC20Decimals(_collateralERC);
-      p.uintDetails.expiry = tokenExpiry;
-    } else if (_isSplit) {
-      require(_splitTokenId != 0, "tokenId cannot be zero");
-      require(!piggies[_splitTokenId].flags.isRequest, "token cannot be an RFP");
-      require(piggies[_splitTokenId].addresses.holder == msg.sender, "only the holder can split");
-      require(block.number < piggies[_splitTokenId].uintDetails.expiry, "cannot split expired token");
-      require(!auctions[_splitTokenId].auctionActive, "cannot split token on auction");
-      require(!piggies[_splitTokenId].flags.hasBeenCleared, "cannot split cleared token");
-      tokenExpiry = piggies[_splitTokenId].uintDetails.expiry;
-      p.addresses.writer = piggies[_splitTokenId].addresses.writer;
-      p.uintDetails.collateral = _collateral;
-      p.uintDetails.collateralDecimals = piggies[_splitTokenId].uintDetails.collateralDecimals;
-      p.uintDetails.expiry = tokenExpiry;
-    } else {
-      require(!_isSplit, "split cannot be true when creating a piggy");
-      tokenExpiry = _expiry.add(block.number);
-      p.addresses.writer = msg.sender;
-      p.uintDetails.collateral = _collateral;
-      p.uintDetails.collateralDecimals = _getERC20Decimals(_collateralERC);
-      p.uintDetails.expiry = tokenExpiry;
-    }
-
-    _addTokenToOwnedPiggies(msg.sender, tokenId);
-
-    address[] memory a = new address[](4);
-    a[0] = msg.sender;
-    a[1] = _collateralERC;
-    a[2] = _dataResolver;
-    a[3] = _arbiter;
-
-    uint256[] memory i = new uint256[](5);
-    i[0] = tokenId;
-    i[1] = _collateral;
-    i[2] = _lotSize;
-    i[3] = _strikePrice;
-    i[4] = tokenExpiry;
-
-    bool[] memory b = new bool[](3);
-    b[0] = _isEuro;
-    b[1] = _isPut;
-    b[2] = _isRequest;
-
-    emit CreatePiggy(
-      a,
-      i,
-      b
-    );
-
+    bytes memory payload = abi.encodeWithSignature("_constructPiggy(address,address,address,uint256,uint256,uint256,uint256,uint256,bool,bool,bool,bool)",
+    _collateralERC,_dataResolver,_arbiter,_collateral,
+    _lotSize,_strikePrice,_expiry,_splitTokenId,
+    _isEuro,_isPut,_isRequest,_isSplit);
+    (bool success, bytes memory result) = address(helperAddress).delegatecall(payload);
+    bytes32 txCheck = abi.decode(result, (bytes32));
+    require(success && txCheck == TX_SUCCESS, "piggy create failed");
     return true;
   }
 
@@ -1393,12 +1490,39 @@ contract SmartPiggies is UsingCooldown {
   function _internalTransfer(address _from, address _to, uint256 _tokenId)
     internal
   {
-    require(_from == piggies[_tokenId].addresses.holder, "from must be the holder");
+    require(_from == piggies[_tokenId].addresses.holder, "from must be holder");
     require(_to != address(0), "receiving address cannot be zero");
     _removeTokenFromOwnedPiggies(_from, _tokenId);
     _addTokenToOwnedPiggies(_to, _tokenId);
     piggies[_tokenId].addresses.holder = _to;
     emit TransferPiggy(_from, _to, _tokenId);
+  }
+
+  function _checkBidPrice(bool isPut, uint256 limitPrice, uint256 oraclePrice)
+    internal
+    pure
+  {
+    // check price limit condition
+    if(isPut) {
+        // if put
+        require(limitPrice < oraclePrice, "price limit violated");
+    } else {
+        // if call
+        require(oraclePrice < limitPrice, "price limit violated");
+    }
+  }
+
+  function _clearBid(uint256 _tokenId)
+    internal
+  {
+    auctions[_tokenId].oraclePrice = 0;
+    auctions[_tokenId].auctionPremium = 0;
+    auctions[_tokenId].cooldown = 0;
+    auctions[_tokenId].activeBidder = address(0);
+    auctions[_tokenId].rfpNonce = 0;
+    auctions[_tokenId].bidLimitSet = false;
+    //auctions[_tokenId].flags[2] = false;
+    auctions[_tokenId].bidCleared = false;
   }
 
   function _clearAuctionDetails(uint256 _tokenId)
@@ -1410,7 +1534,9 @@ contract SmartPiggies is UsingCooldown {
     auctions[_tokenId].reservePrice = 0;
     auctions[_tokenId].timeStep = 0;
     auctions[_tokenId].priceStep = 0;
+    auctions[_tokenId].limitPrice = 0;
     auctions[_tokenId].auctionActive = false;
+    _clearBid(_tokenId);
   }
 
   // calculate the price for satisfaction of an auction
